@@ -77,6 +77,79 @@ def _distinctive_text(html: str) -> list:
     return list(dict.fromkeys(out))[:15]
 
 
+# response headers that carry no product identity
+BORING_HEADERS = {
+    "date", "content-type", "content-length", "content-encoding",
+    "transfer-encoding", "connection", "keep-alive", "cache-control",
+    "pragma", "expires", "etag", "vary", "accept-ranges", "age",
+    "alt-svc", "report-to", "nel", "server-timing", "set-cookie",
+    "strict-transport-security", "content-security-policy",
+    "content-security-policy-report-only", "x-content-type-options",
+    "x-frame-options", "x-xss-protection", "referrer-policy",
+    "permissions-policy", "cross-origin-opener-policy",
+    "cross-origin-embedder-policy", "cross-origin-resource-policy",
+    "origin-agent-cluster", "x-dns-prefetch-control", "expect-ct",
+    "last-modified", "if-modified-since", "location", "refresh",
+    "content-disposition", "content-language", "content-range",
+    "access-control-allow-origin", "access-control-allow-methods",
+    "access-control-allow-headers", "access-control-allow-credentials",
+    "timing-allow-origin", "x-request-id", "x-correlation-id",
+}
+
+
+def _interesting_headers(packets: list, base_host: str) -> list:
+    """Distinctive response headers from same-host packets -> 'k=v' strings."""
+    out = []
+    for p in packets:
+        host = urlsplit(p["url"]).hostname or ""
+        if base_host and host and host != base_host and not host.endswith(base_host):
+            continue
+        if p.get("type") not in ("document", "xhr", "fetch"):
+            continue
+        for k, v in (p.get("headers") or {}).items():
+            k = k.lower()
+            if k in BORING_HEADERS:
+                continue
+            if not (k.startswith("x-") or k in ("server", "via", "powered-by")):
+                continue
+            v = (v or "").strip()
+            if len(v) > 80:
+                continue
+            out.append(f"{k}={v}" if v else k)
+    return list(dict.fromkeys(out))[:20]
+
+
+def _xhr_paths(packets: list, base_host: str) -> list:
+    """XHR/fetch request paths -> 'xhr' rule candidates."""
+    out = []
+    for p in packets:
+        if p.get("type") not in ("xhr", "fetch"):
+            continue
+        u = urlsplit(p["url"])
+        host = u.hostname or ""
+        if base_host and host and host != base_host and not host.endswith(base_host):
+            continue
+        path = u.path or "/"
+        if len(path) < 2 or path.lower().split("/")[1] in GENERIC:
+            continue
+        out.append(path)
+    return list(dict.fromkeys(out))[:15]
+
+
+def _packet_list(packets: list) -> list:
+    """Deduped packet summary for UI display / row selection."""
+    seen, out = set(), []
+    for p in packets:
+        u = p["url"]
+        if u in seen:
+            continue
+        seen.add(u)
+        out.append({"url": u, "type": p.get("type"), "status": p.get("status")})
+        if len(out) >= 150:
+            break
+    return out
+
+
 async def extract(url: str, client=None) -> dict:
     own = client is None
     client = client or probe.make_client()
@@ -99,6 +172,8 @@ async def extract(url: str, client=None) -> dict:
             packet_urls = []
 
         detected = fp.postprocess(fp.match(signals)["hits"])
+        packets = cap.get("packets") or []
+        base_host = urlsplit(signals["url"] or resp["final_url"]).hostname or ""
         return {
             "ok": True,
             "url": url,
@@ -110,6 +185,16 @@ async def extract(url: str, client=None) -> dict:
             "cookies": sorted(signals["cookies"].keys()),
             "paths": _path_prefixes(html, resp["final_url"], packet_urls),
             "keywords": _distinctive_text(html),
+            # packet-derived candidates for url/xhr/headers/js rule fields
+            "packets": _packet_list(packets),
+            "url_suggest": [
+                p for p, _ in _prefix_counts(packet_urls, base_host).most_common(12)
+            ],
+            "xhr_suggest": _xhr_paths(packets, base_host),
+            "headers": _interesting_headers(packets, base_host),
+            "js": [
+                f"{k}={v}" for k, v in (cap.get("js") or {}).items()
+            ],
             "detected": [
                 {"name": h["name"], "category": h["category"], "confidence": h["confidence"]}
                 for h in detected
@@ -118,6 +203,15 @@ async def extract(url: str, client=None) -> dict:
     finally:
         if own:
             await client.aclose()
+
+
+_VERSION_RE = re.compile(r"^\d+(?:\.\d+)+$")
+
+
+def _kv(v: str) -> tuple:
+    """Split a 'key=value' suggestion; value ''/None -> '.*'."""
+    i = v.index("=") if "=" in v else -1
+    return (v[:i], v[i + 1:]) if i >= 0 else (v, ".*")
 
 
 def build_rule(name: str, selected: dict, category: str = "自定义") -> dict:
@@ -135,6 +229,22 @@ def build_rule(name: str, selected: dict, category: str = "自定义") -> dict:
         rule["scriptSrc"] = selected["scriptSrc"]
     if selected.get("probe"):
         rule["probe"] = {p: [".*"] for p in selected["probe"]}
+    # packet-derived fields
+    if selected.get("url"):
+        rule["url"] = selected["url"]
+    if selected.get("xhr"):
+        rule["xhr"] = selected["xhr"]
+    if selected.get("headers"):
+        rule["headers"] = {k: [v or ".*"] for k, v in selected["headers"].items()}
+    if selected.get("js"):
+        js = {}
+        for item in selected["js"]:
+            k, v = _kv(item) if isinstance(item, str) else item
+            if _VERSION_RE.match(v or ""):
+                js[k] = ["([0-9]+(?:\\.[0-9]+)*)\\;version:\\1"]
+            else:
+                js[k] = [v or ".*"]
+        rule["js"] = js
     return rule
 
 
@@ -198,3 +308,14 @@ def is_disabled(name: str) -> bool:
 
 def disabled_names() -> set:
     return {r["name"] for r in load_custom() if r.get("_disabled")}
+
+
+def builtin_raw(name: str):
+    """Raw JSON of a built-in rule (non-custom files) + its source file."""
+    for f in sorted(fp.RULES_DIR.glob("*.json"), key=lambda x: x.name):
+        if f.name == "custom.json":
+            continue
+        for raw in json.loads(f.read_text(encoding="utf-8")):
+            if raw.get("name") == name:
+                return raw, f.name
+    return None, None

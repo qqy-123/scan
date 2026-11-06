@@ -198,7 +198,8 @@ async def learn_preview(body: LearnIn):
 
 
 SIGNAL_FIELDS = ("headers", "cookies", "meta", "js", "html", "scriptSrc",
-                 "scripts", "url", "favicon", "dom", "probe")
+                 "scripts", "url", "xhr", "css", "robots", "favicon",
+                 "dom", "probe")
 
 
 @app.get("/api/rules/detail")
@@ -249,9 +250,22 @@ def save_custom_rule(body: CustomRuleIn):
 
 @app.get("/api/rules/raw/{name}")
 def rule_raw(name: str):
-    """Raw editable JSON of a rule + where it comes from."""
-    if learn.is_disabled(name):
-        return {"name": name, "disabled": True, "file": "custom.json", "rule": None}
+    """Raw editable JSON of a rule + where it comes from.
+
+    Disabled rules are still returned for editing: prefer the custom.json
+    entry when it carries signal fields; otherwise fall back to the built-in
+    definition so its content can be edited (and re-enabled)."""
+    custom = next(
+        (r for r in learn.load_custom() if r.get("name") == name), None
+    )
+    disabled = bool(custom and custom.get("_disabled"))
+    if custom and any(k in custom for k in SIGNAL_FIELDS):
+        return {
+            "name": name,
+            "disabled": disabled,
+            "file": "custom.json",
+            "rule": custom,
+        }
     for r in fp.load_rules():
         if r["name"] == name:
             return {
@@ -260,6 +274,12 @@ def rule_raw(name: str):
                 "file": r.get("_file"),
                 "rule": fp.raw_of(r),
             }
+    raw, fname = learn.builtin_raw(name)
+    if raw:
+        raw = dict(raw)
+        return {"name": name, "disabled": disabled, "file": fname, "rule": raw}
+    if custom:
+        return {"name": name, "disabled": disabled, "file": "custom.json", "rule": custom}
     raise HTTPException(404)
 
 
