@@ -1,0 +1,192 @@
+[
+  {
+    "name": "phpMyAdmin",
+    "category": "Database tool",
+    "website": "https://www.phpmyadmin.net",
+    "html": ["phpMyAdmin", "pma_username"],
+    "cookies": { "^phpMyAdmin|^pma": ".*\\;confidence:60" },
+    "meta": { "generator": ["phpMyAdmin"] },
+    "implies": ["PHP"]
+  },
+  {
+    "name": "Jenkins",
+    "category": "CI/CD",
+    "website": "https://www.jenkins.io",
+    "headers": { "x-jenkins": "([0-9.]+)\\;version:\\1", "x-hudson": ".*\\;confidence:60" },
+    "html": ["Jenkins", "jenkins"],
+    "favicon": ["81586312"],
+    "implies": ["Java"]
+  },
+  {
+    "name": "GitLab",
+    "category": "DevOps",
+    "website": "https://about.gitlab.com",
+    "html": ["og:site_name\" content=\"GitLab", "GitLab</title>", "window\\.gon"],
+    "cookies": { "^_gitlab_session": ".*" },
+    "meta": { "og:site_name": ["GitLab"] }
+  },
+  {
+    "name": "Gitea",
+    "category": "DevOps",
+    "website": "https://about.gitea.com",
+    "html": ["Powered by Gitea", "gitea\\;confidence:60"],
+    "cookies": { "^i_like_gitea": ".*" }
+  },
+  {
+    "name": "Swagger UI",
+    "category": "API tool",
+    "website": "https://swagger.io",
+    "html": ["swagger-ui", "Swagger UI", "swagger\\.json|api-docs\\;confidence:50"],
+    "dom": { "#swagger-ui, .swagger-ui": {} }
+  },
+  {
+    "name": "Kibana",
+    "category": "Analytics",
+    "website": "https://www.elastic.co/kibana",
+    "html": ["Kibana</title>", "kbn-"],
+    "headers": { "kbn-version": "([0-9.]+)\\;version:\\1", "kbn-name|kbn-xpack": ".*\\;confidence:70" }
+  },
+  {
+    "name": "Grafana",
+    "category": "Analytics",
+    "website": "https://grafana.com",
+    "html": ["grafana-app", "Grafana</title>", "grafana\\.com"],
+    "cookies": { "^grafana_sess": ".*" }
+  },
+  {
+    "name": "Harbor",
+    "category": "DevOps",
+    "website": "https://goharbor.io",
+    "html": ["<title>Harbor", "Harbor</title>"],
+    "dom": { "harbor-app": {} }
+  },
+  {
+    "name": "Nacos",
+    "category": "Middleware",
+    "website": "https://nacos.io",
+    "html": ["<title>Nacos", "nacos\\;confidence:60", "console-ui"]
+  },
+  {
+    "name": "Druid Monitor",
+    "category": "Middleware",
+    "website": "https://github.com/alibaba/druid",
+    "html": ["Druid Stat", "druid\\.index"],
+    "probe": { "/druid/index.html": ["Druid|druid"] }
+  },
+  {
+    "name": "WebLogic",
+    "category": "Middleware",
+    "website": "https://www.oracle.com/middleware/weblogic",
+    "headers": { "server": "WebLogic" },
+    "html": ["WebLogic"],
+    "probe": { "/console/login/LoginForm.jsp": ["WebLogic|Oracle"] }
+  },
+  {
+    "name": "JBoss",
+    "category": "Middleware",
+    "website": "https://www.jboss.org",
+    "headers": { "server": "JBoss" },
+    "html": ["JBoss"],
+    "implies": ["Java"]
+  },
+  {
+    "name": "宝塔面板",
+    "category": "Ops panel",
+    "website": "https://www.bt.cn",
+    "html": ["宝塔", "bt\\.cn", "BT-Panel"]
+  },
+  {
+    "name": "禅道",
+    "category": "Project management",
+    "website": "https://www.zentao.net",
+    "html": ["zentao", "禅道"],
+    "cookies": { "^zentaosid|^zentaossid": ".*" },
+    "implies": ["PHP"]
+  },
+  {
+    "name": "泛微 e-cology",
+    "category": "OA",
+    "website": "https://www.weaver.com.cn",
+    "html": ["/wui/", "ecology\\;confidence:60", "weaver"],
+    "cookies": { "ecology_JSession|loginpageweaver": ".*" },
+    "probe": { "/wui/index.html": ["ecology|weaver"] }
+  },
+  {
+    "name": "致远 OA",
+    "category": "OA",
+    "website": "https://www.seeyon.com",
+    "html": ["/seeyon/", "seeyon", "致远"],
+    "probe": { "/seeyon/main.do": ["seeyon|A8|main"] }
+  },
+  {
+    "name": "蓝凌 OA",
+    "category": "OA",
+    "website": "https://www.landray.com.cn",
+    "html": ["landray", "蓝凌"]
+  },
+  {
+    "name": "用友",
+    "category": "ERP",
+    "website": "https://www.yonyou.com",
+    "html": ["yonyou", "iuap", "用友"]
+  },
+  {
+    "name": "通达 OA",
+    "category": "OA",
+    "website": "https://www.tongda2000.com",
+    "html": ["TDOA", "通达OA", "/inc/utility"]
+  },
+  {
+    "name": "Apache Shiro",
+    "category": "Security framework",
+    "website": "https://shiro.apache.org",
+    "cookies": { "^rememberMe$": "deleteMe" },
+    "implies": ["Java"]
+  },
+  {
+    "name": "RuoYi",
+    "category": "Admin framework",
+    "website": "https://ruoyi.vip",
+    "html": ["RuoYi", "ruoyi"],
+    "scriptSrc": ["ruoyi"]
+  },
+  {
+    "name": "JumpServer",
+    "category": "Bastion host",
+    "website": "https://www.jumpserver.org",
+    "html": ["JumpServer", "jumpserver"]
+  },
+  {
+    "name": "SonarQube",
+    "category": "Code quality",
+    "website": "https://www.sonarqube.org",
+    "html": ["SonarQube", "sonarqube"]
+  },
+  {
+    "name": "Nexus Repository",
+    "category": "Repository",
+    "website": "https://www.sonatype.com",
+    "html": ["Nexus Repository", "nexus"],
+    "headers": { "server": "Nexus" }
+  },
+  {
+    "name": "MinIO",
+    "category": "Storage",
+    "website": "https://min.io",
+    "headers": { "server": "MinIO" },
+    "html": ["MinIO Console", "minio"]
+  },
+  {
+    "name": "RabbitMQ Management",
+    "category": "Middleware",
+    "website": "https://www.rabbitmq.com",
+    "html": ["RabbitMQ Management", "rabbitmq"],
+    "headers": { "server": "RabbitMQ" }
+  },
+  {
+    "name": "Eureka",
+    "category": "Middleware",
+    "website": "https://github.com/Netflix/eureka",
+    "html": ["Eureka", "eureka"]
+  }
+]

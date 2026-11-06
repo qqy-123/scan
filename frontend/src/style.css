@@ -1,0 +1,69 @@
+/* T/CIDADS 00032—2026 tokens: 8px grid, PingFang SC + Roboto, Gray 100-10 */
+:root {
+  --font-family: "PingFang SC", "Microsoft YaHei", Roboto, "Helvetica Neue",
+    Helvetica, Arial, sans-serif;
+  --gray-100: #1a1a1a;
+  --gray-80: #404040;
+  --gray-60: #737373;
+  --gray-50: #8c8c8c;
+  --gray-40: #a6a6a6;
+  --gray-30: #bebebe;
+  --gray-20: #d9d9d9;
+  --gray-10: #f3f3f3;
+  --primary-60: #2454e6;
+  --bg-page: #f5f7fa;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  background: var(--bg-page);
+  color: var(--gray-100);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--primary-60);
+  text-decoration: none;
+}
+
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--gray-100);
+}
+
+.shot-thumb {
+  width: 120px;
+  border: 1px solid var(--gray-20);
+  border-radius: 4px;
+  cursor: zoom-in;
+}
+
+.shot-full {
+  max-width: 100%;
+  border: 1px solid var(--gray-20);
+  border-radius: 8px;
+}
+
+.mono {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 12px;
+}

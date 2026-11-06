@@ -1,0 +1,90 @@
+[
+  {
+    "name": "Cloudflare",
+    "category": "CDN/WAF",
+    "website": "https://www.cloudflare.com",
+    "headers": {
+      "server": "cloudflare",
+      "cf-ray|cf-cache-status|cf-request-id|cf-worker": ".*",
+      "report-to": "cloudflare\\;confidence:50"
+    },
+    "cookies": { "^__cf_bm|^cf_clearance|^__cfduid": ".*" }
+  },
+  {
+    "name": "Akamai",
+    "category": "CDN/WAF",
+    "website": "https://www.akamai.com",
+    "headers": {
+      "server": "AkamaiGHost|AkamaiNetStorage",
+      "x-akamai|akamai-.*-request-id": ".*"
+    }
+  },
+  {
+    "name": "Amazon CloudFront",
+    "category": "CDN/WAF",
+    "website": "https://aws.amazon.com/cloudfront",
+    "headers": { "x-amz-cf|via.*CloudFront|server.*CloudFront": ".*" },
+    "cookies": { "^CloudFront-Key-Pair-Id": ".*" }
+  },
+  {
+    "name": "AWS ALB",
+    "category": "CDN/WAF",
+    "website": "https://aws.amazon.com",
+    "cookies": { "^AWSALB|^AWSALBCORS": ".*" }
+  },
+  {
+    "name": "安全狗",
+    "category": "WAF",
+    "website": "https://www.safedog.cn",
+    "headers": { "server": "SafeDog|safedog", "x-powered-by-safe|x-safedog": ".*" },
+    "html": ["safedog", "安全狗", "waf@safedog"]
+  },
+  {
+    "name": "创宇盾",
+    "category": "WAF",
+    "website": "https://www.yunaq.com",
+    "headers": { "server": "yunaq|knownsec", "x-yunaq|via.*yunaq": ".*" },
+    "html": ["yunaq|创宇盾|365waf"]
+  },
+  {
+    "name": "百度云加速",
+    "category": "CDN/WAF",
+    "website": "https://su.baidu.com",
+    "headers": { "server": "yunjiasu|YjsGzip" },
+    "cookies": { "^yjs_js_security_passport": ".*" }
+  },
+  {
+    "name": "F5 BIG-IP",
+    "category": "Load balancer/WAF",
+    "website": "https://www.f5.com",
+    "cookies": { "^BIGipServer|^TS[a-zA-Z0-9]{3,}$": ".*" },
+    "headers": { "x-wa-info": ".*\\;confidence:60" }
+  },
+  {
+    "name": "Incapsula",
+    "category": "WAF",
+    "website": "https://www.imperva.com",
+    "cookies": { "^incap_ses|^visid_incap|nlbi_": ".*" },
+    "html": ["Incapsula|incapsula"]
+  },
+  {
+    "name": "Sucuri",
+    "category": "WAF",
+    "website": "https://sucuri.net",
+    "headers": { "x-sucuri-id|x-sucuri-cache": ".*" },
+    "html": ["sucuri\\.net|Access Denied - Sucuri"]
+  },
+  {
+    "name": "ModSecurity",
+    "category": "WAF",
+    "website": "https://modsecurity.org",
+    "headers": { "server": "Mod_Security|mod_security|NOYB", "x-mod-security|x-backend": ".*\\;confidence:50" }
+  },
+  {
+    "name": "DDoS-Guard",
+    "category": "CDN/WAF",
+    "website": "https://ddos-guard.net",
+    "headers": { "server": "ddos-guard" },
+    "cookies": { "^__ddg": ".*" }
+  }
+]

@@ -1,0 +1,82 @@
+[
+  {
+    "name": "Nginx",
+    "category": "Web server",
+    "website": "https://nginx.org",
+    "headers": { "server": "nginx/?([0-9.]*)\\;version:\\1" }
+  },
+  {
+    "name": "Apache HTTP Server",
+    "category": "Web server",
+    "website": "https://httpd.apache.org",
+    "headers": { "server": "Apache/?([0-9.]*)\\;version:\\1" }
+  },
+  {
+    "name": "Microsoft IIS",
+    "category": "Web server",
+    "website": "https://www.iis.net",
+    "headers": { "server": "Microsoft-IIS/?([0-9.]*)\\;version:\\1" }
+  },
+  {
+    "name": "Apache Tomcat",
+    "category": "Web server",
+    "website": "https://tomcat.apache.org",
+    "headers": { "server": "Apache-Coyote|Tomcat" },
+    "html": ["Apache Tomcat/?([0-9.]*)\\;version:\\1", "tomcat.apache.org"],
+    "implies": ["Java"]
+  },
+  {
+    "name": "Jetty",
+    "category": "Web server",
+    "website": "https://jetty.org",
+    "headers": { "server": "Jetty(\\(([0-9.]*)\\))?\\;version:\\2" },
+    "implies": ["Java"]
+  },
+  {
+    "name": "OpenResty",
+    "category": "Web server",
+    "website": "https://openresty.org",
+    "headers": { "server": "openresty/?([0-9.]*)\\;version:\\1" },
+    "implies": ["Nginx"]
+  },
+  {
+    "name": "Tengine",
+    "category": "Web server",
+    "website": "https://tengine.taobao.org",
+    "headers": { "server": "Tengine/?([0-9.]*)\\;version:\\1" },
+    "implies": ["Nginx"]
+  },
+  {
+    "name": "Caddy",
+    "category": "Web server",
+    "website": "https://caddyserver.com",
+    "headers": { "server": "Caddy/?([0-9.]*)\\;version:\\1" }
+  },
+  {
+    "name": "LiteSpeed",
+    "category": "Web server",
+    "website": "https://www.litespeedtech.com",
+    "headers": { "server": "LiteSpeed|lsws" }
+  },
+  {
+    "name": "Gunicorn",
+    "category": "Web server",
+    "website": "https://gunicorn.org",
+    "headers": { "server": "gunicorn/?([0-9.]*)\\;version:\\1" },
+    "implies": ["Python"]
+  },
+  {
+    "name": "GlassFish",
+    "category": "Web server",
+    "website": "https://glassfish.org",
+    "headers": { "server": "GlassFish" },
+    "implies": ["Java"]
+  },
+  {
+    "name": "WebSphere",
+    "category": "Web server",
+    "website": "https://www.ibm.com/products/websphere-application-server",
+    "headers": { "server": "WebSphere" },
+    "implies": ["Java"]
+  }
+]

@@ -1,0 +1,190 @@
+[
+  {
+    "name": "jQuery",
+    "category": "JavaScript library",
+    "website": "https://jquery.com",
+    "scriptSrc": ["jquery[-.]([0-9.]+)(?:\\.min)?\\.js\\;version:\\1", "jquery(\\.min)?\\.js"],
+    "js": { "jQuery.fn.jquery": "^([0-9.]+)\\;version:\\1" },
+    "html": ["jquery\\.min\\.js\\;confidence:60"]
+  },
+  {
+    "name": "Vue.js",
+    "category": "JavaScript framework",
+    "website": "https://vuejs.org",
+    "scriptSrc": ["vue[@./-]", "vue(\\.min|\\.runtime)?\\.js"],
+    "js": {
+      "Vue": ".*\\;confidence:80",
+      "Vue.version": "([0-9.]+)\\;version:\\1"
+    },
+    "html": ["vue\\.min\\.js", "vue-router", "data-v-app\\;confidence:60"],
+    "dom": { "[data-v-app]": {} }
+  },
+  {
+    "name": "React",
+    "category": "JavaScript framework",
+    "website": "https://react.dev",
+    "scriptSrc": ["react(-dom)?[.@/-]", "react(\\.production)?\\.min\\.js"],
+    "js": {
+      "React": ".*\\;confidence:80",
+      "React.version": "([0-9.]+)\\;version:\\1"
+    },
+    "html": ["data-reactroot", "__reactFiber", "react-dom"],
+    "dom": { "[data-reactroot]": {} }
+  },
+  {
+    "name": "Angular",
+    "category": "JavaScript framework",
+    "website": "https://angular.dev",
+    "dom": { "[ng-version]": {} },
+    "html": ["ng-version=", "ng-app="],
+    "js": { "angular.version.full": "([0-9.]+)\\;version:\\1" }
+  },
+  {
+    "name": "Bootstrap",
+    "category": "UI framework",
+    "website": "https://getbootstrap.com",
+    "scriptSrc": ["bootstrap(\\.bundle)?(\\.min)?\\.js"],
+    "html": ["bootstrap(\\.min)?\\.(css|js)", "bootstrap@([0-9.]+)\\;version:\\1"]
+  },
+  {
+    "name": "Layui",
+    "category": "UI framework",
+    "website": "https://layui.dev",
+    "scriptSrc": ["layui(\\.all)?(\\.min)?\\.js"],
+    "html": ["layui\\.css", "layui\\.js"],
+    "dom": { ".layui-layout, .layui-btn": {} }
+  },
+  {
+    "name": "Element UI",
+    "category": "UI framework",
+    "website": "https://element.eleme.io",
+    "scriptSrc": ["element-ui", "element-plus"],
+    "html": ["element-ui|element-plus\\;confidence:70"],
+    "dom": { ".el-button, .el-table, .el-menu": {} },
+    "implies": ["Vue.js"]
+  },
+  {
+    "name": "Ant Design",
+    "category": "UI framework",
+    "website": "https://ant.design",
+    "scriptSrc": ["antd[./-]"],
+    "html": ["ant-design|antd\\;confidence:60"],
+    "dom": { ".ant-btn, .ant-table, .ant-menu": {} },
+    "implies": ["React"]
+  },
+  {
+    "name": "ECharts",
+    "category": "JavaScript graphics",
+    "website": "https://echarts.apache.org",
+    "scriptSrc": ["echarts(\\.min)?\\.js", "echarts@([0-9.]+)\\;version:\\1"],
+    "js": { "echarts.version": "([0-9.]+)\\;version:\\1" }
+  },
+  {
+    "name": "webpack",
+    "category": "Build tool",
+    "website": "https://webpack.js.org",
+    "html": ["webpackJsonp", "__webpack_require__\\;confidence:60"]
+  },
+  {
+    "name": "Vite",
+    "category": "Build tool",
+    "website": "https://vite.dev",
+    "html": ["/@vite/client", "type=\"module\"[^>]*src=\"/src/\\;confidence:60"]
+  },
+  {
+    "name": "Next.js",
+    "category": "Web framework",
+    "website": "https://nextjs.org",
+    "html": ["__NEXT_DATA__", "/_next/"],
+    "headers": { "x-powered-by": "Next\\.js" },
+    "implies": ["React", "Node.js"]
+  },
+  {
+    "name": "Nuxt.js",
+    "category": "Web framework",
+    "website": "https://nuxt.com",
+    "html": ["__NUXT__", "/_nuxt/"],
+    "headers": { "x-powered-by": "Nuxt" },
+    "implies": ["Vue.js"]
+  },
+  {
+    "name": "Express",
+    "category": "Web framework",
+    "website": "https://expressjs.com",
+    "headers": { "x-powered-by": "Express" },
+    "implies": ["Node.js"]
+  },
+  {
+    "name": "Node.js",
+    "category": "Runtime",
+    "website": "https://nodejs.org",
+    "headers": { "x-powered-by": "Node\\.js" }
+  },
+  {
+    "name": "PHP",
+    "category": "Programming language",
+    "website": "https://php.net",
+    "headers": { "x-powered-by": "PHP/?([0-9.]*)\\;version:\\1" },
+    "cookies": { "^PHPSESSID$": ".*" }
+  },
+  {
+    "name": "ThinkPHP",
+    "category": "Web framework",
+    "website": "https://www.thinkphp.cn",
+    "headers": { "x-powered-by": "ThinkPHP\\s*([0-9.]*)\\;version:\\1" },
+    "html": ["ThinkPHP", "thinkphp\\;confidence:60"],
+    "implies": ["PHP"]
+  },
+  {
+    "name": "Laravel",
+    "category": "Web framework",
+    "website": "https://laravel.com",
+    "cookies": { "^laravel_session|^XSRF-TOKEN$": ".*\\;confidence:70" },
+    "html": ["Laravel\\s*v?([0-9.]*)\\;version:\\1", "laravel\\;confidence:50"],
+    "implies": ["PHP"]
+  },
+  {
+    "name": "Django",
+    "category": "Web framework",
+    "website": "https://www.djangoproject.com",
+    "cookies": { "^csrftoken$|^django_language$": ".*\\;confidence:50" },
+    "html": ["csrfmiddlewaretoken"],
+    "implies": ["Python"]
+  },
+  {
+    "name": "Flask",
+    "category": "Web framework",
+    "website": "https://flask.palletsprojects.com",
+    "headers": { "server": "Werkzeug/?([0-9.]*)\\;version:\\1" },
+    "implies": ["Python"]
+  },
+  {
+    "name": "Spring",
+    "category": "Web framework",
+    "website": "https://spring.io",
+    "html": ["Whitelabel Error Page\\;confidence:60"],
+    "headers": { "x-application-context": ".*" },
+    "cookies": { "^JSESSIONID$": ".*\\;confidence:30" },
+    "implies": ["Java"]
+  },
+  {
+    "name": "ASP.NET",
+    "category": "Web framework",
+    "website": "https://dotnet.microsoft.com",
+    "headers": {
+      "x-aspnet-version": "([0-9.]+)\\;version:\\1",
+      "x-aspnetmvc-version": ".*",
+      "x-powered-by": "ASP\\.NET"
+    },
+    "cookies": { "^ASP\\.NET_SessionId|^\\.AspNet": ".*" },
+    "html": ["__VIEWSTATE", "__VIEWSTATEGENERATOR"],
+    "implies": ["Microsoft IIS"]
+  },
+  {
+    "name": "Ruby on Rails",
+    "category": "Web framework",
+    "website": "https://rubyonrails.org",
+    "headers": { "x-runtime": ".*\\;confidence:40", "x-powered-by": "Phusion Passenger" },
+    "html": ["csrf-param.*csrf-token"]
+  }
+]
