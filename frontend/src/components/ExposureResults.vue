@@ -3,8 +3,8 @@
            :pagination="{ pageSize: 10 }" :loading="loading">
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'kind'">
-        <a-tag :color="record.kind === 'js' ? 'cyan' : 'blue'">
-          {{ record.kind === 'js' ? 'JS' : 'DIR' }}
+        <a-tag :color="{ js: 'cyan', dir: 'blue', leak: 'magenta', vuln: 'red', point: 'volcano' }[record.kind] || 'default'">
+          {{ { js: 'JS', dir: 'DIR', leak: '泄露', vuln: '漏洞', point: '攻击点' }[record.kind] || record.kind }}
         </a-tag>
       </template>
       <template v-else-if="column.key === 'url'">
@@ -53,7 +53,8 @@ const statusColor = (s) =>
   s < 300 ? 'green' : s < 400 ? 'geekblue' : s === 401 || s === 403 ? 'orange' : 'red'
 const hintColor = (h) =>
   ({ admin: 'red', api: 'geekblue', upload: 'orange', auth: 'purple',
-     config: 'gold', debug: 'cyan' })[h.split(':')[0]] || 'default'
+     config: 'gold', debug: 'cyan', vuln: 'red', leak: 'magenta',
+     point: 'volcano' })[h.split(':')[0]] || 'default'
 
 onMounted(async () => {
   loading.value = true

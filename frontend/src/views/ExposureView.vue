@@ -3,7 +3,7 @@
     <div class="page-header">
       <div>
         <div class="page-title">暴露面测绘</div>
-        <div class="page-sub">JS 接口提取 · 目录爆破 · 扩大存活资产攻击面</div>
+        <div class="page-sub">JS 接口提取 · 目录爆破 · 敏感信息/攻击点/源码泄露检测</div>
       </div>
     </div>
 

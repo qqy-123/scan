@@ -214,8 +214,8 @@
         </a-form-item>
         <a-form-item label="扫描方式">
           <a-checkbox-group v-model:value="expOpts.kinds">
-            <a-checkbox value="js">JS 接口提取（解析前端 JS 中的隐藏 API / 后台路径）</a-checkbox>
-            <a-checkbox value="dir">目录爆破（内置字典探测后台 / 备份 / 配置等路径）</a-checkbox>
+            <a-checkbox value="js">JS 接口提取（隐藏 API / 后台路径 / sourcemap + 参数攻击点分类 + 敏感信息检测）</a-checkbox>
+            <a-checkbox value="dir">目录爆破（内置字典探测后台 / 备份 / 配置，命中页检测 SQL 报错与敏感信息）</a-checkbox>
           </a-checkbox-group>
         </a-form-item>
       </a-form>

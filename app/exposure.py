@@ -20,6 +20,7 @@ DICT_PATH = Path(__file__).resolve().parent.parent / "rules" / "dirs.txt"
 MAX_JS_FILES = 25
 MAX_JS_SIZE = 400_000
 MAX_DIR_HITS = 300
+MAX_LEAK_HITS = 120
 
 # quoted URL-ish strings inside JS bundles
 JS_URL_RE = re.compile(
@@ -44,6 +45,185 @@ HINTS = {
 ASSET_EXT = re.compile(
     r"\.(css|png|jpe?g|gif|svg|ico|woff2?|ttf|eot|mp4|mp3|map)$", re.I
 )
+
+# ------------------------------------------------------------------
+# Attack-surface classification (absorbed from Rotor Goddess analysis)
+# ------------------------------------------------------------------
+
+# query-param name -> likely vuln point. Order matters: first hit wins.
+PARAM_POINTS = [
+    ("point:cmd", re.compile(
+        r"(?i)(?:^|[?&])(cmd|exec|command|execute|ping|run|daemon|shell|"
+        r"process|module|payload|do|func|arg|cli)\s*=")),
+    ("point:file", re.compile(
+        r"(?i)(?:^|[?&])(file|filename|filepath|path|download|readfile|openfile|"
+        r"fread|include|require|src|doc|document|attach|template|view|dir|"
+        r"folder|basepath|rootpath|localpath|_FilePath|menu|topic)\s*=")),
+    ("point:ssrf", re.compile(
+        r"(?i)(?:^|[?&])(url|uri|dest|target|domain|host|port|site|ip|server|"
+        r"fetch|fetchurl|weburl|apiurl|geturl|linkurl|srcurl|request|load|"
+        r"open|refer|ref|sudaref|out)\s*=")),
+    ("point:redirect", re.compile(
+        r"(?i)(?:^|[?&])(redirect|redirect_?to|redirect_?url|redirectUrl|jump|"
+        r"jump_?to|goto|gotoUrl|returnUrl|backUrl|forward|forwardurl|"
+        r"return_?uri|service|next|to|fromUrl|redUrl|oauth_callback|"
+        r"urlredirect|redirecturl|returnurl|view)\s*=")),
+    ("point:jsonp", re.compile(
+        r"(?i)(?:^|[?&])(?:_?callback|_cb|_call|_?jsonp_?|jsonp_\w+)\s*=")),
+    ("point:sqli", re.compile(
+        r"(?i)(?:^|[?&])(search|keyword|key|searchkey|query|wd|word|input|"
+        r"content|title|name|username|nickname|subject|desc|info|order|"
+        r"sort|keywords|searchtext|searchword|id|cid|cat|typeid|s|q)\s*=")),
+    ("point:dos", re.compile(
+        r"(?i)(?:^|[?&])(limit|offset|pagesize|pageindex|pagenum|max|maxsize|"
+        r"minsize|quantity|amount|count|num|start|end|size|length|wide|"
+        r"width|height|batch|loop|range|total|step|interval|volume)\s*=")),
+    ("point:upload", re.compile(
+        r"(?i)(?:upload|uploader|upfile|file_upload|uploadfile|multipart|"
+        r"uploadimg|upload_image|upload_video|uploadify|webupload|importfile|"
+        r"exportfile|fileapi|uploadapi)(?:/|$|\?)")),
+]
+
+# content signatures -> secrets / sensitive data leaks
+SECRET_RES = [
+    ("leak:privkey", re.compile(
+        r"-+BEGIN [^\s]+ PRIVATE KEY-+")),
+    ("leak:aws_key", re.compile(
+        r"(?:AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}")),
+    ("leak:github_token", re.compile(
+        r"(?:ghp|ghu|gho|ghs|ghr)_[A-Za-z0-9]{36,}")),
+    ("leak:sonar_token", re.compile(
+        r"sonar[._-]?[a-z]{0,10}[\"'`]?[0-9a-f]{40}", re.I)),
+    ("leak:jwt", re.compile(
+        r"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9._-]{10,}[A-Za-z0-9._-]{10,}")),
+    ("leak:shiro", re.compile(r"rememberMe\s*=\s*deleteMe|rememberMe=[^&\s]{8,}", re.I)),
+    ("leak:oss", re.compile(
+        r"[\w.-]+\.oss\.aliyuncs\.com|[\w.-]+\.s3\.amazonaws\.com|"
+        r"s3://[\w.-]+|oss://[\w.-]+", re.I)),
+    ("leak:cloud_secret", re.compile(
+        r"(?i)((?:access|secret|app|api|aws|aliyun|tencent|hw|obs)[-_]{0,5}"
+        r"(?:key|token|secret|secretkey))\s*[:=]\s*[\"']?([A-Za-z0-9/+_=-]{16,})")),
+    ("leak:credentials", re.compile(
+        r"(?i)(password|passwd|pwd|secret|mima)\s*[:=]\s*[\"']([^\"'\s&,;]{6,})")),
+    ("leak:idcard", re.compile(
+        r"\b[1-9]\d{5}(?:18|19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])"
+        r"\d{3}[\dXx]\b")),
+    ("leak:phone", re.compile(
+        r"(?i)(?:phone|mobile|tel|手机|电话|联系方式)[^\d\n]{0,30}"
+        r"1(?:3\d|4[5-79]|5[0-35-9]|6[5-7]|7[0-8]|8\d|9[189])\d{8}")),
+    ("leak:internal_ip", re.compile(
+        r"\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}"
+        r"\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b")),
+    ("leak:jdbc", re.compile(
+        r"jdbc:(?:mysql|oracle|postgresql|sqlserver|dm|kingbase)://[^\s\"'<)]+", re.I)),
+    ("leak:map_apikey", re.compile(
+        r"(?i)(?:maps\.googleapis\.com|restapi\.amap\.com|api\.map\.baidu\.com|"
+        r"api\.mapbox\.com|apis\.map\.qq\.com|webapi\.amap\.com)"
+        r"[^\s\"'<]{0,120}?(?:key|ak|access_token)=[A-Za-z0-9_-]{10,}")),
+    ("leak:webhook", re.compile(
+        r"https?://[^\s\"'`]*(?:webhook|hooks\.slack\.com|oapi\.dingtalk\.com|"
+        r"qyapi\.weixin\.qq\.com|open\.feishu\.cn|webhook\.office\.com|"
+        r"discord\.com/api/webhooks)[^\s\"'`]*", re.I)),
+]
+
+# SQL error signatures across engines (absorbed & kept multi-DB)
+SQL_ERROR_RE = re.compile(
+    r"(?i)(?:执行当前 Web 请求期间，出现未经处理的异常|Unclosed quotation mark|"
+    r"ODBC Driver|System\.Data\.SqlClient|SqlException|"
+    r"You have an error in your SQL syntax|MySQL server version|"
+    r"Unknown column|Unknown table|Warning: mysql|mysqli_query|"
+    r"MySQL server error|ORA-\d{1,5}|PLS-\d+|Oracle error|"
+    r"ERROR:\s*syntax error at or near|PostgreSQL query|Jet SQL|\.mdb|\.accdb|"
+    r"OLE DB|Syntax error.*SQL|Invalid column name|Table.*doesn.t exist|"
+    r"Database error|SQLSTATE\[|MariaDB server version|SQL syntax.*near|"
+    r"PDOException|SQL error|Driver.*SQL|Microsoft SQL Server|JDBC SQL|"
+    r"SQLite error|no such table|"
+    r"Check the manual that corresponds to your MySQL|MySQL syntax error|"
+    r"PostgreSQL ERROR|SQLServer error|DB2 SQL|Sybase|Informix|"
+    r"Column count doesn.t match|MySQL Error|SQL error code|Unknown database|"
+    r"Access denied for user|Incorrect syntax near)")
+
+# form-level vuln-point signatures on page bodies
+LOGIN_FORM_RE = re.compile(
+    r"(?is)<form[^>]*>(?:(?!</form>).)*?type=[\"']?text[\"'\s>][^>]*>.*?"
+    r"type=[\"']?password[\"'\s>][^>]*>.*?</form")
+UPLOAD_FORM_RE = re.compile(
+    r"(?is)<form[^>]*enctype=[\"']?multipart/form-data[^>]*>"
+    r"(?:(?!</form>).)*?type=[\"']?file[\"'\s>][^>]*>.*?</form")
+PHONE_INPUT_RE = re.compile(
+    r"<input[^>]*(?:=[^\"']*手机号[\"']|maxlength=[\"']11[\"'])[^>]*>", re.I)
+ADMIN_TITLE_RE = re.compile(
+    r"(?i)<title>.*?(后台|管理|admin|manage|console|dashboard).*?</title>")
+
+# js sourcemap probe
+SOURCEMAP_RE = re.compile(r'"sources"\s*:\s*\[')
+
+
+def _classify_params(query: str) -> str | None:
+    """First matching vuln-point class for a URL query string."""
+    if not query:
+        return None
+    for hint, rx in PARAM_POINTS:
+        if rx.search(query):
+            return hint
+    return None
+
+
+def _mask(s: str, keep: int = 6) -> str:
+    """Mask a leaked credential for display."""
+    s = s.strip()
+    if len(s) <= keep * 2:
+        return s[:2] + "****"
+    return s[:keep] + "****" + s[-4:]
+
+
+def _scan_sensitive(body: str, url: str, source: str, out: list):
+    """Append leak/vuln findings discovered in a response body."""
+    for hint, rx in SECRET_RES:
+        m = rx.search(body)
+        if m:
+            frag = m.group(0)
+            out.append({
+                "kind": "leak",
+                "url": url,
+                "source": source,
+                "status_code": None,
+                "title": _mask(frag[:120]),
+                "length": None,
+                "hint": hint,
+            })
+    m = SQL_ERROR_RE.search(body)
+    if m:
+        out.append({
+            "kind": "vuln",
+            "url": url,
+            "source": source,
+            "status_code": None,
+            "title": "SQL报错: " + re.sub(r"\s+", " ", m.group(0))[:100],
+            "length": None,
+            "hint": "vuln:sqli",
+        })
+
+
+def _detect_forms(body: str, url: str, source: str, out: list):
+    """Login / upload / phone-login / admin-page form findings."""
+    checks = [
+        (UPLOAD_FORM_RE, "point:upload", "存在文件上传表单"),
+        (LOGIN_FORM_RE, "point:login", "存在登录表单"),
+        (PHONE_INPUT_RE, "point:login", "存在手机号登录输入框"),
+        (ADMIN_TITLE_RE, "point:admin", "后台标题页"),
+    ]
+    for rx, hint, desc in checks:
+        if rx.search(body):
+            out.append({
+                "kind": "point",
+                "url": url,
+                "source": source,
+                "status_code": None,
+                "title": desc,
+                "length": None,
+                "hint": hint,
+            })
 
 
 def _hint(path: str) -> str:
@@ -79,9 +259,12 @@ def _interesting_js_path(u: str) -> bool:
 
 
 async def js_scan(base_url: str, client: httpx.AsyncClient, dict_urls: list = None) -> list:
-    """Extract endpoints embedded in the site's JS files."""
+    """Extract endpoints embedded in the site's JS files. Also scans the
+    homepage + JS bodies for secrets, SQL errors and form-level vuln points,
+    and probes `<js>.map` sourcemaps."""
     try:
-        html = (await client.get(base_url)).text[:500_000]
+        resp = await client.get(base_url)
+        html = resp.text[:500_000]
     except httpx.HTTPError:
         return []
     srcs = []
@@ -95,7 +278,12 @@ async def js_scan(base_url: str, client: httpx.AsyncClient, dict_urls: list = No
     srcs = srcs[:MAX_JS_FILES]
 
     found = {}  # path-or-url -> source js
+    extra = []  # leak/vuln/point findings
     base = urlsplit(base_url)
+
+    # homepage itself: secrets, SQL errors, forms
+    _scan_sensitive(html, base_url, base_url, extra)
+    _detect_forms(html, base_url, base_url, extra)
 
     async def pull(js_url: str):
         try:
@@ -105,6 +293,7 @@ async def js_scan(base_url: str, client: httpx.AsyncClient, dict_urls: list = No
             body = r.text[:MAX_JS_SIZE]
         except httpx.HTTPError:
             return
+        _scan_sensitive(body, js_url, base_url, extra)
         for m in JS_URL_RE.findall(body):
             u = m.strip()
             if len(u) < 2 or u.startswith(("data:", "javascript:", "#")):
@@ -117,11 +306,28 @@ async def js_scan(base_url: str, client: httpx.AsyncClient, dict_urls: list = No
             key = full.lower()
             found.setdefault(key, (full, js_url))
 
-    await asyncio.gather(*(pull(u) for u in srcs))
+    async def probe_map(js_url: str):
+        """<file>.js.map -> sourcemap often exposes original source paths."""
+        try:
+            r = await client.get(js_url + ".map")
+            if r.status_code == 200 and SOURCEMAP_RE.search(r.text[:50_000]):
+                extra.append({
+                    "kind": "leak", "url": js_url + ".map", "source": js_url,
+                    "status_code": 200, "title": "JS sourcemap 泄露(可还原源码)",
+                    "length": len(r.content), "hint": "leak:sourcemap",
+                })
+        except httpx.HTTPError:
+            pass
+
+    await asyncio.gather(*(
+        [pull(u) for u in srcs] + [probe_map(u) for u in srcs]
+    ))
 
     out = []
     for u, src in found.values():
         same = urlsplit(u).hostname == base.hostname
+        sp = urlsplit(u)
+        hint = _classify_params(sp.query) or _hint(sp.path)
         out.append(
             {
                 "kind": "js",
@@ -130,44 +336,61 @@ async def js_scan(base_url: str, client: httpx.AsyncClient, dict_urls: list = No
                 "status_code": None,
                 "title": None,
                 "length": None,
-                "hint": _hint(urlsplit(u).path) + ("" if same else ":external"),
+                "hint": hint + ("" if same else ":external"),
             }
         )
-    out.sort(key=lambda x: (x["hint"].endswith("external"), x["hint"], x["url"]))
+    # dedupe leak findings on (hint, url)
+    seen = set()
+    for e in extra:
+        k = (e["hint"], e["url"], e["title"])
+        if k in seen or len(out) >= MAX_DIR_HITS * 2 + MAX_LEAK_HITS:
+            continue
+        seen.add(k)
+        out.append(e)
+    out.sort(key=lambda x: (
+        0 if x["kind"] in ("leak", "vuln", "point") else 1,
+        x["hint"].endswith("external"), x["hint"], x["url"],
+    ))
     return out
 
 
 async def _probe_path(client, url, baseline):
-    """One dict word. Returns result dict or None if it looks like a soft-404.
+    """One dict word. Returns a list of result dicts (empty on soft-404).
 
     Only 2xx/3xx/401/403 count as exposure — 429/406/5xx are rate-limit /
-    WAF noise, not findings."""
+    WAF noise, not findings. Hit bodies are also scanned for SQL error
+    signatures, secrets and form-level vuln points."""
     try:
         r = await client.get(url)
     except httpx.HTTPError:
-        return None
+        return []
     status = r.status_code
     if not (200 <= status < 400 or status in (401, 403)):
-        return None
+        return []
+    body = r.text[:300_000]
     body_len = len(r.content)
     title = ""
     if "html" in r.headers.get("content-type", ""):
-        m = TITLE_RE.search(r.text[:300_000])
+        m = TITLE_RE.search(body)
         title = re.sub(r"\s+", " ", m.group(1)).strip() if m else ""
     # soft-404 suppression: same status & similar length & same title as baseline
     for b_status, b_len, b_title in baseline:
         if status == b_status and title == b_title and \
                 (b_len == 0 or abs(body_len - b_len) <= max(40, b_len * 0.1)):
-            return None
-    return {
+            return []
+    results = [{
         "kind": "dir",
         "url": url,
         "source": None,
         "status_code": status,
         "title": title or None,
         "length": body_len,
-        "hint": _hint(urlsplit(url).path),
-    }
+        "hint": _classify_params(urlsplit(url).query) or _hint(urlsplit(url).path),
+    }]
+    _scan_sensitive(body, url, url, results)
+    if status < 400 and "html" in r.headers.get("content-type", ""):
+        _detect_forms(body, url, url, results)
+    return results
 
 
 async def dir_scan(base_url: str, client: httpx.AsyncClient, concurrency: int = 40) -> list:
@@ -193,15 +416,16 @@ async def dir_scan(base_url: str, client: httpx.AsyncClient, concurrency: int = 
     hits = []
 
     async def one(word):
-        if len(hits) >= MAX_DIR_HITS:
+        if len(hits) >= MAX_DIR_HITS + MAX_LEAK_HITS:
             return
         async with sem:
-            r = await _probe_path(client, f"{base}/{word.lstrip('/')}", baseline)
-            if r:
-                hits.append(r)
+            rs = await _probe_path(client, f"{base}/{word.lstrip('/')}", baseline)
+            hits.extend(rs)
 
     await asyncio.gather(*(one(w) for w in _dict_words()))
-    hits.sort(key=lambda x: (x["status_code"], x["url"]))
+    hits.sort(key=lambda x: (
+        0 if x["kind"] in ("leak", "vuln", "point") else 1,
+        x.get("status_code") or 0, x["url"]))
     return hits
 
 

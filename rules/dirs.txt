@@ -1816,3 +1816,50 @@ admin/keystore
 admin/keystore.jks
 admin/truststore
 admin/truststore.jks
+
+# --- spring/actuator deep endpoints (Rotor Goddess 敏感路径) ---
+actuator/caches
+actuator/conditions
+actuator/flyway
+actuator/liquibase
+actuator/scheduledtasks
+actuator/threaddump
+actuator/sessions
+actuator/shutdown
+actuator/refresh
+actuator/restart
+actuator/env/java.home
+actuator/logfile
+actuator/prometheus
+actuator/gateway
+actuator/gateway/routes
+actuator/hystrix.stream
+hystrix.stream
+beans
+mappings
+configprops
+httptrace
+auditevents
+loggers
+scheduledtasks
+threaddump
+trace
+# --- jolokia ---
+jolokia/list
+actuator/jolokia/list
+actuator/beans/actuator/jolokia
+# --- druid extra ---
+druid/uri.html
+druid/weblog.html
+druid/spring.html
+druid/api.html
+druid/css
+# --- nacos api ---
+nacos/v1/auth/users
+nacos/v1/cs/configs
+nacos/v1/ns/instances
+# --- gateway ---
+gateway/routes
+# --- docs variants ---
+v2/api-docs?group
+swagger/v1/swagger.json
