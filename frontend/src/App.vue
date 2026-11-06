@@ -28,17 +28,30 @@
           </router-link>
 
           <div v-if="!collapsed" class="nav-group">系统</div>
-          <div class="nav-item disabled" title="后续模块接入">
+          <router-link
+            to="/settings"
+            class="nav-item"
+            :class="{ active: isActive('/settings') }"
+            title="系统配置"
+          >
             <SettingOutlined class="nav-icon" />
             <span v-if="!collapsed">系统配置</span>
-            <span v-if="!collapsed" class="soon">待接入</span>
-          </div>
+          </router-link>
         </nav>
 
-        <div class="sider-foot">
-          <a-avatar :size="24" style="background: #0a0a0a; font-size: 12px">S</a-avatar>
-          <span v-if="!collapsed">SCAN 平台</span>
-        </div>
+        <a-dropdown :trigger="['click']" placement="topRight">
+          <div class="sider-foot">
+            <a-avatar :size="24" style="background: #0a0a0a; font-size: 12px">S</a-avatar>
+            <span v-if="!collapsed">SCAN 平台</span>
+            <MoreOutlined v-if="!collapsed" style="margin-left: auto; color: #a6a6a6" />
+          </div>
+          <template #overlay>
+            <a-menu>
+              <a-menu-item key="settings" @click="$router.push('/settings')">系统配置</a-menu-item>
+              <a-menu-item key="about" @click="showAbout">关于平台</a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
       </aside>
 
       <a-layout>
@@ -51,7 +64,15 @@
             <kbd>⌘ J</kbd>
           </div>
           <div class="tb-space" />
-          <a-avatar :size="28" style="background: #e5e5e5; color: #525252">A</a-avatar>
+          <a-dropdown :trigger="['click']">
+            <a-avatar :size="28" style="background: #e5e5e5; color: #525252; cursor: pointer">A</a-avatar>
+            <template #overlay>
+              <a-menu>
+                <a-menu-item key="settings" @click="$router.push('/settings')">系统配置</a-menu-item>
+                <a-menu-item key="about" @click="showAbout">关于平台</a-menu-item>
+              </a-menu>
+            </template>
+          </a-dropdown>
         </header>
 
         <a-layout-content class="content">
@@ -65,12 +86,13 @@
 <script setup>
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { Modal } from 'ant-design-vue'
 import {
   AimOutlined,
-  AppstoreOutlined,
   DashboardOutlined,
   DatabaseOutlined,
   MenuFoldOutlined,
+  MoreOutlined,
   SearchOutlined,
   SettingOutlined,
 } from '@ant-design/icons-vue'
@@ -104,6 +126,15 @@ const isActive = (p) =>
 const goSearch = () => {
   if (q.value.trim()) router.push('/projects')
 }
+
+const showAbout = () =>
+  Modal.info({
+    title: '关于 SCAN',
+    content:
+      'SCAN 安全检测平台 — 项目化资产测绘 + 源码指纹识别。' +
+      '支持指纹学习、规则自定义、浏览器抓包识别、存活探测与截图分析。',
+    okText: '知道了',
+  })
 </script>
 
 <style scoped>
@@ -209,6 +240,10 @@ const goSearch = () => {
   border-top: 1px solid var(--gray-20);
   font-size: 13px;
   color: var(--gray-80);
+  cursor: pointer;
+}
+.sider-foot:hover {
+  background: #ececec;
 }
 
 /* topbar */

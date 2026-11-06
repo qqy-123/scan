@@ -7,7 +7,6 @@ UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/126.0 Safari/537.36"
 )
-TIMEOUT = httpx.Timeout(connect=8, read=15, write=8, pool=30)
 TITLE_RE = re.compile(r"<title[^>]*>(.*?)</title>", re.S | re.I)
 
 
@@ -79,10 +78,19 @@ async def fetch_favicon_hash(client: httpx.AsyncClient, final_url: str) -> int |
 
 
 def make_client() -> httpx.AsyncClient:
+    from . import store
+
+    cfg = store.get_settings()
+    timeout = httpx.Timeout(
+        connect=cfg["connect_timeout"],
+        read=cfg["read_timeout"],
+        write=8,
+        pool=30,
+    )
     return httpx.AsyncClient(
         verify=False,
         follow_redirects=True,
-        timeout=TIMEOUT,
+        timeout=timeout,
         headers={"User-Agent": UA},
         limits=httpx.Limits(max_connections=200, max_keepalive_connections=50),
     )

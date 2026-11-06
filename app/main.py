@@ -224,6 +224,45 @@ def overview():
     return d
 
 
+# ---------------- settings / system ----------------
+
+@app.get("/api/settings")
+def get_settings():
+    return store.get_settings()
+
+
+@app.put("/api/settings")
+def update_settings(body: dict):
+    store.set_settings(body)
+    return store.get_settings()
+
+
+@app.get("/api/system")
+def system_info():
+    import platform
+    import sys
+
+    rules = fp.load_rules()
+    shots = list(traffic.SHOT_DIR.glob("*.png")) if traffic.SHOT_DIR.exists() else []
+    shot_mb = sum(f.stat().st_size for f in shots) / 1048576
+    db_mb = (
+        store.DB_PATH.stat().st_size / 1048576 if store.DB_PATH.exists() else 0
+    )
+    browser = traffic._browser
+    return {
+        "version": "0.5.0",
+        "python": sys.version.split()[0],
+        "platform": platform.system(),
+        "db_size_mb": round(db_mb, 1),
+        "screenshots": len(shots),
+        "screenshots_mb": round(shot_mb, 1),
+        "rules_total": len(rules),
+        "rules_custom": len(learn.load_custom()),
+        "rules_disabled": len(learn.disabled_names()),
+        "browser": "running" if browser and browser.is_connected() else "idle",
+    }
+
+
 # ---------------- fingerprint learning ----------------
 
 class LearnIn(BaseModel):

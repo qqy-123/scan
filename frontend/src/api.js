@@ -32,4 +32,7 @@ export default {
   saveCustomRule: (data) => api.post('/api/rules/custom', data),
   deleteCustomRule: (name) =>
     api.delete(`/api/rules/custom/${encodeURIComponent(name)}`),
+  getSettings: () => api.get('/api/settings'),
+  updateSettings: (data) => api.put('/api/settings', data),
+  systemInfo: () => api.get('/api/system'),
 }

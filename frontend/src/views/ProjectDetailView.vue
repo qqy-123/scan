@@ -243,6 +243,7 @@ const showScan = ref(false)
 const importText = ref('')
 const importFile = ref(null)
 const scanOpts = reactive({ scope: 'all', active_probe: true, screenshot: true, concurrency: 50 })
+const settingsLoaded = ref(false)
 let timer = null
 
 const CAT_COLORS = {
@@ -315,6 +316,14 @@ const resultCols = [
 
 async function load() {
   const { data } = await api.getProject(pid)
+  if (!settingsLoaded.value) {
+    settingsLoaded.value = true
+    api.getSettings().then(({ data: s }) => {
+      scanOpts.active_probe = s.active_probe
+      scanOpts.screenshot = s.screenshot
+      scanOpts.concurrency = s.concurrency
+    })
+  }
   project.value = data
   running.value = data.running
   for (const s of data.scans) {

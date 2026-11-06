@@ -4,6 +4,7 @@ import ProjectsView from './views/ProjectsView.vue'
 import ProjectDetailView from './views/ProjectDetailView.vue'
 import ResultDetailView from './views/ResultDetailView.vue'
 import FingerprintsView from './views/FingerprintsView.vue'
+import SettingsView from './views/SettingsView.vue'
 
 export default createRouter({
   history: createWebHistory(),
@@ -30,6 +31,11 @@ export default createRouter({
       path: '/fingerprints',
       name: 'fingerprints',
       component: FingerprintsView,
+    },
+    {
+      path: '/settings',
+      name: 'settings',
+      component: SettingsView,
     },
   ],
 })

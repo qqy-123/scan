@@ -21,8 +21,13 @@ async def run_scan(scan_id: int):
     else:
         targets = store.list_targets(project_id)
 
-    probe_sem = asyncio.Semaphore(opts.get("concurrency") or PROBE_CONCURRENCY)
-    shot_sem = asyncio.Semaphore(BROWSER_CONCURRENCY)
+    cfg = store.get_settings()
+    probe_sem = asyncio.Semaphore(
+        opts.get("concurrency") or cfg["concurrency"] or PROBE_CONCURRENCY
+    )
+    shot_sem = asyncio.Semaphore(
+        cfg["browser_concurrency"] or BROWSER_CONCURRENCY
+    )
     client = probe.make_client()
     alive_count = 0
 
@@ -57,7 +62,7 @@ async def run_scan(scan_id: int):
         shot_name = None
 
         # browser pass: traffic + rendered signals + screenshot
-        if opts.get("screenshot", True):
+        if opts.get("screenshot", cfg["screenshot"]):
             async with shot_sem:
                 shot_name = f"{scan_id}_{uuid.uuid4().hex[:10]}.png"
                 cap = await traffic.capture(
@@ -84,7 +89,7 @@ async def run_scan(scan_id: int):
         hits = list(matched["hits"])
 
         # active probe: extra requests on characteristic paths
-        if opts.get("active_probe", True):
+        if opts.get("active_probe", cfg["active_probe"]):
             base = resp["final_url"]
             for rule in matched["candidates"]:
                 for path in rule["probe"]:

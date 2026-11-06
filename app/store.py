@@ -49,7 +49,21 @@ CREATE TABLE IF NOT EXISTS results(
 );
 CREATE INDEX IF NOT EXISTS idx_results_scan ON results(scan_id);
 CREATE INDEX IF NOT EXISTS idx_results_target ON results(target_id);
+
+CREATE TABLE IF NOT EXISTS settings(
+    key TEXT PRIMARY KEY,
+    value TEXT
+);
 """
+
+DEFAULT_SETTINGS = {
+    "concurrency": 50,          # 目标并发（探测）
+    "browser_concurrency": 4,   # 浏览器并发（抓包/截图）
+    "active_probe": True,       # 扫描默认开启主动探测
+    "screenshot": True,         # 扫描默认开启截图
+    "connect_timeout": 8,       # httpx 连接超时（秒）
+    "read_timeout": 15,         # httpx 读取超时（秒）
+}
 
 
 def _conn():
@@ -193,6 +207,35 @@ def update_target(target_id: int, url: str) -> dict:
 def delete_target(target_id: int):
     conn = _conn()
     conn.execute("DELETE FROM targets WHERE id=?", (target_id,))
+    conn.commit()
+    conn.close()
+
+
+# ---------- settings ----------
+
+def get_settings() -> dict:
+    conn = _conn()
+    rows = conn.execute("SELECT key, value FROM settings").fetchall()
+    conn.close()
+    out = dict(DEFAULT_SETTINGS)
+    for r in rows:
+        if r["key"] in DEFAULT_SETTINGS:
+            try:
+                out[r["key"]] = json.loads(r["value"])
+            except Exception:
+                pass
+    return out
+
+
+def set_settings(values: dict):
+    conn = _conn()
+    for k, v in values.items():
+        if k in DEFAULT_SETTINGS:
+            conn.execute(
+                "INSERT INTO settings(key, value) VALUES(?,?) "
+                "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                (k, json.dumps(v)),
+            )
     conn.commit()
     conn.close()
 
