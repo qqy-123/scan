@@ -59,7 +59,7 @@
     </a-card>
 
     <!-- 指纹库 -->
-    <a-card :bordered="false" :title="`指纹库（${rules.length}）`">
+    <a-card :bordered="false" :title="`指纹库（${rules.filter(r => !r.disabled).length} 生效 / ${rules.length} 总计）`">
       <a-table :data-source="rules" :columns="ruleCols" row-key="name" size="small"
                :pagination="{ pageSize: 20 }">
         <template #bodyCell="{ column, record }">
@@ -67,18 +67,38 @@
             <a-tag v-for="(v, k) in record.signals" :key="k" style="margin-bottom: 4px">
               {{ k }}<template v-if="typeof v === 'number'">×{{ v }}</template>
             </a-tag>
+            <span v-if="record.disabled" style="color: #bfbfbf">-</span>
           </template>
           <template v-else-if="column.key === 'file'">
-            <a-tag :color="record.file === 'custom.json' ? 'purple' : 'default'">{{ record.file }}</a-tag>
+            <a-tag v-if="record.disabled" color="red">已禁用</a-tag>
+            <a-tag v-else-if="record.file === 'custom.json'" color="purple">自定义</a-tag>
+            <a-tag v-else>{{ record.file }}</a-tag>
           </template>
           <template v-else-if="column.key === 'op'">
-            <a-popconfirm v-if="record.file === 'custom.json'" title="删除该指纹？" @confirm="delRule(record.name)">
-              <a style="color: #cf1322">删除</a>
-            </a-popconfirm>
+            <a-space>
+              <a v-if="!record.disabled" @click="openEdit(record)">编辑</a>
+              <a v-if="record.disabled" @click="toggleRule(record, false)">启用</a>
+              <a v-else @click="toggleRule(record, true)">禁用</a>
+              <a-popconfirm v-if="record.file === 'custom.json' && !record.disabled"
+                            title="删除自定义规则？" ok-text="删除" @confirm="delRule(record.name)">
+                <a style="color: #cf1322">删除</a>
+              </a-popconfirm>
+            </a-space>
           </template>
         </template>
       </a-table>
     </a-card>
+
+    <!-- 编辑规则 -->
+    <a-modal v-model:open="showEdit" :title="`编辑指纹：${editName}`" width="720px"
+             ok-text="保存" cancel-text="取消" @ok="saveEdit">
+      <div style="color: #a6a6a6; font-size: 12px; margin-bottom: 8px">
+        修改后保存到 custom.json 同名覆盖内置规则；删除自定义覆盖即恢复内置。格式同 Wappalyzer 规则。
+      </div>
+      <a-textarea v-model:value="editJson" :rows="18" class="mono"
+                  spellcheck="false" />
+      <a-alert v-if="editError" type="error" :message="editError" style="margin-top: 8px" />
+    </a-modal>
   </div>
 </template>
 
@@ -109,11 +129,51 @@ const canSave = computed(
 
 const ruleCols = [
   { title: '名称', dataIndex: 'name', width: 180 },
-  { title: '分类', dataIndex: 'category', width: 160 },
+  { title: '分类', dataIndex: 'category', width: 140 },
   { title: '信号', key: 'signals' },
-  { title: '来源', key: 'file', width: 130 },
-  { title: '操作', key: 'op', width: 80 },
+  { title: '来源', key: 'file', width: 110 },
+  { title: '操作', key: 'op', width: 150 },
 ]
+
+const showEdit = ref(false)
+const editName = ref('')
+const editJson = ref('')
+const editError = ref('')
+
+async function openEdit(record) {
+  editError.value = ''
+  const { data } = await api.ruleRaw(record.name)
+  editName.value = record.name
+  editJson.value = data.rule
+    ? JSON.stringify(data.rule, null, 2)
+    : `{\n  "name": "${record.name}",\n  "category": "自定义",\n  "html": []\n}`
+  showEdit.value = true
+}
+
+async function saveEdit() {
+  editError.value = ''
+  let rule
+  try {
+    rule = JSON.parse(editJson.value)
+  } catch (e) {
+    editError.value = `JSON 格式错误：${e.message}`
+    return
+  }
+  try {
+    await api.updateRule(rule)
+    message.success('已保存（同名覆盖生效）')
+    showEdit.value = false
+    loadRules()
+  } catch (e) {
+    editError.value = e.response?.data?.detail || '保存失败'
+  }
+}
+
+async function toggleRule(record, disabled) {
+  await api.setRuleDisabled(record.name, disabled)
+  message.success(disabled ? '已禁用' : '已启用')
+  loadRules()
+}
 
 async function extract() {
   if (!learnUrl.value.trim()) return message.warning('请输入 URL')

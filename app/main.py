@@ -213,6 +213,18 @@ def rules_detail():
             "file": r.get("_file"),
             "signals": signals,
             "implies": r.get("implies", []),
+            "disabled": False,
+        })
+    # disabled rules don't reach the engine; list them so they can be re-enabled
+    present = {r["name"] for r in out}
+    for name in learn.disabled_names() - present:
+        out.append({
+            "name": name,
+            "category": "-",
+            "file": "custom.json",
+            "signals": {},
+            "implies": [],
+            "disabled": True,
         })
     return out
 
@@ -233,6 +245,52 @@ def save_custom_rule(body: CustomRuleIn):
         raise HTTPException(400, "select at least one signal")
     learn.save_custom(rule)
     return {"ok": True, "rule": rule}
+
+
+@app.get("/api/rules/raw/{name}")
+def rule_raw(name: str):
+    """Raw editable JSON of a rule + where it comes from."""
+    if learn.is_disabled(name):
+        return {"name": name, "disabled": True, "file": "custom.json", "rule": None}
+    for r in fp.load_rules():
+        if r["name"] == name:
+            return {
+                "name": name,
+                "disabled": False,
+                "file": r.get("_file"),
+                "rule": fp.raw_of(r),
+            }
+    raise HTTPException(404)
+
+
+class RawRuleIn(BaseModel):
+    rule: dict
+
+
+@app.put("/api/rules/custom")
+def update_custom_rule(body: RawRuleIn):
+    """Save an edited rule into custom.json — overrides same-name built-in."""
+    rule = body.rule
+    name = (rule.get("name") or "").strip()
+    if not name:
+        raise HTTPException(400, "rule.name required")
+    if not any(k in rule for k in SIGNAL_FIELDS) and not rule.get("_disabled"):
+        raise HTTPException(400, "rule must define at least one signal")
+    rule.pop("_file", None)
+    learn.save_custom(rule)
+    return {"ok": True}
+
+
+@app.post("/api/rules/{name}/disable")
+def disable_rule(name: str):
+    learn.set_disabled(name, True)
+    return {"ok": True}
+
+
+@app.post("/api/rules/{name}/enable")
+def enable_rule(name: str):
+    learn.set_disabled(name, False)
+    return {"ok": True}
 
 
 @app.delete("/api/rules/custom/{name}")

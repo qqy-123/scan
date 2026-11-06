@@ -80,14 +80,28 @@ _cache = None
 
 
 def load_rules() -> list:
+    """Load all rules. custom.json is applied LAST so user-saved rules
+    override built-ins by name; entries with _disabled are skipped."""
     global _cache
     if _cache is None:
-        rules = []
-        for f in sorted(RULES_DIR.glob("*.json")):
+        files = sorted(
+            RULES_DIR.glob("*.json"), key=lambda f: f.name == "custom.json"
+        )
+        by_name = {}
+        order = []
+        for f in files:
             for raw in json.loads(f.read_text(encoding="utf-8")):
+                name = raw.get("name")
+                if not name:
+                    continue
+                if raw.get("_disabled"):
+                    by_name.pop(name, None)
+                    continue
                 raw["_file"] = f.name
-                rules.append(compile_rule(raw))
-        _cache = rules
+                if name not in by_name:
+                    order.append(name)
+                by_name[name] = compile_rule(raw)
+        _cache = [by_name[n] for n in order if n in by_name]
     return _cache
 
 
@@ -95,6 +109,29 @@ def reload():
     """Drop the compiled-rule cache so new/edited rule files take effect."""
     global _cache
     _cache = None
+
+
+def raw_of(rule: dict) -> dict:
+    """Reconstruct editable raw JSON from a compiled rule."""
+    raw = {"name": rule["name"], "category": rule.get("category", "other")}
+    if rule.get("website"):
+        raw["website"] = rule["website"]
+    for f in ("headers", "cookies", "meta", "js", "probe"):
+        if rule.get(f):
+            raw[f] = {k: [p.raw for p in pats] for k, pats in rule[f].items()}
+    for f in ("html", "scriptSrc", "scripts", "url", "xhr"):
+        if rule.get(f):
+            raw[f] = [p.raw for p in rule[f]]
+    if rule.get("favicon"):
+        raw["favicon"] = rule["favicon"]
+    if rule.get("dom"):
+        raw["dom"] = rule["dom"]
+    if rule.get("implies"):
+        raw["implies"] = rule["implies"]
+    if rule.get("excludes"):
+        raw["excludes"] = rule["excludes"]
+    raw["_file"] = rule.get("_file")
+    return raw
 
 
 def rule_names() -> set:

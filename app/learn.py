@@ -164,3 +164,37 @@ def delete_custom(name: str) -> bool:
     )
     fp.reload()
     return True
+
+
+def set_disabled(name: str, disabled: bool):
+    """Disable a rule via a custom.json override, or re-enable it.
+
+    For custom rules the flag toggles on the existing entry; for built-ins a
+    {"name": ..., "_disabled": true} override entry is appended.
+    """
+    rules = load_custom()
+    entry = next((r for r in rules if r.get("name") == name), None)
+    if disabled:
+        if entry is None:
+            rules.append({"name": name, "_disabled": True})
+        else:
+            entry["_disabled"] = True
+    else:
+        if entry is None:
+            return  # nothing to enable
+        entry.pop("_disabled", None)
+        if not any(k for k in entry if k not in ("name", "category", "_file")):
+            rules = [r for r in rules if r is not entry]  # pure stub -> drop
+    CUSTOM_RULES.write_text(
+        json.dumps(rules, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    fp.reload()
+
+
+def is_disabled(name: str) -> bool:
+    entry = next((r for r in load_custom() if r.get("name") == name), None)
+    return bool(entry and entry.get("_disabled"))
+
+
+def disabled_names() -> set:
+    return {r["name"] for r in load_custom() if r.get("_disabled")}

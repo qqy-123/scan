@@ -21,6 +21,10 @@ export default {
   getResult: (rid) => api.get(`/api/results/${rid}`),
   rules: () => api.get('/api/rules'),
   rulesDetail: () => api.get('/api/rules/detail'),
+  ruleRaw: (name) => api.get(`/api/rules/raw/${encodeURIComponent(name)}`),
+  updateRule: (rule) => api.put('/api/rules/custom', { rule }),
+  setRuleDisabled: (name, disabled) =>
+    api.post(`/api/rules/${encodeURIComponent(name)}/${disabled ? 'disable' : 'enable'}`),
   learnPreview: (url) => api.post('/api/learn/preview', { url }),
   saveCustomRule: (data) => api.post('/api/rules/custom', data),
   deleteCustomRule: (name) =>
