@@ -28,7 +28,18 @@
               {{ record.found }}
             </span>
           </template>
+          <template v-else-if="column.key === 'deep'">
+            <a-badge v-if="record.deep_status === 'running'" status="processing"
+                     :text="`深扫中 ${record.deep_done}/${record.deep_total}`" />
+            <a-tag v-else-if="record.deep_status === 'done'" color="green">已深扫</a-tag>
+            <a-tag v-else-if="record.deep_status === 'failed'" color="red">深扫失败</a-tag>
+            <span v-else style="color: #bfbfbf">-</span>
+          </template>
           <template v-else-if="column.key === 'op'">
+            <a v-if="record.status === 'done' && record.deep_status !== 'running'"
+               style="margin-right: 10px" @click="deepScan(record.id)">
+              {{ record.deep_status === 'done' ? '重新深扫' : '深扫' }}
+            </a>
             <a-popconfirm title="删除该次测绘及结果？" @confirm="del(record.id)">
               <a style="color: #cf1322">删除</a>
             </a-popconfirm>
@@ -60,9 +71,10 @@ const runCols = [
   { title: '方式', key: 'kinds', width: 160 },
   { title: '状态', key: 'status', width: 130 },
   { title: '发现', key: 'found', width: 80 },
-  { title: '开始时间', dataIndex: 'started_at', width: 190 },
-  { title: '结束时间', dataIndex: 'finished_at', width: 190, customRender: ({ text }) => text || '-' },
-  { title: '操作', key: 'op', width: 70 },
+  { title: '深扫', key: 'deep', width: 140 },
+  { title: '开始时间', dataIndex: 'started_at', width: 170 },
+  { title: '结束时间', dataIndex: 'finished_at', width: 170, customRender: ({ text }) => text || '-' },
+  { title: '操作', key: 'op', width: 120 },
 ]
 
 const parseKinds = (r) => {
@@ -70,6 +82,15 @@ const parseKinds = (r) => {
     return JSON.parse(r.options || '{}').kinds || []
   } catch {
     return []
+  }
+}
+
+async function deepScan(id) {
+  try {
+    await api.deepScanExposure(id, 120)
+    load()
+  } catch (e) {
+    // silent
   }
 }
 
@@ -90,7 +111,7 @@ async function load() {
 onMounted(() => {
   load()
   timer = setInterval(() => {
-    if (runs.value.some((r) => r.status === 'running')) load()
+    if (runs.value.some((r) => r.status === 'running' || r.deep_status === 'running')) load()
   }, 3000)
 })
 onBeforeUnmount(() => timer && clearInterval(timer))

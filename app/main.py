@@ -270,6 +270,24 @@ def get_exposure(rid: int):
     return run
 
 
+class DeepScanIn(BaseModel):
+    limit: int = 120                    # max discovered urls to deep-scan
+
+
+@app.post("/api/exposure/{rid}/deepscan")
+async def deep_scan_exposure(rid: int, body: DeepScanIn = None):
+    run = store.get_exposure_run(rid)
+    if not run:
+        raise HTTPException(404)
+    if run["status"] != "done":
+        raise HTTPException(409, "exposure scan is still running")
+    if run.get("deep_status") == "running":
+        raise HTTPException(409, "deep scan is already running")
+    limit = min(max(1, (body.limit if body else 120)), 500)
+    asyncio.create_task(exposure.run_deep_scan(rid, limit))
+    return {"ok": True}
+
+
 @app.delete("/api/exposure/{rid}")
 def delete_exposure(rid: int):
     if not store.get_exposure_run(rid):

@@ -63,6 +63,9 @@ CREATE TABLE IF NOT EXISTS exposure_runs(
     total INTEGER DEFAULT 0,
     done INTEGER DEFAULT 0,
     found INTEGER DEFAULT 0,
+    deep_status TEXT DEFAULT 'none',
+    deep_total INTEGER DEFAULT 0,
+    deep_done INTEGER DEFAULT 0,
     started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     finished_at TIMESTAMP
 );
@@ -77,6 +80,12 @@ CREATE TABLE IF NOT EXISTS exposure_results(
     title TEXT,
     length INTEGER,
     hint TEXT,
+    alive INTEGER,
+    final_url TEXT,
+    server TEXT,
+    fingerprints TEXT,
+    screenshot TEXT,
+    protection TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_exposure_run ON exposure_results(run_id);
@@ -104,6 +113,23 @@ def init():
     for col in ("protection TEXT",):
         try:
             conn.execute(f"ALTER TABLE results ADD COLUMN {col}")
+        except sqlite3.OperationalError:
+            pass  # column already exists
+    for col in (
+        "alive INTEGER", "final_url TEXT", "server TEXT",
+        "fingerprints TEXT", "screenshot TEXT", "protection TEXT",
+    ):
+        try:
+            conn.execute(f"ALTER TABLE exposure_results ADD COLUMN {col}")
+        except sqlite3.OperationalError:
+            pass  # column already exists
+    for col in (
+        "deep_status TEXT DEFAULT 'none'",
+        "deep_total INTEGER DEFAULT 0",
+        "deep_done INTEGER DEFAULT 0",
+    ):
+        try:
+            conn.execute(f"ALTER TABLE exposure_runs ADD COLUMN {col}")
         except sqlite3.OperationalError:
             pass  # column already exists
     conn.commit()
@@ -362,6 +388,57 @@ def delete_exposure_run(rid: int):
     conn.execute("DELETE FROM exposure_results WHERE run_id=?", (rid,))
     conn.execute("DELETE FROM exposure_runs WHERE id=?", (rid,))
     conn.commit()
+    conn.close()
+
+
+# ---------- exposure deep scan (攻击面深扫: 指纹+截图) ----------
+
+def exposure_deep_start(rid: int, total: int):
+    conn = _conn()
+    conn.execute(
+        "UPDATE exposure_runs SET deep_status='running', deep_total=?, deep_done=0 WHERE id=?",
+        (total, rid),
+    )
+    conn.commit()
+    conn.close()
+
+
+def bump_exposure_deep(rid: int):
+    conn = _conn()
+    conn.execute("UPDATE exposure_runs SET deep_done=deep_done+1 WHERE id=?", (rid,))
+    conn.commit()
+    conn.close()
+
+
+def finish_exposure_deep(rid: int):
+    conn = _conn()
+    conn.execute(
+        "UPDATE exposure_runs SET deep_status='done' WHERE id=?", (rid,))
+    conn.commit()
+    conn.close()
+
+
+def fail_exposure_deep(rid: int):
+    conn = _conn()
+    conn.execute(
+        "UPDATE exposure_runs SET deep_status='failed' WHERE id=?", (rid,))
+    conn.commit()
+    conn.close()
+
+
+def update_exposure_deep_result(rid: int, url: str, fields: dict):
+    """Fill probe/fingerprint/screenshot columns on every row of `url`."""
+    conn = _conn()
+    conn.execute(
+        """UPDATE exposure_results SET status_code=?, alive=?, final_url=?,
+               server=?, fingerprints=?, screenshot=?, protection=?
+           WHERE run_id=? AND url=?""",
+        (fields.get("status_code"), fields.get("alive"), fields.get("final_url"),
+         fields.get("server"), fields.get("fingerprints"),
+         fields.get("screenshot"), fields.get("protection"), rid, url),
+    )
+    conn.commit()
+    conn.close()
     conn.close()
 
 

@@ -184,7 +184,19 @@
               <template v-else-if="column.key === 'found'">
                 <span :style="{ color: record.found ? 'var(--red)' : 'inherit' }">{{ record.found }}</span>
               </template>
+              <template v-else-if="column.key === 'deep'">
+                <a-badge v-if="record.deep_status === 'running'" status="processing"
+                         :text="`深扫中 ${record.deep_done}/${record.deep_total}`" />
+                <a-tag v-else-if="record.deep_status === 'done'" color="green">已深扫</a-tag>
+                <a-tag v-else-if="record.deep_status === 'failed'" color="red">深扫失败</a-tag>
+                <span v-else style="color: #bfbfbf">-</span>
+              </template>
               <template v-else-if="column.key === 'op'">
+                <a v-if="record.status === 'done' && record.deep_status !== 'running'"
+                   style="margin-right: 10px"
+                   @click="deepScan(record.id)">
+                  {{ record.deep_status === 'done' ? '重新深扫' : '深扫' }}
+                </a>
                 <a-popconfirm title="删除该次测绘及结果？" @confirm="delExposure(record.id)">
                   <a style="color: #cf1322">删除</a>
                 </a-popconfirm>
@@ -312,6 +324,7 @@ const expOpts = reactive({ scope: 'alive', kinds: ['js', 'dir'] })
 const expRuns = ref([])
 const expRunning = computed(() => expRuns.value.some((r) => r.status === 'running'))
 let timer = null
+let expTimer = null
 
 const CAT_COLORS = {
   CMS: 'blue', 'JavaScript framework': 'geekblue', 'JavaScript library': 'cyan',
@@ -377,9 +390,10 @@ const expCols = [
   { title: '方式', key: 'kinds', width: 150 },
   { title: '状态', key: 'status', width: 130 },
   { title: '发现', key: 'found', width: 80 },
-  { title: '开始时间', dataIndex: 'started_at', width: 190 },
-  { title: '结束时间', dataIndex: 'finished_at', width: 190, customRender: ({ text }) => text || '-' },
-  { title: '操作', key: 'op', width: 70 },
+  { title: '深扫', key: 'deep', width: 140 },
+  { title: '开始时间', dataIndex: 'started_at', width: 170 },
+  { title: '结束时间', dataIndex: 'finished_at', width: 170, customRender: ({ text }) => text || '-' },
+  { title: '操作', key: 'op', width: 120 },
 ]
 
 const parseKinds = (r) => {
@@ -392,6 +406,13 @@ const parseKinds = (r) => {
 
 async function loadExposure() {
   expRuns.value = (await api.listExposure(pid)).data
+  const busy = expRuns.value.some(r => r.status === 'running' || r.deep_status === 'running')
+  if (busy && !expTimer) {
+    expTimer = setInterval(loadExposure, 4000)
+  } else if (!busy && expTimer) {
+    clearInterval(expTimer)
+    expTimer = null
+  }
 }
 
 async function startExposure() {
@@ -401,6 +422,16 @@ async function startExposure() {
     showExposure.value = false
     message.success('暴露面扫描已开始')
     tab.value = 'exposure'
+    loadExposure()
+  } catch (e) {
+    message.error(e.response?.data?.detail || '启动失败')
+  }
+}
+
+async function deepScan(id) {
+  try {
+    await api.deepScanExposure(id, 120)
+    message.success('攻击面深扫已开始（指纹+截图）')
     loadExposure()
   } catch (e) {
     message.error(e.response?.data?.detail || '启动失败')
@@ -565,5 +596,8 @@ async function saveTarget() {
 }
 
 onMounted(load)
-onBeforeUnmount(() => timer && clearInterval(timer))
+onBeforeUnmount(() => {
+  timer && clearInterval(timer)
+  expTimer && clearInterval(expTimer)
+})
 </script>

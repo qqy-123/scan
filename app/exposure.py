@@ -14,7 +14,8 @@ from urllib.parse import urljoin, urlsplit
 
 import httpx
 
-from . import probe, store
+from . import fingerprint as fp
+from . import probe, store, traffic
 
 DICT_PATH = Path(__file__).resolve().parent.parent / "rules" / "dirs.txt"
 MAX_JS_FILES = 25
@@ -465,6 +466,115 @@ async def run_exposure(run_id: int):
         store.finish_exposure(run_id)
     except Exception:
         store.fail_exposure(run_id)
+        raise
+    finally:
+        await client.aclose()
+
+
+# ------------------------------------------------------------------
+# Deep scan: fingerprint + screenshot every discovered in-scope URL
+# ------------------------------------------------------------------
+
+# selection priority for deep scan — attack points and leaks first
+DEEP_PRIORITY = {"vuln": 0, "point": 1, "leak": 2, "dir": 3, "js": 4}
+
+
+async def run_deep_scan(run_id: int, limit: int = 120):
+    """Re-probe every discovered same-host URL: liveness + fingerprint +
+    screenshot, exactly like the main fingerprint pipeline."""
+    run = store.get_exposure_run(run_id)
+    if not run:
+        return
+    project_id = run["project_id"]
+    cfg = store.get_settings()
+    targets = {t["id"]: t for t in store.list_targets(project_id)}
+    rows = store.list_exposure_results(run_id)
+
+    def host_of(t):
+        u = t["url"] if "://" in t["url"] else "https://" + t["url"]
+        return urlsplit(u).hostname
+
+    # dedupe urls, keep best (lowest) priority kind; same-host scope only
+    urls = {}
+    for r in rows:
+        u = r.get("url") or ""
+        t = targets.get(r.get("target_id"))
+        if not u.startswith("http") or not t:
+            continue
+        if urlsplit(u).hostname != host_of(t):
+            continue  # external hosts stay out of authorized scope
+        pri = DEEP_PRIORITY.get(r.get("kind") or "js", 9)
+        prev = urls.get(u)
+        if prev is None or pri < prev[0]:
+            urls[u] = (pri, r["target_id"])
+    ordered = sorted(urls.items(), key=lambda kv: (kv[1][0], kv[0]))[:limit]
+
+    store.exposure_deep_start(run_id, len(ordered))
+
+    client = probe.make_client()
+    probe_sem = asyncio.Semaphore(max(5, cfg["concurrency"] // 3))
+    shot_sem = asyncio.Semaphore(max(1, cfg["browser_concurrency"]))
+
+    async def one(url, _tid):
+        try:
+            resp = await probe.fetch(client, url)
+            fields = {
+                "status_code": resp["status_code"],
+                "alive": 1 if resp["alive"] else 0,
+                "final_url": resp["final_url"],
+                "server": resp["server"],
+                "fingerprints": None,
+                "screenshot": None,
+                "protection": None,
+            }
+            if resp["alive"]:
+                signals = None
+                shot_name = f"exp{run_id}_{uuid.uuid4().hex[:8]}.png"
+                if cfg["screenshot"]:
+                    async with shot_sem:
+                        cap = await traffic.capture(
+                            resp["final_url"], traffic.SHOT_DIR / shot_name,
+                            fp.js_globals(), fp.dom_selectors(),
+                        )
+                    if cap["ok"]:
+                        fields["screenshot"] = shot_name
+                        signals = fp.signals_from_capture(cap, resp)
+                if signals is None:
+                    favicon_hash = await probe.fetch_favicon_hash(
+                        client, resp["final_url"])
+                    signals = fp.signals_from_response(resp, favicon_hash)
+                matched = fp.match(signals)
+                hits = list(matched["hits"])
+                if cfg["active_probe"]:
+                    base = resp["final_url"]
+                    for rule in matched["candidates"]:
+                        for path in rule["probe"]:
+                            try:
+                                r = await client.get(
+                                    base.rstrip("/") + "/" + path.lstrip("/"))
+                                if r.status_code >= 400:
+                                    continue
+                                h = fp.evaluate_probe(rule, r.text[:300_000])
+                            except Exception:
+                                h = None
+                            if h:
+                                hits.append(h)
+                                break
+                fps = fp.postprocess(hits)
+                fields["fingerprints"] = json.dumps(fps, ensure_ascii=False)
+                prot = [h["name"] for h in fps if h["category"] == "防护页"]
+                fields["protection"] = ",".join(prot) if prot else None
+            store.update_exposure_deep_result(run_id, url, fields)
+        except Exception:
+            pass
+        finally:
+            store.bump_exposure_deep(run_id)
+
+    try:
+        await asyncio.gather(*(one(u, t) for u, (p, t) in ordered))
+        store.finish_exposure_deep(run_id)
+    except Exception:
+        store.fail_exposure_deep(run_id)
         raise
     finally:
         await client.aclose()
