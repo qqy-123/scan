@@ -6,6 +6,8 @@ export default {
   overview: () => api.get('/api/overview'),
   listProjects: () => api.get('/api/projects'),
   createProject: (data) => api.post('/api/projects', data),
+  updateProject: (id, data) => api.put(`/api/projects/${id}`, data),
+  deleteProject: (id) => api.delete(`/api/projects/${id}`),
   getProject: (id) => api.get(`/api/projects/${id}`),
   addTargets: (pid, urls) =>
     api.post(`/api/projects/${pid}/targets`, { urls }),
@@ -15,6 +17,7 @@ export default {
     return api.post(`/api/projects/${pid}/targets/upload`, fd)
   },
   deleteTarget: (tid) => api.delete(`/api/targets/${tid}`),
+  updateTarget: (tid, url) => api.put(`/api/targets/${tid}`, { url }),
   createScan: (pid, opts) => api.post(`/api/projects/${pid}/scans`, opts),
   getScan: (sid) => api.get(`/api/scans/${sid}`),
   scanStats: (sid) => api.get(`/api/scans/${sid}/stats`),

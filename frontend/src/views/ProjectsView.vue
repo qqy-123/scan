@@ -5,7 +5,7 @@
         <div class="page-title">项目</div>
         <div class="page-sub">资产管理 · 共 {{ projects.length }} 个项目</div>
       </div>
-      <a-button type="primary" @click="showCreate = true">新建项目</a-button>
+      <a-button type="primary" @click="openCreate">新建项目</a-button>
     </div>
 
     <a-table
@@ -27,6 +27,19 @@
         <template v-else-if="column.key === 'created_at'">
           <span class="mono">{{ record.created_at }}</span>
         </template>
+        <template v-else-if="column.key === 'op'">
+          <a-space>
+            <a @click="openEdit(record)">编辑</a>
+            <a-popconfirm
+              title="删除项目及其全部目标和扫描记录？"
+              ok-text="删除"
+              cancel-text="取消"
+              @confirm="delProject(record.id)"
+            >
+              <a style="color: #cf1322">删除</a>
+            </a-popconfirm>
+          </a-space>
+        </template>
       </template>
       <template #emptyText>
         <a-empty description="还没有项目，点击右上角新建" />
@@ -34,11 +47,11 @@
     </a-table>
 
     <a-modal
-      v-model:open="showCreate"
-      title="新建项目"
-      ok-text="创建"
+      v-model:open="showForm"
+      :title="editing ? '编辑项目' : '新建项目'"
+      :ok-text="editing ? '保存' : '创建'"
       cancel-text="取消"
-      @ok="create"
+      @ok="submit"
     >
       <a-form layout="vertical">
         <a-form-item label="项目名称" required>
@@ -59,7 +72,8 @@ import api from '../api'
 
 const projects = ref([])
 const loading = ref(false)
-const showCreate = ref(false)
+const showForm = ref(false)
+const editing = ref(null)
 const form = reactive({ name: '', description: '' })
 
 const columns = [
@@ -67,8 +81,42 @@ const columns = [
   { title: '目标数', dataIndex: 'target_count', width: 100 },
   { title: '存活/失活', key: 'alive', width: 130 },
   { title: '扫描轮次', dataIndex: 'scan_count', width: 100 },
-  { title: '创建时间', key: 'created_at', width: 200 },
+  { title: '创建时间', key: 'created_at', width: 190 },
+  { title: '操作', key: 'op', width: 110 },
 ]
+
+function openCreate() {
+  editing.value = null
+  form.name = ''
+  form.description = ''
+  showForm.value = true
+}
+
+function openEdit(record) {
+  editing.value = record
+  form.name = record.name
+  form.description = record.description || ''
+  showForm.value = true
+}
+
+async function submit() {
+  if (!form.name.trim()) return message.warning('请输入项目名称')
+  if (editing.value) {
+    await api.updateProject(editing.value.id, form)
+    message.success('已保存')
+  } else {
+    await api.createProject(form)
+    message.success('项目已创建')
+  }
+  showForm.value = false
+  load()
+}
+
+async function delProject(id) {
+  await api.deleteProject(id)
+  message.success('项目已删除')
+  load()
+}
 
 async function load() {
   loading.value = true
@@ -77,16 +125,6 @@ async function load() {
   } finally {
     loading.value = false
   }
-}
-
-async function create() {
-  if (!form.name.trim()) return message.warning('请填写项目名称')
-  await api.createProject(form)
-  showCreate.value = false
-  form.name = ''
-  form.description = ''
-  message.success('已创建')
-  load()
 }
 
 onMounted(load)

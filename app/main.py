@@ -54,6 +54,29 @@ def get_project(pid: int):
     return p
 
 
+class ProjectUpdate(BaseModel):
+    name: str
+    description: str = ""
+
+
+@app.put("/api/projects/{pid}")
+def update_project(pid: int, body: ProjectUpdate):
+    if not store.get_project(pid):
+        raise HTTPException(404)
+    if not body.name.strip():
+        raise HTTPException(400, "name required")
+    store.update_project(pid, body.name.strip(), body.description)
+    return {"ok": True}
+
+
+@app.delete("/api/projects/{pid}")
+def delete_project(pid: int):
+    if not store.get_project(pid):
+        raise HTTPException(404)
+    store.delete_project(pid)
+    return {"ok": True}
+
+
 # ---------------- targets ----------------
 
 class TargetsIn(BaseModel):
@@ -82,6 +105,22 @@ async def add_targets_file(pid: int, file: UploadFile):
     res = store.add_targets(pid, urls)
     res["parsed"] = len(urls)
     return res
+
+
+class TargetUpdate(BaseModel):
+    url: str
+
+
+@app.put("/api/targets/{tid}")
+def update_target(tid: int, body: TargetUpdate):
+    url = ingest.normalize(body.url)
+    if not url:
+        raise HTTPException(400, "invalid url")
+    res = store.update_target(tid, url)
+    if not res["ok"]:
+        raise HTTPException(409 if res["error"] == "duplicate" else 404,
+                            "URL 已存在于该项目" if res["error"] == "duplicate" else "not found")
+    return {"ok": True}
 
 
 @app.delete("/api/targets/{tid}")

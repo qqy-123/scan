@@ -117,6 +117,32 @@ def get_project(pid: int) -> dict | None:
     return dict(row) if row else None
 
 
+def update_project(pid: int, name: str, description: str = ""):
+    conn = _conn()
+    conn.execute(
+        "UPDATE projects SET name=?, description=? WHERE id=?",
+        (name, description, pid),
+    )
+    conn.commit()
+    conn.close()
+
+
+def delete_project(pid: int):
+    """Cascade: results (by scan and by target) -> scans -> targets -> project."""
+    conn = _conn()
+    conn.execute(
+        """DELETE FROM results WHERE scan_id IN
+               (SELECT id FROM scans WHERE project_id=?)
+           OR target_id IN (SELECT id FROM targets WHERE project_id=?)""",
+        (pid, pid),
+    )
+    conn.execute("DELETE FROM scans WHERE project_id=?", (pid,))
+    conn.execute("DELETE FROM targets WHERE project_id=?", (pid,))
+    conn.execute("DELETE FROM projects WHERE id=?", (pid,))
+    conn.commit()
+    conn.close()
+
+
 # ---------- targets ----------
 
 def add_targets(project_id: int, urls: list[str]) -> dict:
@@ -142,6 +168,26 @@ def list_targets(project_id: int) -> list:
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+def update_target(target_id: int, url: str) -> dict:
+    """Change a target's URL. Past results keep their own url snapshot."""
+    conn = _conn()
+    t = conn.execute("SELECT * FROM targets WHERE id=?", (target_id,)).fetchone()
+    if not t:
+        conn.close()
+        return {"ok": False, "error": "not found"}
+    dup = conn.execute(
+        "SELECT id FROM targets WHERE project_id=? AND url=? AND id!=?",
+        (t["project_id"], url, target_id),
+    ).fetchone()
+    if dup:
+        conn.close()
+        return {"ok": False, "error": "duplicate"}
+    conn.execute("UPDATE targets SET url=? WHERE id=?", (url, target_id))
+    conn.commit()
+    conn.close()
+    return {"ok": True}
 
 
 def delete_target(target_id: int):

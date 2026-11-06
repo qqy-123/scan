@@ -32,6 +32,15 @@
             >
               二次扫描（存活目标）
             </a-button>
+            <a-dropdown>
+              <a-button><template #icon><EllipsisOutlined /></template></a-button>
+              <template #overlay>
+                <a-menu>
+                  <a-menu-item key="edit" @click="openEditProject">编辑项目</a-menu-item>
+                  <a-menu-item key="delete" danger @click="delProject">删除项目</a-menu-item>
+                </a-menu>
+              </template>
+            </a-dropdown>
           </a-space>
         </a-col>
       </a-row>
@@ -81,6 +90,7 @@
               <template v-else-if="column.key === 'op'">
                 <a-space>
                   <router-link v-if="record.latest" :to="`/results/${record.latest.id}`">详情</router-link>
+                  <a @click="openEditTarget(record)">编辑</a>
                   <a-popconfirm title="删除该目标？" @confirm="delTarget(record.id)">
                     <a style="color: #cf1322">删除</a>
                   </a-popconfirm>
@@ -166,6 +176,29 @@
       </a-tabs>
     </a-modal>
 
+    <!-- 编辑项目 -->
+    <a-modal v-model:open="showEditProject" title="编辑项目" ok-text="保存" cancel-text="取消"
+             @ok="saveProject">
+      <a-form layout="vertical">
+        <a-form-item label="项目名称" required>
+          <a-input v-model:value="editProjectForm.name" />
+        </a-form-item>
+        <a-form-item label="描述">
+          <a-textarea v-model:value="editProjectForm.description" :rows="3" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <!-- 编辑目标 URL -->
+    <a-modal v-model:open="showEditTarget" title="编辑目标 URL" ok-text="保存" cancel-text="取消"
+             @ok="saveTarget">
+      <a-form layout="vertical">
+        <a-form-item label="URL" required>
+          <a-input v-model:value="editTargetUrl" class="mono" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
     <!-- 发起扫描 -->
     <a-modal v-model:open="showScan" title="发起扫描" ok-text="开始" cancel-text="取消"
              @ok="startScan()">
@@ -192,11 +225,14 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import { message } from 'ant-design-vue'
+import { useRouter } from 'vue-router'
+import { Modal, message } from 'ant-design-vue'
+import { EllipsisOutlined } from '@ant-design/icons-vue'
 import api from '../api'
 
 const props = defineProps({ id: String })
 const pid = Number(props.id)
+const router = useRouter()
 
 const project = ref(null)
 const running = ref(null)
@@ -256,7 +292,7 @@ const targetCols = [
   { title: '标题', dataIndex: ['latest', 'title'], ellipsis: true, customRender: ({ record }) => record.latest?.title || '-' },
   { title: '指纹', key: 'fps' },
   { title: '截图', key: 'shot', width: 140 },
-  { title: '操作', key: 'op', width: 110 },
+  { title: '操作', key: 'op', width: 150 },
 ]
 
 const scanCols = [
@@ -350,6 +386,65 @@ function rescanAlive() {
 async function delTarget(tid) {
   await api.deleteTarget(tid)
   load()
+}
+
+// ---------- edit project / target ----------
+
+const showEditProject = ref(false)
+const editProjectForm = reactive({ name: '', description: '' })
+const showEditTarget = ref(false)
+const editTargetId = ref(null)
+const editTargetUrl = ref('')
+
+function openEditProject() {
+  editProjectForm.name = project.value?.name || ''
+  editProjectForm.description = project.value?.description || ''
+  showEditProject.value = true
+}
+
+async function saveProject() {
+  if (!editProjectForm.name.trim()) return message.warning('名称不能为空')
+  try {
+    await api.updateProject(pid, editProjectForm)
+    message.success('已保存')
+    showEditProject.value = false
+    load()
+  } catch (e) {
+    message.error(e.response?.data?.detail || '保存失败')
+  }
+}
+
+function delProject() {
+  Modal.confirm({
+    title: '删除项目？',
+    content: '将同时删除该项目下全部目标、扫描轮次和历史结果，不可恢复。',
+    okText: '删除',
+    okType: 'danger',
+    cancelText: '取消',
+    async onOk() {
+      await api.deleteProject(pid)
+      message.success('项目已删除')
+      router.push('/projects')
+    },
+  })
+}
+
+function openEditTarget(record) {
+  editTargetId.value = record.id
+  editTargetUrl.value = record.url
+  showEditTarget.value = true
+}
+
+async function saveTarget() {
+  if (!editTargetUrl.value.trim()) return message.warning('URL 不能为空')
+  try {
+    await api.updateTarget(editTargetId.value, editTargetUrl.value.trim())
+    message.success('已保存')
+    showEditTarget.value = false
+    load()
+  } catch (e) {
+    message.error(e.response?.data?.detail || '保存失败')
+  }
 }
 
 onMounted(load)
