@@ -71,7 +71,7 @@
     "category": "Middleware",
     "website": "https://github.com/alibaba/druid",
     "html": ["Druid Stat", "druid\\.index"],
-    "probe": { "/druid/index.html": ["Druid|druid"] }
+    "probe": { "/druid/index.html": ["Druid Stat|/druid/[a-zA-Z]+\\.(js|css|jpg|png)"] }
   },
   {
     "name": "WebLogic",
@@ -116,7 +116,7 @@
     "category": "OA",
     "website": "https://www.seeyon.com",
     "html": ["/seeyon/", "seeyon", "致远"],
-    "probe": { "/seeyon/main.do": ["seeyon|A8|main"] }
+    "probe": { "/seeyon/main.do": ["com\\.seeyon|/seeyon/common/|A8-[0-9]"] }
   },
   {
     "name": "蓝凌 OA",

@@ -78,7 +78,7 @@
     "name": "ModSecurity",
     "category": "WAF",
     "website": "https://modsecurity.org",
-    "headers": { "server": "Mod_Security|mod_security|NOYB", "x-mod-security|x-backend": ".*\\;confidence:50" }
+    "headers": { "server": "Mod_Security|mod_security|NOYB", "x-mod-security": ".*\\;confidence:50" }
   },
   {
     "name": "DDoS-Guard",

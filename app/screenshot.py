@@ -43,11 +43,9 @@ async def capture(url: str, path: Path, js_globals: list, dom_selectors: list) -
             await page.wait_for_timeout(1200)
 
             rendered["html"] = await page.content()
-            rendered["script_src"] = [
-                el.get_attribute("src")
-                for el in await page.query_selector_all("script[src]")
-            ]
-            rendered["script_src"] = [s for s in rendered["script_src"] if s]
+            rendered["script_src"] = await page.eval_on_selector_all(
+                "script[src]", "els => els.map(e => e.src)"
+            )
 
             for g in js_globals:
                 try:
