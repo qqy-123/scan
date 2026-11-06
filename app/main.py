@@ -4,7 +4,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, UploadFile
 from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
+
 from pydantic import BaseModel
 
 from . import fingerprint as fp
@@ -331,11 +331,25 @@ def shot(name: str):
 
 
 if DIST.exists():
-    app.mount("/assets", StaticFiles(directory=DIST / "assets"), name="assets")
 
-    @app.get("/{path:path}")
+    @app.api_route("/assets/{path:path}", methods=["GET", "HEAD"])
+    def assets_cached(path: str):
+        # hash-named build assets: safe to cache forever
+        f = (DIST / "assets" / path).resolve()
+        if not f.is_file() or (DIST / "assets").resolve() not in f.parents:
+            raise HTTPException(404)
+        return FileResponse(
+            f,
+            headers={"Cache-Control": "public, max-age=31536000, immutable"},
+        )
+
+    @app.api_route("/{path:path}", methods=["GET", "HEAD"])
     def spa(path: str):
-        f = DIST / path
-        if path and f.is_file():
+        f = (DIST / path).resolve()
+        if path and f.is_file() and DIST.resolve() in f.parents:
             return FileResponse(f)
-        return FileResponse(DIST / "index.html")
+        # index.html must never be cached — it pins the asset filenames
+        return FileResponse(
+            DIST / "index.html",
+            headers={"Cache-Control": "no-cache"},
+        )
