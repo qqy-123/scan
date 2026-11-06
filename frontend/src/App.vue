@@ -58,11 +58,6 @@
         <!-- top bar -->
         <header class="topbar">
           <MenuFoldOutlined class="tb-btn" @click="collapsed = !collapsed" />
-          <div class="search">
-            <SearchOutlined class="search-ico" />
-            <input v-model="q" placeholder="Search" @keyup.enter="goSearch" />
-            <kbd>⌘ J</kbd>
-          </div>
           <div class="tb-space" />
           <a-dropdown :trigger="['click']">
             <a-avatar :size="28" style="background: #e5e5e5; color: #525252; cursor: pointer">A</a-avatar>
@@ -93,14 +88,12 @@ import {
   DatabaseOutlined,
   MenuFoldOutlined,
   MoreOutlined,
-  SearchOutlined,
   SettingOutlined,
 } from '@ant-design/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
 const collapsed = ref(false)
-const q = ref('')
 
 // monochrome theme: black primary buttons like ARTEX
 const theme = {
@@ -122,10 +115,6 @@ const navMain = [
 
 const isActive = (p) =>
   p === '/' ? route.path === '/' : route.path.startsWith(p)
-
-const goSearch = () => {
-  if (q.value.trim()) router.push('/projects')
-}
 
 const showAbout = () =>
   Modal.info({
@@ -263,36 +252,6 @@ const showAbout = () =>
   font-size: 15px;
   color: var(--gray-60);
   cursor: pointer;
-}
-.search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--gray-10);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 5px 10px;
-  width: 220px;
-}
-.search input {
-  border: none;
-  outline: none;
-  background: transparent;
-  font-size: 13px;
-  flex: 1;
-}
-.search-ico {
-  color: var(--gray-40);
-  font-size: 13px;
-}
-.search kbd {
-  font-size: 11px;
-  color: var(--gray-40);
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 0 5px;
-  font-family: inherit;
 }
 .tb-space {
   flex: 1;
