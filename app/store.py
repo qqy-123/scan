@@ -88,8 +88,23 @@ def list_projects() -> list:
     rows = conn.execute(
         """SELECT p.*,
                   (SELECT COUNT(*) FROM targets t WHERE t.project_id = p.id) AS target_count,
-                  (SELECT COUNT(*) FROM scans s WHERE s.project_id = p.id) AS scan_count
-           FROM projects p ORDER BY p.id DESC"""
+                  (SELECT COUNT(*) FROM scans s WHERE s.project_id = p.id) AS scan_count,
+                  COALESCE(s.alive, 0) AS alive_count,
+                  COALESCE(s.dead, 0) AS dead_count
+           FROM projects p
+           LEFT JOIN (
+               SELECT t.project_id,
+                      SUM(CASE WHEN lr.alive = 1 THEN 1 ELSE 0 END) AS alive,
+                      SUM(CASE WHEN lr.alive = 0 THEN 1 ELSE 0 END) AS dead
+               FROM targets t
+               LEFT JOIN (
+                   SELECT target_id, alive FROM results r
+                   WHERE r.id = (SELECT MAX(r2.id) FROM results r2
+                                 WHERE r2.target_id = r.target_id)
+               ) lr ON lr.target_id = t.id
+               GROUP BY t.project_id
+           ) s ON s.project_id = p.id
+           ORDER BY p.id DESC"""
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
@@ -305,6 +320,29 @@ def overview() -> dict:
                WHERE fingerprints != '[]' ORDER BY id DESC LIMIT 3000"""
         ).fetchall()
     ]
+    # latest-result view per target: alive / dead / unscanned + status code dist
+    d["dead"] = conn.execute(
+        """SELECT COUNT(*) FROM (
+               SELECT r.target_id, r.alive FROM results r
+               WHERE r.id = (SELECT MAX(r2.id) FROM results r2
+                             WHERE r2.target_id = r.target_id)
+           ) WHERE alive=0"""
+    ).fetchone()[0]
+    d["unscanned"] = conn.execute(
+        """SELECT COUNT(*) FROM targets t WHERE NOT EXISTS (
+               SELECT 1 FROM results r WHERE r.target_id = t.id
+           )"""
+    ).fetchone()[0]
+    d["status_dist"] = {
+        str(r["status_code"]): r["n"]
+        for r in conn.execute(
+            """SELECT status_code, COUNT(*) AS n FROM results r
+               WHERE r.id = (SELECT MAX(r2.id) FROM results r2
+                             WHERE r2.target_id = r.target_id)
+               AND status_code IS NOT NULL
+               GROUP BY status_code ORDER BY n DESC"""
+        ).fetchall()
+    }
     conn.close()
     return d
 

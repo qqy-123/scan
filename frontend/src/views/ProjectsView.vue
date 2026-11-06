@@ -1,7 +1,10 @@
 <template>
   <div class="page">
     <div class="page-header">
-      <div class="page-title">项目</div>
+      <div>
+        <div class="page-title">项目</div>
+        <div class="page-sub">资产管理 · 共 {{ projects.length }} 个项目</div>
+      </div>
       <a-button type="primary" @click="showCreate = true">新建项目</a-button>
     </div>
 
@@ -15,6 +18,11 @@
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'name'">
           <router-link :to="`/projects/${record.id}`">{{ record.name }}</router-link>
+        </template>
+        <template v-else-if="column.key === 'alive'">
+          <a-badge status="success" :text="String(record.alive_count)" />
+          <span style="margin: 0 6px; color: #d9d9d9">/</span>
+          <a-badge status="error" :text="String(record.dead_count)" />
         </template>
         <template v-else-if="column.key === 'created_at'">
           <span class="mono">{{ record.created_at }}</span>
@@ -56,8 +64,9 @@ const form = reactive({ name: '', description: '' })
 
 const columns = [
   { title: '项目名称', key: 'name', dataIndex: 'name' },
-  { title: '目标数', dataIndex: 'target_count', width: 120 },
-  { title: '扫描轮次', dataIndex: 'scan_count', width: 120 },
+  { title: '目标数', dataIndex: 'target_count', width: 100 },
+  { title: '存活/失活', key: 'alive', width: 130 },
+  { title: '扫描轮次', dataIndex: 'scan_count', width: 100 },
   { title: '创建时间', key: 'created_at', width: 200 },
 ]
 

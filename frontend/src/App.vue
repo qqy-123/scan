@@ -1,43 +1,60 @@
 <template>
   <a-config-provider :theme="theme">
-    <a-layout style="min-height: 100vh">
-      <a-layout-sider :width="216" theme="light" class="sider">
+    <a-layout class="app">
+      <!-- ARTEX-style light sidebar -->
+      <aside class="sider" :class="{ collapsed }">
         <router-link to="/" class="brand">
-          <span class="brand-mark">S</span>
-          <span>
-            <div class="brand-name">SCAN</div>
-            <div class="brand-sub">安全检测平台</div>
-          </span>
+          <svg class="logo" viewBox="0 0 24 24" fill="none">
+            <circle cx="7" cy="7" r="3" stroke="#0a0a0a" stroke-width="2" />
+            <circle cx="17" cy="7" r="3" stroke="#0a0a0a" stroke-width="2" />
+            <circle cx="7" cy="17" r="3" stroke="#0a0a0a" stroke-width="2" />
+            <circle cx="17" cy="17" r="3" stroke="#0a0a0a" stroke-width="2" />
+          </svg>
+          <span v-if="!collapsed" class="brand-name">SCAN</span>
         </router-link>
-        <a-menu
-          mode="inline"
-          :selected-keys="[menuKey]"
-          style="border-inline-end: none"
-        >
-          <a-menu-item key="/" @click="$router.push('/')">
-            <template #icon><DashboardOutlined /></template>
-            工作台
-          </a-menu-item>
-          <a-menu-item-group title="资产测绘">
-            <a-menu-item key="/projects" @click="$router.push('/projects')">
-              <template #icon><DatabaseOutlined /></template>
-              项目管理
-            </a-menu-item>
-            <a-menu-item key="/fingerprints" @click="$router.push('/fingerprints')">
-              <template #icon><AimOutlined /></template>
-              指纹库
-            </a-menu-item>
-          </a-menu-item-group>
-          <a-menu-item-group title="功能扩展">
-            <a-menu-item key="/future" disabled>
-              <template #icon><AppstoreAddOutlined /></template>
-              <span style="color: #bfbfbf">更多模块待接入…</span>
-            </a-menu-item>
-          </a-menu-item-group>
-        </a-menu>
-      </a-layout-sider>
+
+        <nav class="nav">
+          <div v-if="!collapsed" class="nav-group">功能</div>
+          <router-link
+            v-for="it in navMain"
+            :key="it.path"
+            :to="it.path"
+            class="nav-item"
+            :class="{ active: isActive(it.path) }"
+            :title="it.label"
+          >
+            <component :is="it.icon" class="nav-icon" />
+            <span v-if="!collapsed">{{ it.label }}</span>
+          </router-link>
+
+          <div v-if="!collapsed" class="nav-group">系统</div>
+          <div class="nav-item disabled" title="后续模块接入">
+            <SettingOutlined class="nav-icon" />
+            <span v-if="!collapsed">系统配置</span>
+            <span v-if="!collapsed" class="soon">待接入</span>
+          </div>
+        </nav>
+
+        <div class="sider-foot">
+          <a-avatar :size="24" style="background: #0a0a0a; font-size: 12px">S</a-avatar>
+          <span v-if="!collapsed">SCAN 平台</span>
+        </div>
+      </aside>
+
       <a-layout>
-        <a-layout-content>
+        <!-- top bar -->
+        <header class="topbar">
+          <MenuFoldOutlined class="tb-btn" @click="collapsed = !collapsed" />
+          <div class="search">
+            <SearchOutlined class="search-ico" />
+            <input v-model="q" placeholder="Search" @keyup.enter="goSearch" />
+            <kbd>⌘ J</kbd>
+          </div>
+          <div class="tb-space" />
+          <a-avatar :size="28" style="background: #e5e5e5; color: #525252">A</a-avatar>
+        </header>
+
+        <a-layout-content class="content">
           <router-view />
         </a-layout-content>
       </a-layout>
@@ -46,65 +63,205 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
   AimOutlined,
-  AppstoreAddOutlined,
+  AppstoreOutlined,
   DashboardOutlined,
   DatabaseOutlined,
+  MenuFoldOutlined,
+  SearchOutlined,
+  SettingOutlined,
 } from '@ant-design/icons-vue'
 
 const route = useRoute()
-const menuKey = computed(() => {
-  if (route.path.startsWith('/projects')) return '/projects'
-  if (route.path.startsWith('/fingerprints')) return '/fingerprints'
-  return '/'
-})
+const router = useRouter()
+const collapsed = ref(false)
+const q = ref('')
 
+// monochrome theme: black primary buttons like ARTEX
 const theme = {
   token: {
-    colorPrimary: '#2454e6',
+    colorPrimary: '#0a0a0a',
+    colorLink: '#0a0a0a',
+    colorInfo: '#0a0a0a',
     borderRadius: 8,
     fontFamily:
       '"PingFang SC", "Microsoft YaHei", Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif',
   },
 }
+
+const navMain = [
+  { path: '/', label: '仪表盘', icon: DashboardOutlined },
+  { path: '/projects', label: '项目管理', icon: DatabaseOutlined },
+  { path: '/fingerprints', label: '指纹库', icon: AimOutlined },
+]
+
+const isActive = (p) =>
+  p === '/' ? route.path === '/' : route.path.startsWith(p)
+
+const goSearch = () => {
+  if (q.value.trim()) router.push('/projects')
+}
 </script>
 
 <style scoped>
-.sider {
-  border-right: 1px solid #eaeaea;
+.app {
+  min-height: 100vh;
 }
+
+/* sidebar */
+.sider {
+  width: 232px;
+  flex-shrink: 0;
+  background: var(--bg-sider);
+  border-right: 1px solid var(--gray-20);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  transition: width 0.2s;
+}
+.sider.collapsed {
+  width: 64px;
+}
+
 .brand {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 16px;
-  height: 64px;
-  margin-bottom: 8px;
+  gap: 10px;
+  padding: 16px 18px;
 }
-.brand-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: #2454e6;
-  color: #fff;
-  font-weight: 700;
-  font-size: 16px;
+.logo {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
 }
 .brand-name {
   font-size: 16px;
-  font-weight: 600;
-  color: #1a1a1a;
-  line-height: 1.2;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.5px;
 }
-.brand-sub {
-  font-size: 12px;
-  color: #a6a6a6;
-  line-height: 1.2;
+.brand:hover {
+  text-decoration: none;
+}
+
+.nav {
+  flex: 1;
+  padding: 4px 12px;
+  overflow-y: auto;
+}
+.nav-group {
+  font-size: 11px;
+  color: var(--gray-40);
+  padding: 16px 10px 6px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: var(--gray-80);
+  margin-bottom: 2px;
+}
+.nav-item:hover {
+  background: #ececec;
+  text-decoration: none;
+}
+.nav-item.active {
+  background: #e8e8e8;
+  color: var(--ink);
+  font-weight: 500;
+}
+.nav-item.disabled {
+  color: var(--gray-40);
+  cursor: default;
+}
+.nav-item.disabled:hover {
+  background: none;
+}
+.nav-icon {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.soon {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--gray-30);
+}
+.collapsed .nav-item {
+  justify-content: center;
+  padding: 10px;
+}
+
+.sider-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--gray-20);
+  font-size: 13px;
+  color: var(--gray-80);
+}
+
+/* topbar */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 56px;
+  padding: 0 20px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.tb-btn {
+  font-size: 15px;
+  color: var(--gray-60);
+  cursor: pointer;
+}
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--gray-10);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 10px;
+  width: 220px;
+}
+.search input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  flex: 1;
+}
+.search-ico {
+  color: var(--gray-40);
+  font-size: 13px;
+}
+.search kbd {
+  font-size: 11px;
+  color: var(--gray-40);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 5px;
+  font-family: inherit;
+}
+.tb-space {
+  flex: 1;
+}
+
+.content {
+  min-height: calc(100vh - 56px);
 }
 </style>

@@ -1,5 +1,11 @@
 <template>
   <div class="page">
+    <div class="page-header">
+      <div>
+        <div class="page-title">指纹库</div>
+        <div class="page-sub">源码/系统指纹规则 · 学习 · 编辑 · 启停</div>
+      </div>
+    </div>
     <!-- 指纹学习 -->
     <a-card :bordered="false" title="指纹学习" style="margin-bottom: 16px">
       <a-space.Compact style="width: 560px; max-width: 100%">

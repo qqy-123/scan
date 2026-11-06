@@ -12,7 +12,9 @@
           <div style="color: #737373; margin-top: 4px">{{ project?.description }}</div>
         </a-col>
         <a-col><a-statistic title="目标" :value="project?.targets?.length || 0" /></a-col>
-        <a-col><a-statistic title="存活" :value="aliveCount" /></a-col>
+        <a-col><a-statistic title="存活" :value="aliveCount" :value-style="{ color: '#52c41a' }" /></a-col>
+        <a-col><a-statistic title="失活" :value="deadCount" :value-style="{ color: '#ff4d4f' }" /></a-col>
+        <a-col><a-statistic title="未探测" :value="unscannedCount" /></a-col>
         <a-col><a-statistic title="扫描轮次" :value="project?.scans?.length || 0" /></a-col>
         <a-col>
           <a-space>
@@ -222,6 +224,15 @@ const aliveCount = computed(() => {
   if (!project.value?.latest) return 0
   return Object.values(project.value.latest).filter((r) => r.alive).length
 })
+
+const deadCount = computed(() => {
+  if (!project.value?.latest) return 0
+  return Object.values(project.value.latest).filter((r) => !r.alive).length
+})
+
+const unscannedCount = computed(
+  () => (project.value?.targets?.length || 0) - aliveCount.value - deadCount.value
+)
 
 const targetRows = computed(() =>
   (project.value?.targets || []).map((t) => {
