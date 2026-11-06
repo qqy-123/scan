@@ -33,6 +33,11 @@ export default createRouter({
       component: FingerprintsView,
     },
     {
+      path: '/exposure',
+      name: 'exposure',
+      component: () => import('./views/ExposureView.vue'),
+    },
+    {
       path: '/settings',
       name: 'settings',
       component: SettingsView,

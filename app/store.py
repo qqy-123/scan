@@ -54,6 +54,32 @@ CREATE TABLE IF NOT EXISTS settings(
     key TEXT PRIMARY KEY,
     value TEXT
 );
+
+CREATE TABLE IF NOT EXISTS exposure_runs(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    options TEXT,
+    status TEXT DEFAULT 'running',
+    total INTEGER DEFAULT 0,
+    done INTEGER DEFAULT 0,
+    found INTEGER DEFAULT 0,
+    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    finished_at TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS exposure_results(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id INTEGER NOT NULL,
+    target_id INTEGER,
+    kind TEXT,
+    url TEXT,
+    source TEXT,
+    status_code INTEGER,
+    title TEXT,
+    length INTEGER,
+    hint TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_exposure_run ON exposure_results(run_id);
 """
 
 DEFAULT_SETTINGS = {
@@ -236,6 +262,105 @@ def set_settings(values: dict):
                 "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
                 (k, json.dumps(v)),
             )
+    conn.commit()
+    conn.close()
+
+
+# ---------- exposure runs (暴露面) ----------
+
+def create_exposure_run(project_id: int, options: dict, total: int) -> int:
+    conn = _conn()
+    cur = conn.execute(
+        "INSERT INTO exposure_runs(project_id, options, total) VALUES(?,?,?)",
+        (project_id, json.dumps(options), total),
+    )
+    rid = cur.lastrowid
+    conn.commit()
+    conn.close()
+    return rid
+
+
+def get_exposure_run(rid: int) -> dict | None:
+    conn = _conn()
+    row = conn.execute("SELECT * FROM exposure_runs WHERE id=?", (rid,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def list_exposure_runs(project_id: int | None = None) -> list:
+    conn = _conn()
+    q = """SELECT e.*, p.name AS project_name,
+                  (SELECT COUNT(*) FROM exposure_results r WHERE r.run_id=e.id) AS found
+           FROM exposure_runs e JOIN projects p ON p.id=e.project_id"""
+    if project_id:
+        rows = conn.execute(q + " WHERE e.project_id=? ORDER BY e.id DESC",
+                            (project_id,)).fetchall()
+    else:
+        rows = conn.execute(q + " ORDER BY e.id DESC").fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def save_exposure_result(run_id: int, target_id: int, r: dict):
+    conn = _conn()
+    conn.execute(
+        """INSERT INTO exposure_results(run_id, target_id, kind, url, source,
+               status_code, title, length, hint)
+           VALUES(?,?,?,?,?,?,?,?,?)""",
+        (run_id, target_id, r.get("kind"), r.get("url"), r.get("source"),
+         r.get("status_code"), r.get("title"), r.get("length"), r.get("hint")),
+    )
+    conn.execute(
+        "UPDATE exposure_runs SET found=(SELECT COUNT(*) FROM exposure_results WHERE run_id=?) WHERE id=?",
+        (run_id, run_id),
+    )
+    conn.commit()
+    conn.close()
+
+
+def bump_exposure_done(run_id: int):
+    conn = _conn()
+    conn.execute("UPDATE exposure_runs SET done=done+1 WHERE id=?", (run_id,))
+    conn.commit()
+    conn.close()
+
+
+def finish_exposure(run_id: int):
+    conn = _conn()
+    conn.execute(
+        "UPDATE exposure_runs SET status='done', finished_at=CURRENT_TIMESTAMP WHERE id=?",
+        (run_id,),
+    )
+    conn.commit()
+    conn.close()
+
+
+def fail_exposure(run_id: int):
+    conn = _conn()
+    conn.execute(
+        "UPDATE exposure_runs SET status='failed', finished_at=CURRENT_TIMESTAMP WHERE id=?",
+        (run_id,),
+    )
+    conn.commit()
+    conn.close()
+
+
+def list_exposure_results(run_id: int) -> list:
+    conn = _conn()
+    rows = conn.execute(
+        """SELECT r.*, t.url AS target_url FROM exposure_results r
+           LEFT JOIN targets t ON t.id=r.target_id
+           WHERE r.run_id=? ORDER BY r.kind, r.hint, r.url""",
+        (run_id,),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def delete_exposure_run(rid: int):
+    conn = _conn()
+    conn.execute("DELETE FROM exposure_results WHERE run_id=?", (rid,))
+    conn.execute("DELETE FROM exposure_runs WHERE id=?", (rid,))
     conn.commit()
     conn.close()
 

@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from . import fingerprint as fp
-from . import ingest, learn, pipeline, store, traffic
+from . import exposure, ingest, learn, pipeline, store, traffic
 
 BASE = Path(__file__).resolve().parent.parent
 DIST = BASE / "frontend" / "dist"
@@ -222,6 +222,60 @@ def overview():
     ]
     d["rules_count"] = len(fp.load_rules())
     return d
+
+
+# ---------------- exposure (暴露面测绘) ----------------
+
+class ExposureIn(BaseModel):
+    scope: str = "alive"                 # alive | all
+    kinds: list = ["js", "dir"]          # js: JS接口提取  dir: 目录爆破
+
+
+@app.post("/api/projects/{pid}/exposure")
+async def create_exposure(pid: int, body: ExposureIn):
+    if not store.get_project(pid):
+        raise HTTPException(404)
+    total = len(
+        store.alive_targets(pid)
+        if body.scope == "alive"
+        else store.list_targets(pid)
+    )
+    if total == 0:
+        raise HTTPException(400, "no targets to scan")
+    running = [r for r in store.list_exposure_runs(pid) if r["status"] == "running"]
+    if running:
+        raise HTTPException(409, "an exposure scan is already running")
+    rid = store.create_exposure_run(pid, body.model_dump(), total)
+    asyncio.create_task(exposure.run_exposure(rid))
+    return {"id": rid, "total": total}
+
+
+@app.get("/api/exposure")
+def list_exposure_all():
+    return store.list_exposure_runs()
+
+
+@app.get("/api/projects/{pid}/exposure")
+def list_exposure(pid: int):
+    return store.list_exposure_runs(pid)
+
+
+@app.get("/api/exposure/{rid}")
+def get_exposure(rid: int):
+    run = store.get_exposure_run(rid)
+    if not run:
+        raise HTTPException(404)
+    run["options"] = json.loads(run["options"] or "{}")
+    run["results"] = store.list_exposure_results(rid)
+    return run
+
+
+@app.delete("/api/exposure/{rid}")
+def delete_exposure(rid: int):
+    if not store.get_exposure_run(rid):
+        raise HTTPException(404)
+    store.delete_exposure_run(rid)
+    return {"ok": True}
 
 
 # ---------------- settings / system ----------------

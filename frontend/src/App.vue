@@ -88,6 +88,7 @@ import {
   DatabaseOutlined,
   MenuFoldOutlined,
   MoreOutlined,
+  RadarChartOutlined,
   SettingOutlined,
 } from '@ant-design/icons-vue'
 
@@ -110,6 +111,7 @@ const theme = {
 const navMain = [
   { path: '/', label: '仪表盘', icon: DashboardOutlined },
   { path: '/projects', label: '项目管理', icon: DatabaseOutlined },
+  { path: '/exposure', label: '暴露面测绘', icon: RadarChartOutlined },
   { path: '/fingerprints', label: '指纹库', icon: AimOutlined },
 ]
 

@@ -32,6 +32,12 @@
             >
               二次扫描（存活目标）
             </a-button>
+            <a-button
+              :disabled="!aliveCount || !!expRunning"
+              @click="showExposure = true"
+            >
+              暴露面扫描
+            </a-button>
             <a-dropdown>
               <a-button><template #icon><EllipsisOutlined /></template></a-button>
               <template #overlay>
@@ -156,8 +162,64 @@
             </template>
           </a-table>
         </a-tab-pane>
+
+        <a-tab-pane key="exposure" :tab="`暴露面 (${expRuns.length})`">
+          <a-table
+            :data-source="expRuns"
+            :columns="expCols"
+            row-key="id"
+            size="middle"
+            :pagination="{ pageSize: 10 }"
+          >
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'kinds'">
+                <a-tag v-for="k in parseKinds(record)" :key="k" :color="k === 'js' ? 'cyan' : 'blue'">
+                  {{ k === 'js' ? 'JS接口' : '目录爆破' }}
+                </a-tag>
+              </template>
+              <template v-else-if="column.key === 'status'">
+                <a-badge :status="{ running: 'processing', done: 'success' }[record.status] || 'error'"
+                         :text="record.status === 'running' ? `${record.done}/${record.total}` : record.status" />
+              </template>
+              <template v-else-if="column.key === 'found'">
+                <span :style="{ color: record.found ? 'var(--red)' : 'inherit' }">{{ record.found }}</span>
+              </template>
+              <template v-else-if="column.key === 'op'">
+                <a-popconfirm title="删除该次测绘及结果？" @confirm="delExposure(record.id)">
+                  <a style="color: #cf1322">删除</a>
+                </a-popconfirm>
+              </template>
+            </template>
+            <template #expandedRowRender="{ record }">
+              <ExposureResults :run-id="record.id" />
+            </template>
+            <template #expandColumnTitle><span /></template>
+            <template #emptyText>
+              <a-empty description="还没有测绘记录，点击右上角「暴露面扫描」" />
+            </template>
+          </a-table>
+        </a-tab-pane>
       </a-tabs>
     </a-card>
+
+    <!-- 暴露面扫描 -->
+    <a-modal v-model:open="showExposure" title="暴露面扫描" ok-text="开始" cancel-text="取消"
+             @ok="startExposure">
+      <a-form layout="vertical">
+        <a-form-item label="扫描范围">
+          <a-radio-group v-model:value="expOpts.scope">
+            <a-radio value="alive">存活目标（{{ aliveCount }}）</a-radio>
+            <a-radio value="all">全部目标（{{ project?.targets?.length || 0 }}）</a-radio>
+          </a-radio-group>
+        </a-form-item>
+        <a-form-item label="扫描方式">
+          <a-checkbox-group v-model:value="expOpts.kinds">
+            <a-checkbox value="js">JS 接口提取（解析前端 JS 中的隐藏 API / 后台路径）</a-checkbox>
+            <a-checkbox value="dir">目录爆破（内置字典探测后台 / 备份 / 配置等路径）</a-checkbox>
+          </a-checkbox-group>
+        </a-form-item>
+      </a-form>
+    </a-modal>
 
     <!-- 导入目标 -->
     <a-modal v-model:open="showImport" title="导入目标" ok-text="导入" cancel-text="取消"
@@ -229,6 +291,7 @@ import { useRouter } from 'vue-router'
 import { Modal, message } from 'ant-design-vue'
 import { EllipsisOutlined } from '@ant-design/icons-vue'
 import api from '../api'
+import ExposureResults from '../components/ExposureResults.vue'
 
 const props = defineProps({ id: String })
 const pid = Number(props.id)
@@ -244,6 +307,10 @@ const importText = ref('')
 const importFile = ref(null)
 const scanOpts = reactive({ scope: 'all', active_probe: true, screenshot: true, concurrency: 50 })
 const settingsLoaded = ref(false)
+const showExposure = ref(false)
+const expOpts = reactive({ scope: 'alive', kinds: ['js', 'dir'] })
+const expRuns = ref([])
+const expRunning = computed(() => expRuns.value.some((r) => r.status === 'running'))
 let timer = null
 
 const CAT_COLORS = {
@@ -305,6 +372,46 @@ const scanCols = [
   { title: '结束时间', dataIndex: 'finished_at', width: 200, customRender: ({ text }) => text || '-' },
 ]
 
+const expCols = [
+  { title: '#', dataIndex: 'id', width: 60 },
+  { title: '方式', key: 'kinds', width: 150 },
+  { title: '状态', key: 'status', width: 130 },
+  { title: '发现', key: 'found', width: 80 },
+  { title: '开始时间', dataIndex: 'started_at', width: 190 },
+  { title: '结束时间', dataIndex: 'finished_at', width: 190, customRender: ({ text }) => text || '-' },
+  { title: '操作', key: 'op', width: 70 },
+]
+
+const parseKinds = (r) => {
+  try {
+    return JSON.parse(r.options || '{}').kinds || []
+  } catch {
+    return []
+  }
+}
+
+async function loadExposure() {
+  expRuns.value = (await api.listExposure(pid)).data
+}
+
+async function startExposure() {
+  if (!expOpts.kinds.length) return message.warning('至少选择一种扫描方式')
+  try {
+    await api.createExposure(pid, { ...expOpts })
+    showExposure.value = false
+    message.success('暴露面扫描已开始')
+    tab.value = 'exposure'
+    loadExposure()
+  } catch (e) {
+    message.error(e.response?.data?.detail || '启动失败')
+  }
+}
+
+async function delExposure(id) {
+  await api.deleteExposure(id)
+  loadExposure()
+}
+
 const resultCols = [
   { title: '状态', key: 'alive', width: 80 },
   { title: 'URL', dataIndex: 'final_url', ellipsis: true },
@@ -324,6 +431,7 @@ async function load() {
       scanOpts.concurrency = s.concurrency
     })
   }
+  loadExposure()
   project.value = data
   running.value = data.running
   for (const s of data.scans) {

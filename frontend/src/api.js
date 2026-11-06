@@ -35,4 +35,9 @@ export default {
   getSettings: () => api.get('/api/settings'),
   updateSettings: (data) => api.put('/api/settings', data),
   systemInfo: () => api.get('/api/system'),
+  createExposure: (pid, opts) => api.post(`/api/projects/${pid}/exposure`, opts),
+  listExposure: (pid) => api.get(`/api/projects/${pid}/exposure`),
+  listExposureAll: () => api.get('/api/exposure'),
+  getExposure: (rid) => api.get(`/api/exposure/${rid}`),
+  deleteExposure: (rid) => api.delete(`/api/exposure/${rid}`),
 }
