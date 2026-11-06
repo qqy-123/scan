@@ -1,7 +1,7 @@
 <template>
   <div class="page" v-if="result">
     <a-breadcrumb style="margin-bottom: 16px">
-      <a-breadcrumb-item><router-link to="/">项目</router-link></a-breadcrumb-item>
+      <a-breadcrumb-item><router-link to="/projects">项目</router-link></a-breadcrumb-item>
       <a-breadcrumb-item>结果详情</a-breadcrumb-item>
     </a-breadcrumb>
 

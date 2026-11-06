@@ -3,6 +3,7 @@ import axios from 'axios'
 const api = axios.create({ baseURL: '/', timeout: 60000 })
 
 export default {
+  overview: () => api.get('/api/overview'),
   listProjects: () => api.get('/api/projects'),
   createProject: (data) => api.post('/api/projects', data),
   getProject: (id) => api.get(`/api/projects/${id}`),

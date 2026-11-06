@@ -164,6 +164,27 @@ def rules_summary():
     return {"count": len(rules), "names": sorted({r["name"] for r in rules})}
 
 
+# ---------------- overview / dashboard ----------------
+
+@app.get("/api/overview")
+def overview():
+    d = store.overview()
+    fp_names, fp_cats = {}, {}
+    for row in d.pop("fp_rows"):
+        try:
+            for f in json.loads(row):
+                fp_names[f["name"]] = fp_names.get(f["name"], 0) + 1
+                fp_cats[f["name"]] = f["category"]
+        except Exception:
+            pass
+    top = sorted(fp_names.items(), key=lambda x: -x[1])[:15]
+    d["top_fingerprints"] = [
+        {"name": n, "count": c, "category": fp_cats.get(n, "")} for n, c in top
+    ]
+    d["rules_count"] = len(fp.load_rules())
+    return d
+
+
 # ---------------- fingerprint learning ----------------
 
 class LearnIn(BaseModel):

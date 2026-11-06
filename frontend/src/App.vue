@@ -4,19 +4,37 @@
       <a-layout-sider :width="216" theme="light" class="sider">
         <router-link to="/" class="brand">
           <span class="brand-mark">S</span>
-          <span class="brand-name">SCAN</span>
+          <span>
+            <div class="brand-name">SCAN</div>
+            <div class="brand-sub">安全检测平台</div>
+          </span>
         </router-link>
-        <a-menu mode="inline" :selected-keys="[$route.path]" :open-keys="openKeys">
+        <a-menu
+          mode="inline"
+          :selected-keys="[menuKey]"
+          style="border-inline-end: none"
+        >
           <a-menu-item key="/" @click="$router.push('/')">
-            <template #icon><DatabaseOutlined /></template>
-            项目管理
+            <template #icon><DashboardOutlined /></template>
+            工作台
           </a-menu-item>
-          <a-menu-item key="/fingerprints" @click="$router.push('/fingerprints')">
-            <template #icon><AimOutlined /></template>
-            指纹库
-          </a-menu-item>
+          <a-menu-item-group title="资产测绘">
+            <a-menu-item key="/projects" @click="$router.push('/projects')">
+              <template #icon><DatabaseOutlined /></template>
+              项目管理
+            </a-menu-item>
+            <a-menu-item key="/fingerprints" @click="$router.push('/fingerprints')">
+              <template #icon><AimOutlined /></template>
+              指纹库
+            </a-menu-item>
+          </a-menu-item-group>
+          <a-menu-item-group title="功能扩展">
+            <a-menu-item key="/future" disabled>
+              <template #icon><AppstoreAddOutlined /></template>
+              <span style="color: #bfbfbf">更多模块待接入…</span>
+            </a-menu-item>
+          </a-menu-item-group>
         </a-menu>
-        <div class="sider-foot">网站指纹识别平台</div>
       </a-layout-sider>
       <a-layout>
         <a-layout-content>
@@ -28,10 +46,22 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { AimOutlined, DatabaseOutlined } from '@ant-design/icons-vue'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import {
+  AimOutlined,
+  AppstoreAddOutlined,
+  DashboardOutlined,
+  DatabaseOutlined,
+} from '@ant-design/icons-vue'
 
-const openKeys = ref([])
+const route = useRoute()
+const menuKey = computed(() => {
+  if (route.path.startsWith('/projects')) return '/projects'
+  if (route.path.startsWith('/fingerprints')) return '/fingerprints'
+  return '/'
+})
+
 const theme = {
   token: {
     colorPrimary: '#2454e6',
@@ -45,39 +75,36 @@ const theme = {
 <style scoped>
 .sider {
   border-right: 1px solid #eaeaea;
-  display: flex;
-  flex-direction: column;
 }
 .brand {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 16px;
-  height: 56px;
+  height: 64px;
+  margin-bottom: 8px;
 }
 .brand-mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
   background: #2454e6;
   color: #fff;
   font-weight: 700;
+  font-size: 16px;
 }
 .brand-name {
   font-size: 16px;
   font-weight: 600;
   color: #1a1a1a;
+  line-height: 1.2;
 }
-.sider-foot {
-  position: absolute;
-  bottom: 16px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  color: #a6a6a6;
+.brand-sub {
   font-size: 12px;
+  color: #a6a6a6;
+  line-height: 1.2;
 }
 </style>

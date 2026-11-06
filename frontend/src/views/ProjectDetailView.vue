@@ -1,7 +1,7 @@
 <template>
   <div class="page">
     <a-breadcrumb style="margin-bottom: 16px">
-      <a-breadcrumb-item><router-link to="/">项目</router-link></a-breadcrumb-item>
+      <a-breadcrumb-item><router-link to="/projects">项目</router-link></a-breadcrumb-item>
       <a-breadcrumb-item>{{ project?.name }}</a-breadcrumb-item>
     </a-breadcrumb>
 

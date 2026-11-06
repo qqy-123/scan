@@ -275,6 +275,40 @@ def get_result(rid: int) -> dict | None:
     return dict(row) if row else None
 
 
+def overview() -> dict:
+    conn = _conn()
+    def one(q):
+        return conn.execute(q).fetchone()[0]
+    d = {
+        "projects": one("SELECT COUNT(*) FROM projects"),
+        "targets": one("SELECT COUNT(*) FROM targets"),
+        "scans": one("SELECT COUNT(*) FROM scans"),
+        "running": one("SELECT COUNT(*) FROM scans WHERE status='running'"),
+        "alive": one(
+            """SELECT COUNT(*) FROM (
+                   SELECT r.target_id, r.alive FROM results r
+                   WHERE r.id = (SELECT MAX(r2.id) FROM results r2
+                                 WHERE r2.target_id = r.target_id)
+               ) WHERE alive=1"""
+        ),
+    }
+    d["recent_scans"] = [
+        dict(r) for r in conn.execute(
+            """SELECT s.*, p.name AS project_name FROM scans s
+               JOIN projects p ON p.id = s.project_id
+               ORDER BY s.id DESC LIMIT 8"""
+        ).fetchall()
+    ]
+    d["fp_rows"] = [
+        r[0] for r in conn.execute(
+            """SELECT fingerprints FROM results
+               WHERE fingerprints != '[]' ORDER BY id DESC LIMIT 3000"""
+        ).fetchall()
+    ]
+    conn.close()
+    return d
+
+
 def latest_results_by_target(project_id: int) -> dict:
     """target_id -> latest result row (for showing current state in target table)."""
     conn = _conn()
