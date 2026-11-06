@@ -109,6 +109,8 @@ const goSearch = () => {
 <style scoped>
 .app {
   min-height: 100vh;
+  display: flex;
+  flex-direction: row;
 }
 
 /* sidebar */
