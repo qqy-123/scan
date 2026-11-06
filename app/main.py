@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import fingerprint as fp
-from . import ingest, pipeline, screenshot, store
+from . import ingest, learn, pipeline, screenshot, store
 
 BASE = Path(__file__).resolve().parent.parent
 DIST = BASE / "frontend" / "dist"
@@ -162,6 +162,63 @@ def get_result(rid: int):
 def rules_summary():
     rules = fp.load_rules()
     return {"count": len(rules), "names": sorted({r["name"] for r in rules})}
+
+
+# ---------------- fingerprint learning ----------------
+
+class LearnIn(BaseModel):
+    url: str
+
+
+@app.post("/api/learn/preview")
+async def learn_preview(body: LearnIn):
+    """Fetch a site and extract candidate fingerprint features."""
+    return await learn.extract(body.url.strip())
+
+
+SIGNAL_FIELDS = ("headers", "cookies", "meta", "js", "html", "scriptSrc",
+                 "scripts", "url", "favicon", "dom", "probe")
+
+
+@app.get("/api/rules/detail")
+def rules_detail():
+    out = []
+    for r in fp.load_rules():
+        signals = {f: (list(r[f].keys()) if isinstance(r[f], dict) else len(r[f]))
+                   for f in SIGNAL_FIELDS if r.get(f)}
+        out.append({
+            "name": r["name"],
+            "category": r.get("category", "other"),
+            "file": r.get("_file"),
+            "signals": signals,
+            "implies": r.get("implies", []),
+        })
+    return out
+
+
+class CustomRuleIn(BaseModel):
+    name: str
+    category: str = "自定义"
+    selected: dict
+
+
+@app.post("/api/rules/custom")
+def save_custom_rule(body: CustomRuleIn):
+    name = body.name.strip()
+    if not name:
+        raise HTTPException(400, "name required")
+    rule = learn.build_rule(name, body.selected, body.category.strip() or "自定义")
+    if not any(k in rule for k in SIGNAL_FIELDS):
+        raise HTTPException(400, "select at least one signal")
+    learn.save_custom(rule)
+    return {"ok": True, "rule": rule}
+
+
+@app.delete("/api/rules/custom/{name}")
+def delete_custom_rule(name: str):
+    if not learn.delete_custom(name):
+        raise HTTPException(404)
+    return {"ok": True}
 
 
 # ---------------- static ----------------

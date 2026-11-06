@@ -91,6 +91,12 @@ def load_rules() -> list:
     return _cache
 
 
+def reload():
+    """Drop the compiled-rule cache so new/edited rule files take effect."""
+    global _cache
+    _cache = None
+
+
 def rule_names() -> set:
     return {r["name"] for r in load_rules()}
 

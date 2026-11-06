@@ -6,6 +6,10 @@
           <span class="brand-mark">S</span>
           SCAN · 网站指纹识别平台
         </router-link>
+        <nav class="nav">
+          <router-link to="/" class="nav-link">项目</router-link>
+          <router-link to="/fingerprints" class="nav-link">指纹库</router-link>
+        </nav>
       </a-layout-header>
       <a-layout-content>
         <router-view />
@@ -41,6 +45,18 @@ const theme = {
   color: #fff;
   font-size: 16px;
   font-weight: 600;
+}
+.nav {
+  margin-left: 48px;
+  display: flex;
+  gap: 24px;
+}
+.nav-link {
+  color: #a6a6a6;
+  font-size: 14px;
+}
+.nav-link.router-link-exact-active {
+  color: #fff;
 }
 .brand-mark {
   display: inline-flex;

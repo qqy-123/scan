@@ -19,4 +19,9 @@ export default {
   scanStats: (sid) => api.get(`/api/scans/${sid}/stats`),
   getResult: (rid) => api.get(`/api/results/${rid}`),
   rules: () => api.get('/api/rules'),
+  rulesDetail: () => api.get('/api/rules/detail'),
+  learnPreview: (url) => api.post('/api/learn/preview', { url }),
+  saveCustomRule: (data) => api.post('/api/rules/custom', data),
+  deleteCustomRule: (name) =>
+    api.delete(`/api/rules/custom/${encodeURIComponent(name)}`),
 }
