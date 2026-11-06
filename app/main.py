@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import fingerprint as fp
-from . import ingest, learn, pipeline, screenshot, store
+from . import ingest, learn, pipeline, store, traffic
 
 BASE = Path(__file__).resolve().parent.parent
 DIST = BASE / "frontend" / "dist"
@@ -19,7 +19,7 @@ app = FastAPI(title="scan")
 @app.on_event("startup")
 def _startup():
     store.init()
-    screenshot.SHOT_DIR.mkdir(exist_ok=True)
+    traffic.SHOT_DIR.mkdir(exist_ok=True)
 
 
 # ---------------- projects ----------------
@@ -225,8 +225,8 @@ def delete_custom_rule(name: str):
 
 @app.get("/screenshots/{name}")
 def shot(name: str):
-    p = (screenshot.SHOT_DIR / name).resolve()
-    if p.parent != screenshot.SHOT_DIR.resolve() or not p.exists():
+    p = (traffic.SHOT_DIR / name).resolve()
+    if p.parent != traffic.SHOT_DIR.resolve() or not p.exists():
         raise HTTPException(404)
     return FileResponse(p)
 

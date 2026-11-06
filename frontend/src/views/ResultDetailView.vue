@@ -5,6 +5,8 @@
       <a-breadcrumb-item>结果详情</a-breadcrumb-item>
     </a-breadcrumb>
 
+    <a-alert v-if="result.protection" type="warning" show-icon style="margin-bottom: 16px"
+             :message="`检测到前台保护：${result.protection}，识别结果可能来自防护页面`" />
     <a-card :bordered="false" style="margin-bottom: 16px">
       <a-descriptions :column="2" size="small">
         <a-descriptions-item label="原始 URL">

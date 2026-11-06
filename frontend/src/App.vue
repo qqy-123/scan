@@ -1,24 +1,37 @@
 <template>
   <a-config-provider :theme="theme">
     <a-layout style="min-height: 100vh">
-      <a-layout-header class="topbar">
+      <a-layout-sider :width="216" theme="light" class="sider">
         <router-link to="/" class="brand">
           <span class="brand-mark">S</span>
-          SCAN · 网站指纹识别平台
+          <span class="brand-name">SCAN</span>
         </router-link>
-        <nav class="nav">
-          <router-link to="/" class="nav-link">项目</router-link>
-          <router-link to="/fingerprints" class="nav-link">指纹库</router-link>
-        </nav>
-      </a-layout-header>
-      <a-layout-content>
-        <router-view />
-      </a-layout-content>
+        <a-menu mode="inline" :selected-keys="[$route.path]" :open-keys="openKeys">
+          <a-menu-item key="/" @click="$router.push('/')">
+            <template #icon><DatabaseOutlined /></template>
+            项目管理
+          </a-menu-item>
+          <a-menu-item key="/fingerprints" @click="$router.push('/fingerprints')">
+            <template #icon><AimOutlined /></template>
+            指纹库
+          </a-menu-item>
+        </a-menu>
+        <div class="sider-foot">网站指纹识别平台</div>
+      </a-layout-sider>
+      <a-layout>
+        <a-layout-content>
+          <router-view />
+        </a-layout-content>
+      </a-layout>
     </a-layout>
   </a-config-provider>
 </template>
 
 <script setup>
+import { ref } from 'vue'
+import { AimOutlined, DatabaseOutlined } from '@ant-design/icons-vue'
+
+const openKeys = ref([])
 const theme = {
   token: {
     colorPrimary: '#2454e6',
@@ -30,33 +43,17 @@ const theme = {
 </script>
 
 <style scoped>
-.topbar {
+.sider {
+  border-right: 1px solid #eaeaea;
   display: flex;
-  align-items: center;
-  background: #1a1a1a;
-  padding: 0 24px;
-  height: 56px;
-  line-height: 56px;
+  flex-direction: column;
 }
 .brand {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #fff;
-  font-size: 16px;
-  font-weight: 600;
-}
-.nav {
-  margin-left: 48px;
-  display: flex;
-  gap: 24px;
-}
-.nav-link {
-  color: #a6a6a6;
-  font-size: 14px;
-}
-.nav-link.router-link-exact-active {
-  color: #fff;
+  padding: 16px;
+  height: 56px;
 }
 .brand-mark {
   display: inline-flex;
@@ -68,5 +65,19 @@ const theme = {
   background: #2454e6;
   color: #fff;
   font-weight: 700;
+}
+.brand-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+.sider-foot {
+  position: absolute;
+  bottom: 16px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: #a6a6a6;
+  font-size: 12px;
 }
 </style>

@@ -1,0 +1,52 @@
+[
+  {
+    "name": "Cloudflare 质询",
+    "category": "防护页",
+    "website": "https://www.cloudflare.com",
+    "html": ["Just a moment", "cf-chl", "challenge-platform", "window._cf_chl_opt", "Checking your browser"],
+    "headers": { "cf-mitigated": "challenge" },
+    "implies": ["Cloudflare"]
+  },
+  {
+    "name": "安全狗防护",
+    "category": "防护页",
+    "website": "https://www.safedog.cn",
+    "html": ["safedog", "安全狗", "safedogsite\\.com", "waf@safedog"],
+    "headers": { "x-powered-by-safe": ".*" }
+  },
+  {
+    "name": "创宇盾防护",
+    "category": "防护页",
+    "website": "https://www.yunaq.com",
+    "html": ["yunaq", "创宇盾", "365waf", "知道创宇"],
+    "headers": { "server": "yunaq" }
+  },
+  {
+    "name": "雷池 SafeLine",
+    "category": "防护页",
+    "website": "https://waf.chaitin.com",
+    "html": ["safeline", "雷池", "chaitin"]
+  },
+  {
+    "name": "阿里云盾",
+    "category": "防护页",
+    "website": "https://www.aliyun.com",
+    "html": ["aliyunwaf|阿里云盾|errors\\.aliyun\\.com"],
+    "headers": { "x-aliyun": ".*" }
+  },
+  {
+    "name": "腾讯宙斯盾",
+    "category": "防护页",
+    "html": ["腾讯云安全|tencentwaf|zhos"]
+  },
+  {
+    "name": "百度加速乐拦截",
+    "category": "防护页",
+    "html": ["加速乐|jiasule|Veryvd\\?"]
+  },
+  {
+    "name": "JS 质询页",
+    "category": "防护页",
+    "html": ["document\\.cookie.{0,80}location\\.href|window\\.location\\.reload.{0,50}challenge|verifying your browser|检查您的浏览器"]
+  }
+]

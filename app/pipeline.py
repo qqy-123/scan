@@ -1,18 +1,17 @@
 import asyncio
 import json
 import uuid
-from urllib.parse import urlsplit
 
 from . import fingerprint as fp
-from . import probe, screenshot, store
+from . import probe, store, traffic
 
 PROBE_CONCURRENCY = 50
-SHOT_CONCURRENCY = 4
+BROWSER_CONCURRENCY = 4
 
 
 async def run_scan(scan_id: int):
-    """Full pipeline: probe liveness -> fingerprint (passive + active probe)
-    -> screenshot (+ rendered signals, second-pass fingerprint)."""
+    """probe liveness -> browser traffic capture (+screenshot) -> fingerprint
+    (passive signals + packet URLs + active probe) -> protection check."""
     scan = store.get_scan(scan_id)
     opts = json.loads(scan["options"])
     project_id = scan["project_id"]
@@ -23,7 +22,7 @@ async def run_scan(scan_id: int):
         targets = store.list_targets(project_id)
 
     probe_sem = asyncio.Semaphore(opts.get("concurrency") or PROBE_CONCURRENCY)
-    shot_sem = asyncio.Semaphore(SHOT_CONCURRENCY)
+    shot_sem = asyncio.Semaphore(BROWSER_CONCURRENCY)
     client = probe.make_client()
     alive_count = 0
 
@@ -45,6 +44,7 @@ async def run_scan(scan_id: int):
             "elapsed_ms": resp["elapsed_ms"],
             "fingerprints": [],
             "screenshot": None,
+            "protection": None,
             "error": resp["error"],
         }
         if not resp["alive"]:
@@ -53,17 +53,40 @@ async def run_scan(scan_id: int):
             return
 
         alive_count += 1
-        favicon_hash = await probe.fetch_favicon_hash(client, resp["final_url"])
-        signals = fp.signals_from_response(resp, favicon_hash)
+        signals = None
+        shot_name = None
 
-        # passive match
-        first = fp.match(signals)
-        hits = list(first["hits"])
+        # browser pass: traffic + rendered signals + screenshot
+        if opts.get("screenshot", True):
+            async with shot_sem:
+                shot_name = f"{scan_id}_{uuid.uuid4().hex[:10]}.png"
+                cap = await traffic.capture(
+                    resp["final_url"],
+                    traffic.SHOT_DIR / shot_name,
+                    fp.js_globals(),
+                    fp.dom_selectors(),
+                )
+            if cap["ok"]:
+                result["screenshot"] = shot_name
+                signals = fp.signals_from_capture(cap, resp)
+                if cap.get("title"):
+                    result["title"] = cap["title"]
+            else:
+                result["error"] = f"browser: {cap['error']}"
+                shot_name = None
 
-        # active probe: candidate rules + probe-only rules
+        # fallback: httpx signals only
+        if signals is None:
+            favicon_hash = await probe.fetch_favicon_hash(client, resp["final_url"])
+            signals = fp.signals_from_response(resp, favicon_hash)
+
+        matched = fp.match(signals)
+        hits = list(matched["hits"])
+
+        # active probe: extra requests on characteristic paths
         if opts.get("active_probe", True):
             base = resp["final_url"]
-            for rule in first["candidates"]:
+            for rule in matched["candidates"]:
                 for path in rule["probe"]:
                     probe_url = base.rstrip("/") + "/" + path.lstrip("/")
                     try:
@@ -77,28 +100,10 @@ async def run_scan(scan_id: int):
                         hits.append(h)
                         break
 
-        # screenshot + rendered second pass
-        if opts.get("screenshot", True):
-            async with shot_sem:
-                shot_name = f"{scan_id}_{uuid.uuid4().hex[:10]}.png"
-                rendered = await screenshot.capture(
-                    resp["final_url"],
-                    screenshot.SHOT_DIR / shot_name,
-                    fp.js_globals(),
-                    fp.dom_selectors(),
-                )
-            if "error" not in rendered:
-                result["screenshot"] = shot_name
-                fp.merge_rendered(signals, rendered)
-                second = fp.match(signals)
-                seen = {h["name"] for h in hits}
-                for h in second["hits"]:
-                    if h["name"] not in seen:
-                        hits.append(h)
-            else:
-                result["error"] = f"screenshot: {rendered['error']}"
-
-        result["fingerprints"] = fp.postprocess(hits)
+        fps = fp.postprocess(hits)
+        result["fingerprints"] = fps
+        prot = [h["name"] for h in fps if h["category"] == "防护页"]
+        result["protection"] = ",".join(prot) if prot else None
         store.save_result(result)
         store.bump_done(scan_id)
 

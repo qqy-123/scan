@@ -67,7 +67,7 @@ def compile_rule(raw: dict) -> dict:
     rule = dict(raw)
     for f in ("headers", "cookies", "meta", "js", "probe"):
         rule[f] = _pmap(rule.get(f))
-    for f in ("html", "scriptSrc", "scripts", "url", "css", "robots"):
+    for f in ("html", "scriptSrc", "scripts", "url", "xhr", "css", "robots"):
         rule[f] = _plist(rule.get(f))
     rule["favicon"] = [str(x) for x in rule.get("favicon") or []]
     rule["dom"] = rule.get("dom") or {}
@@ -139,19 +139,50 @@ def signals_from_response(resp: dict, favicon_hash=None) -> dict:
         "favicon": str(favicon_hash) if favicon_hash is not None else "",
         "js": {},
         "dom": {},
+        "urls": [],
+        "xhr_urls": [],
     }
 
 
-def merge_rendered(signals: dict, rendered: dict):
-    """Merge playwright-rendered extras (html, js, dom, script_src) into signals."""
-    if rendered.get("html"):
-        signals["html"] = rendered["html"]
-    if rendered.get("script_src"):
-        signals["script_src"] = sorted(
-            set(signals["script_src"]) | set(rendered["script_src"])
-        )
-    signals["js"].update(rendered.get("js") or {})
-    signals["dom"].update(rendered.get("dom") or {})
+def signals_from_capture(cap: dict, fallback_resp: dict | None = None) -> dict:
+    """Build signals from a traffic.capture() result (all browser packets)."""
+    packets = cap.get("packets") or []
+    docs = [p for p in packets if p.get("type") == "document"]
+    main = docs[-1] if docs else {}
+
+    cookies = {}
+    for p in packets:
+        sc = p.get("headers", {}).get("set-cookie", "")
+        for part in sc.split("\n") if "\n" in sc else [sc]:
+            nv = part.split(";", 1)[0]
+            if "=" in nv:
+                k, v = nv.split("=", 1)
+                cookies.setdefault(k.strip(), v.strip())
+
+    html = cap.get("html") or (main.get("body") if main else "")
+    resp = fallback_resp or {}
+    base = signals_from_response(
+        {
+            "final_url": cap.get("final_url") or resp.get("final_url"),
+            "status_code": main.get("status") or resp.get("status_code"),
+            "headers": main.get("headers") or resp.get("headers") or {},
+            "cookies": cookies or resp.get("cookies") or {},
+            "html": html or resp.get("html") or "",
+            "title": cap.get("title") or resp.get("title") or "",
+        },
+        cap.get("favicon_hash"),
+    )
+    base["script_src"] = sorted(
+        set(base["script_src"]) | set(cap.get("script_src") or [])
+    )
+    base["js"] = cap.get("js") or {}
+    base["dom"] = cap.get("dom") or {}
+    base["urls"] = [p["url"] for p in packets]
+    base["xhr_urls"] = [
+        p["url"] for p in packets if p.get("type") in ("xhr", "fetch")
+    ]
+    base["title"] = cap.get("title") or base["title"]
+    return base
 
 
 # ---------------- matching ----------------
@@ -211,11 +242,22 @@ def evaluate(rule: dict, signals: dict) -> dict | None:
         ("html", "html"),
         ("scriptSrc", "script_src"),
         ("scripts", "scripts"),
-        ("url", "url"),
     ):
         s, v = _match_list(rule[field], signals.get(key), field, evidence)
         score += s
         version = version or v
+
+    # url patterns match final URL and every request URL the page triggered;
+    # xhr patterns match only XHR/fetch request URLs
+    url_blob = "\n".join([signals.get("url") or ""] + (signals.get("urls") or []))
+    s, v = _match_list(rule["url"], url_blob, "url", evidence)
+    score += s
+    version = version or v
+    s, v = _match_list(
+        rule["xhr"], "\n".join(signals.get("xhr_urls") or []), "xhr", evidence
+    )
+    score += s
+    version = version or v
 
     for sel, cond in rule["dom"].items():
         d = signals["dom"].get(sel)

@@ -3,119 +3,299 @@
     "name": "WordPress",
     "category": "CMS",
     "website": "https://wordpress.org",
-    "meta": { "generator": ["WordPress\\s*([0-9.]*)\\;version:\\1"] },
-    "html": ["wp-content/", "wp-includes/"],
-    "headers": { "x-pingback": ".*" },
-    "cookies": { "^wp-|^wordpress": ".*" },
-    "probe": { "/wp-login.php": ["wp-submit|loginform|action=lostpassword"] },
-    "implies": ["PHP"]
+    "meta": {
+      "generator": [
+        "WordPress\\s*([0-9.]*)\\;version:\\1"
+      ]
+    },
+    "html": [
+      "wp-content/",
+      "wp-includes/"
+    ],
+    "headers": {
+      "x-pingback": ".*"
+    },
+    "cookies": {
+      "^wp-|^wordpress": ".*"
+    },
+    "probe": {
+      "/wp-login.php": [
+        "wp-submit|loginform|action=lostpassword"
+      ]
+    },
+    "implies": [
+      "PHP"
+    ],
+    "url": [
+      "wp-content",
+      "wp-includes",
+      "wp-json"
+    ]
   },
   {
     "name": "Discuz!",
     "category": "CMS",
     "website": "https://www.discuz.net",
-    "meta": { "generator": ["Discuz!"] },
-    "html": ["Powered by Discuz!", "Discuz!\\s*X?\\s*([0-9.]+)\\;version:\\1", "discuz_uid"],
-    "cookies": { "_sid$|_saltkey$|_lastvisit$": ".*\\;confidence:60" },
-    "implies": ["PHP"]
+    "meta": {
+      "generator": [
+        "Discuz!"
+      ]
+    },
+    "html": [
+      "Powered by Discuz!",
+      "Discuz!\\s*X?\\s*([0-9.]+)\\;version:\\1",
+      "discuz_uid"
+    ],
+    "cookies": {
+      "_sid$|_saltkey$|_lastvisit$": ".*\\;confidence:60"
+    },
+    "implies": [
+      "PHP"
+    ],
+    "url": [
+      "uc_server",
+      "/source/plugin",
+      "/static/image/common"
+    ]
   },
   {
     "name": "DedeCMS",
     "category": "CMS",
     "website": "https://www.dedecms.com",
-    "meta": { "generator": ["DedeCMS"] },
-    "html": ["DedeCMS", "dedecms", "powered by dedecms"],
-    "cookies": { "^DedeUserID|^DedeLoginTime": ".*" },
-    "implies": ["PHP"]
+    "meta": {
+      "generator": [
+        "DedeCMS"
+      ]
+    },
+    "html": [
+      "DedeCMS",
+      "dedecms",
+      "powered by dedecms"
+    ],
+    "cookies": {
+      "^DedeUserID|^DedeLoginTime": ".*"
+    },
+    "implies": [
+      "PHP"
+    ],
+    "url": [
+      "/dede/",
+      "/templets/",
+      "/plus/"
+    ]
   },
   {
     "name": "Drupal",
     "category": "CMS",
     "website": "https://www.drupal.org",
-    "meta": { "generator": ["Drupal\\s*([0-9]*)\\;version:\\1"] },
-    "headers": { "x-generator": "Drupal", "x-drupal-cache|x-drupal-dynamic-cache": ".*" },
-    "html": ["Drupal\\.settings", "sites/default/files", "content=\"Drupal"],
-    "implies": ["PHP"]
+    "meta": {
+      "generator": [
+        "Drupal\\s*([0-9]*)\\;version:\\1"
+      ]
+    },
+    "headers": {
+      "x-generator": "Drupal",
+      "x-drupal-cache|x-drupal-dynamic-cache": ".*"
+    },
+    "html": [
+      "Drupal\\.settings",
+      "sites/default/files",
+      "content=\"Drupal"
+    ],
+    "implies": [
+      "PHP"
+    ],
+    "url": [
+      "/sites/",
+      "drupal"
+    ]
   },
   {
     "name": "Joomla",
     "category": "CMS",
     "website": "https://www.joomla.org",
-    "meta": { "generator": ["Joomla!"] },
-    "html": ["content=\"Joomla!", "/media/system/", "/media/jui/"],
-    "headers": { "x-content-encoded-by": "Joomla" },
-    "implies": ["PHP"]
+    "meta": {
+      "generator": [
+        "Joomla!"
+      ]
+    },
+    "html": [
+      "content=\"Joomla!",
+      "/media/system/",
+      "/media/jui/"
+    ],
+    "headers": {
+      "x-content-encoded-by": "Joomla"
+    },
+    "implies": [
+      "PHP"
+    ],
+    "url": [
+      "/media/system",
+      "/administrator/"
+    ]
   },
   {
     "name": "Typecho",
     "category": "CMS",
     "website": "http://typecho.org",
-    "meta": { "generator": ["Typecho\\s*([0-9./]*)\\;version:\\1"] },
-    "html": ["typecho", "Typecho"],
-    "implies": ["PHP"]
+    "meta": {
+      "generator": [
+        "Typecho\\s*([0-9./]*)\\;version:\\1"
+      ]
+    },
+    "html": [
+      "typecho",
+      "Typecho"
+    ],
+    "implies": [
+      "PHP"
+    ],
+    "url": [
+      "typecho"
+    ]
   },
   {
     "name": "Z-Blog",
     "category": "CMS",
     "website": "https://www.zblogcn.com",
-    "meta": { "generator": ["Z-Blog"] },
-    "html": ["zb_system", "Z-BlogPHP"],
-    "implies": ["PHP"]
+    "meta": {
+      "generator": [
+        "Z-Blog"
+      ]
+    },
+    "html": [
+      "zb_system",
+      "Z-BlogPHP"
+    ],
+    "implies": [
+      "PHP"
+    ],
+    "url": [
+      "zb_system"
+    ]
   },
   {
     "name": "Hexo",
     "category": "CMS",
     "website": "https://hexo.io",
-    "meta": { "generator": ["Hexo\\s*([0-9.]*)\\;version:\\1"] },
-    "html": ["hexo"]
+    "meta": {
+      "generator": [
+        "Hexo\\s*([0-9.]*)\\;version:\\1"
+      ]
+    },
+    "html": [
+      "hexo"
+    ]
   },
   {
     "name": "EmpireCMS",
     "category": "CMS",
     "website": "https://www.phome.net",
-    "html": ["EmpireCMS", "帝国CMS", "/e/data/images/"],
-    "implies": ["PHP"]
+    "html": [
+      "EmpireCMS",
+      "帝国CMS",
+      "/e/data/images/"
+    ],
+    "implies": [
+      "PHP"
+    ],
+    "url": [
+      "/e/data"
+    ]
   },
   {
     "name": "phpwind",
     "category": "CMS",
     "website": "https://www.phpwind.net",
-    "meta": { "generator": ["phpwind"] },
-    "html": ["phpwind"],
-    "implies": ["PHP"]
+    "meta": {
+      "generator": [
+        "phpwind"
+      ]
+    },
+    "html": [
+      "phpwind"
+    ],
+    "implies": [
+      "PHP"
+    ],
+    "url": [
+      "phpwind"
+    ]
   },
   {
     "name": "MetInfo",
     "category": "CMS",
     "website": "https://www.metinfo.cn",
-    "meta": { "generator": ["MetInfo\\s*([0-9.]*)\\;version:\\1"] },
-    "html": ["MetInfo", "metinfo"],
-    "implies": ["PHP"]
+    "meta": {
+      "generator": [
+        "MetInfo\\s*([0-9.]*)\\;version:\\1"
+      ]
+    },
+    "html": [
+      "MetInfo",
+      "metinfo"
+    ],
+    "implies": [
+      "PHP"
+    ],
+    "url": [
+      "metinfo"
+    ]
   },
   {
     "name": "MacCMS",
     "category": "CMS",
     "website": "https://maccms.la",
-    "html": ["maccms", "苹果CMS", "MacCMS"]
+    "html": [
+      "maccms",
+      "苹果CMS",
+      "MacCMS"
+    ],
+    "url": [
+      "maccms"
+    ]
   },
   {
     "name": "EyouCMS",
     "category": "CMS",
     "website": "https://www.eyoucms.com",
-    "html": ["eyoucms", "EyouCMS"],
-    "implies": ["PHP"]
+    "html": [
+      "eyoucms",
+      "EyouCMS"
+    ],
+    "implies": [
+      "PHP"
+    ],
+    "url": [
+      "eyoucms"
+    ]
   },
   {
     "name": "PbootCMS",
     "category": "CMS",
     "website": "https://www.pbootcms.com",
-    "html": ["PbootCMS", "pbootcms"],
-    "implies": ["PHP"]
+    "html": [
+      "PbootCMS",
+      "pbootcms"
+    ],
+    "implies": [
+      "PHP"
+    ],
+    "url": [
+      "pbootcms"
+    ]
   },
   {
     "name": "蝉知 CMS",
     "category": "CMS",
     "website": "https://www.chanzhi.org",
-    "html": ["chanzhi", "蝉知"]
+    "html": [
+      "chanzhi",
+      "蝉知"
+    ],
+    "url": [
+      "chanzhi"
+    ]
   }
 ]

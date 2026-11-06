@@ -56,7 +56,9 @@
               <template v-if="column.key === 'status'">
                 <a-badge v-if="record.latest" :status="record.latest.alive ? 'success' : 'error'"
                          :text="record.latest.alive ? '存活' : '失活'" />
-                <span v-else style="color: #a6a6a6">未扫描</span>
+                <a-tag v-if="record.latest?.protection" color="volcano"
+                       style="margin-left: 4px">防护</a-tag>
+                <span v-if="!record.latest" style="color: #a6a6a6">未扫描</span>
               </template>
               <template v-else-if="column.key === 'code'">
                 <a-tag v-if="record.latest?.status_code">{{ record.latest.status_code }}</a-tag>
@@ -212,7 +214,7 @@ const CAT_COLORS = {
   'Web server': 'purple', 'CDN/WAF': 'red', WAF: 'red',
   OA: 'orange', ERP: 'orange', Middleware: 'gold', 'Ops panel': 'gold',
   'DevOps': 'green', 'CI/CD': 'green', 'Database tool': 'green',
-  Analytics: 'green', 'API tool': 'green',
+  Analytics: 'green', 'API tool': 'green', '防护页': 'volcano',
 }
 const catColor = (c) => CAT_COLORS[c] || 'default'
 

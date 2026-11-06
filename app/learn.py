@@ -8,7 +8,7 @@ from pathlib import Path
 from urllib.parse import urljoin, urlsplit
 
 from . import fingerprint as fp
-from . import probe
+from . import probe, traffic
 
 CUSTOM_RULES = Path(__file__).resolve().parent.parent / "rules" / "custom.json"
 
@@ -26,25 +26,38 @@ GENERIC = {
 }
 
 
-def _path_prefixes(html: str, base_url: str) -> list:
-    """Extract ranked candidate path prefixes from src/href attributes."""
-    base = urlsplit(base_url)
+def _prefix_counts(urls: list, base_host: str) -> Counter:
     counts = Counter()
-    for m in ATTR_RE.findall(html):
-        u = m.strip()
-        if u.startswith(("data:", "javascript:", "#", "mailto:")):
-            continue
-        p = urlsplit(urljoin(base_url, u))
-        if p.hostname and base.hostname and p.hostname != base.hostname \
-                and not p.hostname.endswith(base.hostname):
+    for u in urls:
+        p = urlsplit(u)
+        if p.hostname and base_host and p.hostname != base_host \
+                and not p.hostname.endswith(base_host):
             continue
         segs = [s for s in p.path.split("/") if s]
         if not segs or segs[0].lower() in GENERIC:
             continue
-        if len(segs) == 1 and re.search(r"\.(ico|png|jpe?g|gif|svg|css|js|woff2?|map|txt|xml|json)$", segs[0], re.I):
+        if len(segs) == 1 and re.search(
+            r"\.(ico|png|jpe?g|gif|svg|css|js|woff2?|map|txt|xml|json)$",
+            segs[0],
+            re.I,
+        ):
             continue  # single-segment assets are not distinctive
-        prefix = "/" + "/".join(segs[:2]) if len(segs) >= 2 else "/" + segs[0]
-        counts[prefix] += 1
+        counts["/" + "/".join(segs[:2]) if len(segs) >= 2 else "/" + segs[0]] += 1
+    return counts
+
+
+def _path_prefixes(html: str, base_url: str, packet_urls: list = None) -> list:
+    """Rank candidate path prefixes from src/href attrs + all request URLs."""
+    base = urlsplit(base_url)
+    urls = []
+    for m in ATTR_RE.findall(html):
+        u = m.strip()
+        if u.startswith(("data:", "javascript:", "#", "mailto:")):
+            continue
+        urls.append(urljoin(base_url, u))
+    counts = _prefix_counts(urls, base.hostname or "")
+    if packet_urls:
+        counts.update(_prefix_counts(packet_urls, base.hostname or ""))
     return [p for p, _ in counts.most_common(15)]
 
 
@@ -71,20 +84,32 @@ async def extract(url: str, client=None) -> dict:
         resp = await probe.fetch(client, url)
         if not resp["alive"]:
             return {"ok": False, "error": resp["error"], "url": url}
-        favicon = await probe.fetch_favicon_hash(client, resp["final_url"])
-        signals = fp.signals_from_response(resp, favicon)
+
+        # browser pass for richer candidates (all triggered packet URLs)
+        cap = await traffic.capture(resp["final_url"], None, [], [])
+        if cap["ok"]:
+            signals = fp.signals_from_capture(cap, resp)
+            html = signals["html"]
+            packet_urls = signals["urls"]
+        else:
+            favicon = await probe.fetch_favicon_hash(client, resp["final_url"])
+            cap["favicon_hash"] = favicon
+            signals = fp.signals_from_response(resp, favicon)
+            html = resp["html"]
+            packet_urls = []
+
         detected = fp.postprocess(fp.match(signals)["hits"])
         return {
             "ok": True,
             "url": url,
-            "final_url": resp["final_url"],
-            "title": resp["title"],
+            "final_url": signals["url"] or resp["final_url"],
+            "title": signals["title"] or resp["title"],
             "server": resp["server"],
-            "favicon": favicon,
+            "favicon": cap.get("favicon_hash"),
             "meta": {k: v for k, v in signals["meta"].items() if v},
             "cookies": sorted(signals["cookies"].keys()),
-            "paths": _path_prefixes(resp["html"], resp["final_url"]),
-            "keywords": _distinctive_text(resp["html"]),
+            "paths": _path_prefixes(html, resp["final_url"], packet_urls),
+            "keywords": _distinctive_text(html),
             "detected": [
                 {"name": h["name"], "category": h["category"], "confidence": h["confidence"]}
                 for h in detected

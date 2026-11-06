@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS results(
     elapsed_ms INTEGER,
     fingerprints TEXT,
     screenshot TEXT,
+    protection TEXT,
     error TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_results_scan ON results(scan_id);
@@ -60,6 +61,12 @@ def _conn():
 def init():
     conn = _conn()
     conn.executescript(SCHEMA)
+    for col in ("protection TEXT",):
+        try:
+            conn.execute(f"ALTER TABLE results ADD COLUMN {col}")
+        except sqlite3.OperationalError:
+            pass  # column already exists
+    conn.commit()
     conn.close()
 
 
@@ -217,8 +224,8 @@ def save_result(r: dict) -> int:
     conn = _conn()
     cur = conn.execute(
         """INSERT INTO results(scan_id, target_id, url, alive, status_code, final_url,
-                               title, server, elapsed_ms, fingerprints, screenshot, error)
-           VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",
+                               title, server, elapsed_ms, fingerprints, screenshot, protection, error)
+           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
         (
             r.get("scan_id"),
             r.get("target_id"),
@@ -231,6 +238,7 @@ def save_result(r: dict) -> int:
             r.get("elapsed_ms"),
             json.dumps(r.get("fingerprints", []), ensure_ascii=False),
             r.get("screenshot"),
+            r.get("protection"),
             r.get("error"),
         ),
     )
