@@ -49,7 +49,7 @@
                :custom-row="rowClick" :row-class-name="rowClass">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'project'">
-            <router-link :to="`/projects/${record.project_id}`" @click.stop>{{ record.project_name }}</router-link>
+            {{ record.project_name }}
           </template>
           <template v-else-if="column.key === 'kinds'">
             <a-tag v-for="k in parseKinds(record)" :key="k" :color="kindColor(k)">

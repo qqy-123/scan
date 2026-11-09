@@ -17,7 +17,7 @@
     >
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'name'">
-          <router-link :to="`/projects/${record.id}`">{{ record.name }}</router-link>
+          <span style="font-weight: 500">{{ record.name }}</span>
         </template>
         <template v-else-if="column.key === 'alive'">
           <a-badge status="success" :text="String(record.alive_count)" />
