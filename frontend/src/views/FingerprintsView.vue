@@ -105,7 +105,8 @@
     <!-- 指纹库 -->
     <a-card :bordered="false" :title="`指纹库（${rules.filter(r => !r.disabled).length} 生效 / ${rules.length} 总计）`">
       <a-table :data-source="rules" :columns="ruleCols" row-key="name" size="small"
-               :pagination="{ pageSize: 20 }">
+               :pagination="{ pageSize: 20, showSizeChanger: true, showQuickJumper: true,
+                             showTotal: (t) => `共 ${t} 条` }">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'signals'">
             <a-tag v-for="(v, k) in record.signals" :key="k" style="margin-bottom: 4px">
@@ -121,7 +122,7 @@
           <template v-else-if="column.key === 'op'">
             <a-space :size="6">
               <a-button size="small" @click="openEdit(record)">编辑</a-button>
-              <a-button v-if="record.disabled" size="small" type="primary" ghost
+              <a-button v-if="record.disabled" size="small"
                         @click="toggleRule(record, false)">启用</a-button>
               <a-button v-else size="small" @click="toggleRule(record, true)">禁用</a-button>
               <a-popconfirm v-if="record.file === 'custom.json' && !record.disabled"
@@ -135,7 +136,7 @@
     </a-card>
 
     <!-- 编辑规则：结构化 + JSON 双模式 -->
-    <a-modal v-model:open="showEdit" :title="`编辑指纹：${edit.name || editName}`" width="780px"
+    <a-modal v-model:open="showEdit" :title="`编辑指纹：${edit.name || editName}`" width="800px"
              ok-text="保存" cancel-text="取消" @ok="saveEdit">
       <div style="color: #a6a6a6; font-size: 12px; margin-bottom: 8px">
         所有字段均可修改，保存到 custom.json 同名覆盖内置；删除自定义覆盖即恢复。

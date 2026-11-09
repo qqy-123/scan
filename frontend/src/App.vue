@@ -1,5 +1,5 @@
 <template>
-  <a-config-provider :theme="theme">
+  <a-config-provider :theme="theme" :locale="zhCN">
     <router-view v-if="route.name === 'login'" />
     <a-layout v-else class="app">
       <!-- ARTEX-style light sidebar -->
@@ -87,6 +87,7 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Modal } from 'ant-design-vue'
+import zhCN from 'ant-design-vue/es/locale/zh_CN'
 import {
   AimOutlined,
   DashboardOutlined,
@@ -101,15 +102,16 @@ const route = useRoute()
 const router = useRouter()
 const collapsed = ref(false)
 
-// monochrome theme: black primary buttons like ARTEX
+// CIDADS 00032-2026: controls 4px radius, modals/cards 8px, links blue
 const theme = {
   token: {
     colorPrimary: '#0a0a0a',
-    colorLink: '#0a0a0a',
+    colorLink: '#1677ff',
     colorInfo: '#0a0a0a',
-    borderRadius: 8,
+    borderRadius: 4,
+    borderRadiusLG: 8,
     fontFamily:
-      '"PingFang SC", "Microsoft YaHei", Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif',
+      '"Helvetica Neue", "Microsoft YaHei", "PingFang SC", Roboto, Helvetica, Arial, sans-serif',
   },
 }
 
@@ -165,8 +167,8 @@ const showAbout = () =>
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 16px 18px;
+  gap: 8px;
+  padding: 16px 20px;
 }
 .logo {
   width: 22px;
@@ -191,13 +193,13 @@ const showAbout = () =>
 .nav-group {
   font-size: 11px;
   color: var(--gray-40);
-  padding: 16px 10px 6px;
+  padding: 16px 12px 8px;
 }
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
+  gap: 8px;
+  padding: 8px 12px;
   border-radius: 8px;
   font-size: 13.5px;
   color: var(--gray-80);
@@ -220,7 +222,7 @@ const showAbout = () =>
   background: none;
 }
 .nav-icon {
-  font-size: 15px;
+  font-size: 16px;
   flex-shrink: 0;
 }
 .soon {
@@ -230,14 +232,14 @@ const showAbout = () =>
 }
 .collapsed .nav-item {
   justify-content: center;
-  padding: 10px;
+  padding: 12px;
 }
 
 .sider-foot {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 18px;
+  gap: 8px;
+  padding: 16px 20px;
   border-top: 1px solid var(--gray-20);
   font-size: 13px;
   color: var(--gray-80);
@@ -261,7 +263,7 @@ const showAbout = () =>
   z-index: 10;
 }
 .tb-btn {
-  font-size: 15px;
+  font-size: 16px;
   color: var(--gray-60);
   cursor: pointer;
 }

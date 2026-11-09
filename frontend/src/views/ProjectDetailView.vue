@@ -35,8 +35,6 @@
               <template #icon><ReloadOutlined /></template>二次扫描
             </a-button>
             <a-button
-              type="primary"
-              ghost
               :disabled="!aliveCount || !!expRunning"
               @click="showExposure = true"
             >
@@ -71,7 +69,8 @@
             :columns="targetCols"
             row-key="id"
             size="middle"
-            :pagination="{ pageSize: 20, showSizeChanger: true }"
+            :pagination="{ pageSize: 20, showSizeChanger: true, showQuickJumper: true,
+                           showTotal: (t) => `共 ${t} 条` }"
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'status'">
@@ -113,7 +112,7 @@
             :columns="scanCols"
             row-key="id"
             size="middle"
-            :pagination="{ pageSize: 10 }"
+            :pagination="{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }"
             :custom-row="scanRowClick"
             :row-class-name="scanRowClass"
           >
@@ -133,7 +132,7 @@
                 />
               </template>
               <template v-else-if="column.key === 'op'">
-                <a-button size="small" type="primary" :disabled="record.status !== 'done'"
+                <a-button size="small" :disabled="record.status !== 'done'"
                           @click="viewScan(record)">查看</a-button>
               </template>
             </template>
@@ -158,7 +157,8 @@
               :columns="resultCols"
               row-key="id"
               size="small"
-              :pagination="{ pageSize: 10, showSizeChanger: true }"
+              :pagination="{ pageSize: 10, showSizeChanger: true, showQuickJumper: true,
+                            showTotal: (t) => `共 ${t} 条` }"
               :loading="scanResults[selectedScan.id] === undefined"
             >
               <template #bodyCell="{ column, record: r }">
@@ -194,7 +194,7 @@
             :columns="expCols"
             row-key="id"
             size="middle"
-            :pagination="{ pageSize: 10 }"
+            :pagination="{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }"
             v-model:expandedRowKeys="expExpanded"
           >
             <template #bodyCell="{ column, record }">
@@ -219,7 +219,7 @@
               </template>
               <template v-else-if="column.key === 'op'">
                 <a-space :size="6">
-                  <a-button size="small" type="primary" :disabled="record.status !== 'done'"
+                  <a-button size="small" :disabled="record.status !== 'done'"
                             @click="expExpanded = expExpanded.includes(record.id) ? [] : [record.id]">查看</a-button>
                   <a-button v-if="record.status === 'done' && record.deep_status !== 'running'"
                             size="small" @click="deepScan(record.id)">
@@ -249,7 +249,7 @@
 
     <!-- 导入目标 -->
     <a-modal v-model:open="showImport" title="导入目标" ok-text="导入" cancel-text="取消"
-             @ok="doImport">
+             width="640px" @ok="doImport">
       <a-tabs>
         <a-tab-pane key="text" tab="粘贴 URL">
           <a-textarea v-model:value="importText" :rows="8"
@@ -266,7 +266,7 @@
 
     <!-- 编辑项目 -->
     <a-modal v-model:open="showEditProject" title="编辑项目" ok-text="保存" cancel-text="取消"
-             @ok="saveProject">
+             width="480px" @ok="saveProject">
       <a-form layout="vertical">
         <a-form-item label="项目名称" required>
           <a-input v-model:value="editProjectForm.name" />
@@ -279,7 +279,7 @@
 
     <!-- 编辑目标 URL -->
     <a-modal v-model:open="showEditTarget" title="编辑目标 URL" ok-text="保存" cancel-text="取消"
-             @ok="saveTarget">
+             width="480px" @ok="saveTarget">
       <a-form layout="vertical">
         <a-form-item label="URL" required>
           <a-input v-model:value="editTargetUrl" class="mono" />
@@ -289,7 +289,7 @@
 
     <!-- 发起扫描 -->
     <a-modal v-model:open="showScan" title="发起扫描" ok-text="开始" cancel-text="取消"
-             @ok="startScan()">
+             width="480px" @ok="startScan()">
       <a-form layout="vertical">
         <a-form-item label="扫描范围">
           <a-radio-group v-model:value="scanOpts.scope">

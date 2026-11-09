@@ -45,7 +45,8 @@
         </a-button>
       </template>
       <a-table :data-source="runs" :columns="runCols" row-key="id" size="small"
-               :pagination="{ pageSize: 8 }" :loading="loading"
+               :pagination="{ pageSize: 8, showSizeChanger: true, showQuickJumper: true,
+                             showTotal: (t) => `共 ${t} 条` }" :loading="loading"
                :custom-row="rowClick" :row-class-name="rowClass">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'project'">
@@ -74,7 +75,7 @@
           </template>
           <template v-else-if="column.key === 'op'">
             <a-space :size="6">
-              <a-button size="small" type="primary" @click.stop="viewRun(record)">查看</a-button>
+              <a-button size="small" @click.stop="viewRun(record)">查看</a-button>
               <a-button v-if="record.status === 'done' && record.deep_status !== 'running'"
                         size="small" @click.stop="deepScan(record.id)">
                 {{ record.deep_status === 'done' ? '重新深扫' : '深扫' }}

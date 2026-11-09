@@ -54,7 +54,7 @@
         <a-card :bordered="false">
           <template #title><ThunderboltOutlined /> 最近扫描</template>
           <template #extra>
-            <a-button size="small" @click="router.push('/projects')">全部 →</a-button>
+            <a-button type="link" size="small" @click="router.push('/projects')">全部 →</a-button>
           </template>
           <div v-if="data?.recent_scans?.length" class="feed">
             <div v-for="s in data.recent_scans" :key="s.id" class="feed-item">
@@ -69,7 +69,7 @@
                 </div>
               </div>
               <div class="feed-time">{{ ago(s.started_at) }}</div>
-              <a-button size="small" type="primary" ghost
+              <a-button size="small"
                         @click="router.push(`/projects/${s.project_id}?tab=scans&scan=${s.id}`)">查看</a-button>
             </div>
           </div>
@@ -80,12 +80,12 @@
         <a-card :bordered="false">
           <template #title><DatabaseOutlined /> 项目存活概览</template>
           <template #extra>
-            <a-button size="small" @click="router.push('/projects')">全部 →</a-button>
+            <a-button type="link" size="small" @click="router.push('/projects')">全部 →</a-button>
           </template>
           <div v-if="projects.length" class="plist">
             <div v-for="p in projects" :key="p.id" class="plist-item">
               <div class="plist-name">{{ p.name }}</div>
-              <a-button size="small" type="primary" ghost style="flex-shrink: 0"
+              <a-button size="small" style="flex-shrink: 0"
                         @click="router.push(`/projects/${p.id}`)">查看</a-button>
               <div class="pbar">
                 <div class="seg green" :style="{ width: pct(p.alive_count, p) }" />

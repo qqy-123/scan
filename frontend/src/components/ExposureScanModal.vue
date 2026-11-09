@@ -1,6 +1,7 @@
 <template>
   <a-modal :open="open" title="发起暴露面测绘" ok-text="开始测绘" cancel-text="取消"
-           :confirm-loading="starting" @ok="start" @cancel="$emit('update:open', false)">
+           width="640px" :confirm-loading="starting"
+           @ok="start" @cancel="$emit('update:open', false)">
     <a-form layout="vertical">
       <a-form-item v-if="!project" label="选择项目">
         <a-select v-model:value="pid" placeholder="选择要测绘的项目" :options="projectOptions"

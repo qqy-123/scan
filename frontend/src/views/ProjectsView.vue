@@ -13,7 +13,8 @@
       :columns="columns"
       :loading="loading"
       row-key="id"
-      :pagination="{ pageSize: 20 }"
+      :pagination="{ pageSize: 20, showSizeChanger: true, showQuickJumper: true,
+                     showTotal: (t) => `共 ${t} 条` }"
     >
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'name'">
@@ -29,7 +30,7 @@
         </template>
         <template v-else-if="column.key === 'op'">
           <a-space :size="6">
-            <a-button size="small" type="primary" @click="router.push(`/projects/${record.id}`)">查看</a-button>
+            <a-button size="small" @click="router.push(`/projects/${record.id}`)">查看</a-button>
             <a-button size="small" @click="openEdit(record)">编辑</a-button>
             <a-popconfirm
               title="删除项目及其全部目标和扫描记录？"
@@ -49,6 +50,7 @@
 
     <a-modal
       v-model:open="showForm"
+      width="480px"
       :title="editing ? '编辑项目' : '新建项目'"
       :ok-text="editing ? '保存' : '创建'"
       cancel-text="取消"
