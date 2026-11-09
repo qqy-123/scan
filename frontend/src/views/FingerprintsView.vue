@@ -119,13 +119,14 @@
             <a-tag v-else>{{ record.file }}</a-tag>
           </template>
           <template v-else-if="column.key === 'op'">
-            <a-space>
-              <a @click="openEdit(record)">编辑</a>
-              <a v-if="record.disabled" @click="toggleRule(record, false)">启用</a>
-              <a v-else @click="toggleRule(record, true)">禁用</a>
+            <a-space :size="6">
+              <a-button size="small" @click="openEdit(record)">编辑</a-button>
+              <a-button v-if="record.disabled" size="small" type="primary" ghost
+                        @click="toggleRule(record, false)">启用</a-button>
+              <a-button v-else size="small" @click="toggleRule(record, true)">禁用</a-button>
               <a-popconfirm v-if="record.file === 'custom.json' && !record.disabled"
                             title="删除自定义规则？" ok-text="删除" @confirm="delRule(record.name)">
-                <a style="color: #cf1322">删除</a>
+                <a-button size="small" danger>删除</a-button>
               </a-popconfirm>
             </a-space>
           </template>
@@ -163,9 +164,10 @@
                 <a-input v-model:value="row.k" :placeholder="f.kph" style="width: 220px" size="small" />
                 <a-select v-model:value="row.p" mode="tags" :open="false" size="small"
                           placeholder="匹配模式（回车添加多条）" style="flex: 1" />
-                <a @click="edit.maps[f.key].splice(i, 1)" style="color: #cf1322">删</a>
+                <a-button size="small" danger type="text"
+                          @click="edit.maps[f.key].splice(i, 1)">删</a-button>
               </div>
-              <a @click="edit.maps[f.key].push({ k: '', p: [] })" style="font-size: 12px">+ 添加</a>
+              <a-button size="small" @click="edit.maps[f.key].push({ k: '', p: [] })">+ 添加</a-button>
             </a-form-item>
 
             <a-form-item label="dom（选择器 → 条件 JSON，可选）">

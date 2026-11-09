@@ -73,20 +73,22 @@
             <span v-else style="color: #bfbfbf">-</span>
           </template>
           <template v-else-if="column.key === 'op'">
-            <a v-if="record.status === 'done' && record.deep_status !== 'running'"
-               style="margin-right: 10px" @click.stop="deepScan(record.id)">
-              {{ record.deep_status === 'done' ? '重新深扫' : '深扫' }}
-            </a>
-            <a-popconfirm title="删除该次测绘及结果？" @confirm="del(record.id)">
-              <a style="color: #cf1322" @click.stop>删除</a>
-            </a-popconfirm>
+            <a-space :size="6">
+              <a-button v-if="record.status === 'done' && record.deep_status !== 'running'"
+                        size="small" @click.stop="deepScan(record.id)">
+                {{ record.deep_status === 'done' ? '重新深扫' : '深扫' }}
+              </a-button>
+              <a-popconfirm title="删除该次测绘及结果？" @confirm="del(record.id)">
+                <a-button size="small" danger @click.stop>删除</a-button>
+              </a-popconfirm>
+            </a-space>
           </template>
         </template>
       </a-table>
       <a-empty v-if="!loading && !runs.length">
         <template #description>
           还没有测绘记录
-          <a-button type="link" size="small" @click="showScan = true">立即发起测绘</a-button>
+          <a-button type="primary" size="small" @click="showScan = true">立即发起测绘</a-button>
         </template>
       </a-empty>
     </a-card>

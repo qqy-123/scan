@@ -30,7 +30,7 @@
       <div class="opt-group">
         网络空间测绘
         <a-tooltip title="在「系统配置 → 网络空间测绘 API」里配置 key">
-          <a href="/settings" target="_blank" class="opt-link">去配置 →</a>
+          <a-button size="small" href="/settings" target="_blank">去配置</a-button>
         </a-tooltip>
       </div>
       <a-form-item>

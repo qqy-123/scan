@@ -94,11 +94,12 @@
                 <span v-else>-</span>
               </template>
               <template v-else-if="column.key === 'op'">
-                <a-space>
-                  <router-link v-if="record.latest" :to="`/results/${record.latest.id}`">详情</router-link>
-                  <a @click="openEditTarget(record)">编辑</a>
+                <a-space :size="6">
+                  <a-button v-if="record.latest" size="small"
+                            @click="router.push(`/results/${record.latest.id}`)">详情</a-button>
+                  <a-button size="small" @click="openEditTarget(record)">编辑</a-button>
                   <a-popconfirm title="删除该目标？" @confirm="delTarget(record.id)">
-                    <a style="color: #cf1322">删除</a>
+                    <a-button size="small" danger>删除</a-button>
                   </a-popconfirm>
                 </a-space>
               </template>
@@ -172,7 +173,7 @@
                   <span v-else>-</span>
                 </template>
                 <template v-else-if="column.key === 'detail'">
-                  <router-link :to="`/results/${r.id}`">详情</router-link>
+                  <a-button size="small" @click="router.push(`/results/${r.id}`)">详情</a-button>
                 </template>
                 <template v-else-if="column.key === 'final_url'">
                   <a :href="r.final_url" target="_blank" rel="noopener" class="mono"
@@ -213,14 +214,15 @@
                 <span v-else style="color: #bfbfbf">-</span>
               </template>
               <template v-else-if="column.key === 'op'">
-                <a v-if="record.status === 'done' && record.deep_status !== 'running'"
-                   style="margin-right: 10px"
-                   @click="deepScan(record.id)">
-                  {{ record.deep_status === 'done' ? '重新深扫' : '深扫' }}
-                </a>
-                <a-popconfirm title="删除该次测绘及结果？" @confirm="delExposure(record.id)">
-                  <a style="color: #cf1322">删除</a>
-                </a-popconfirm>
+                <a-space :size="6">
+                  <a-button v-if="record.status === 'done' && record.deep_status !== 'running'"
+                            size="small" @click="deepScan(record.id)">
+                    {{ record.deep_status === 'done' ? '重新深扫' : '深扫' }}
+                  </a-button>
+                  <a-popconfirm title="删除该次测绘及结果？" @confirm="delExposure(record.id)">
+                    <a-button size="small" danger>删除</a-button>
+                  </a-popconfirm>
+                </a-space>
               </template>
             </template>
             <template #expandedRowRender="{ record }">

@@ -28,15 +28,15 @@
           <span class="mono">{{ record.created_at }}</span>
         </template>
         <template v-else-if="column.key === 'op'">
-          <a-space>
-            <a @click="openEdit(record)">编辑</a>
+          <a-space :size="6">
+            <a-button size="small" @click="openEdit(record)">编辑</a-button>
             <a-popconfirm
               title="删除项目及其全部目标和扫描记录？"
               ok-text="删除"
               cancel-text="取消"
               @confirm="delProject(record.id)"
             >
-              <a style="color: #cf1322">删除</a>
+              <a-button size="small" danger>删除</a-button>
             </a-popconfirm>
           </a-space>
         </template>
