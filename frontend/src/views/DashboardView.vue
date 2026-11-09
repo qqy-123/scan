@@ -62,10 +62,11 @@
                 {{ s.kind === 'rescan' ? '二次' : '全量' }}
               </a-tag>
               <div class="feed-body">
-                <router-link :to="`/projects/${s.project_id}`" class="feed-title">
+                <router-link :to="`/projects/${s.project_id}?tab=scans&scan=${s.id}`" class="feed-title">
                   {{ s.project_name }}
                 </router-link>
                 <div class="feed-desc">
+                  轮次 #{{ s.id }} ·
                   {{ s.status === 'running' ? `进行中 ${s.done}/${s.total}` : `存活 ${s.alive}/${s.total}` }}
                 </div>
               </div>

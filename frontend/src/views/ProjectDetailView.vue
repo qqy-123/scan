@@ -113,6 +113,8 @@
             row-key="id"
             size="middle"
             :pagination="{ pageSize: 10 }"
+            :custom-row="scanRowClick"
+            :row-class-name="scanRowClass"
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'kind'">
@@ -130,37 +132,57 @@
                 />
               </template>
             </template>
-            <template #expandedRowRender="{ record }">
-              <a-table
-                :data-source="scanResults[record.id] || []"
-                :columns="resultCols"
-                row-key="id"
-                size="small"
-                :pagination="{ pageSize: 10 }"
-              >
-                <template #bodyCell="{ column, record: r }">
-                  <template v-if="column.key === 'alive'">
-                    <a-badge :status="r.alive ? 'success' : 'error'"
-                             :text="r.alive ? '存活' : '失活'" />
-                  </template>
-                  <template v-else-if="column.key === 'fps'">
-                    <a-tag v-for="f in parseFps(r)" :key="f.name" :color="catColor(f.category)">
-                      {{ f.name }}{{ f.version ? ' ' + f.version : '' }}
-                    </a-tag>
-                  </template>
-                  <template v-else-if="column.key === 'shot'">
-                    <router-link v-if="r.screenshot" :to="`/results/${r.id}`">
-                      <img class="shot-thumb" :src="`/screenshots/${r.screenshot}`" />
-                    </router-link>
-                    <span v-else>-</span>
-                  </template>
-                </template>
-              </a-table>
-            </template>
-            <template #expandColumnTitle>
-              <span />
-            </template>
           </a-table>
+          <a-empty v-if="!project?.scans?.length" description="还没有扫描记录" />
+
+          <template v-if="selectedScan">
+            <div class="result-head">
+              <span class="result-title">
+                扫描结果 · 轮次 #{{ selectedScan.id }}
+                <a-tag :color="selectedScan.kind === 'rescan' ? 'purple' : 'blue'"
+                       style="margin-left: 8px">
+                  {{ selectedScan.kind === 'rescan' ? '二次扫描' : '全量扫描' }}
+                </a-tag>
+                <a-tag color="default">存活 {{ selectedScan.alive }}/{{ selectedScan.total }}</a-tag>
+              </span>
+              <a-input-search v-model:value="scanKw" placeholder="过滤 URL / 标题 / 指纹"
+                              style="width: 240px" size="small" allow-clear />
+            </div>
+            <a-table
+              :data-source="filteredScanResults"
+              :columns="resultCols"
+              row-key="id"
+              size="small"
+              :pagination="{ pageSize: 10, showSizeChanger: true }"
+              :loading="scanResults[selectedScan.id] === undefined"
+            >
+              <template #bodyCell="{ column, record: r }">
+                <template v-if="column.key === 'alive'">
+                  <a-badge :status="r.alive ? 'success' : 'error'"
+                           :text="r.alive ? '存活' : '失活'" />
+                  <a-tag v-if="r.protection" color="volcano" style="margin-left: 4px">防护</a-tag>
+                </template>
+                <template v-else-if="column.key === 'fps'">
+                  <a-tag v-for="f in parseFps(r)" :key="f.name" :color="catColor(f.category)">
+                    {{ f.name }}{{ f.version ? ' ' + f.version : '' }}
+                  </a-tag>
+                </template>
+                <template v-else-if="column.key === 'shot'">
+                  <router-link v-if="r.screenshot" :to="`/results/${r.id}`">
+                    <img class="shot-thumb" :src="`/screenshots/${r.screenshot}`" />
+                  </router-link>
+                  <span v-else>-</span>
+                </template>
+                <template v-else-if="column.key === 'detail'">
+                  <router-link :to="`/results/${r.id}`">详情</router-link>
+                </template>
+                <template v-else-if="column.key === 'final_url'">
+                  <a :href="r.final_url" target="_blank" rel="noopener" class="mono"
+                     style="word-break: break-all">{{ r.final_url }}</a>
+                </template>
+              </template>
+            </a-table>
+          </template>
         </a-tab-pane>
 
         <a-tab-pane key="exposure" :tab="`暴露面 (${expRuns.length})`">
@@ -303,7 +325,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { Modal, message } from 'ant-design-vue'
 import { EllipsisOutlined } from '@ant-design/icons-vue'
 import api from '../api'
@@ -312,6 +334,7 @@ import ExposureResults from '../components/ExposureResults.vue'
 const props = defineProps({ id: String })
 const pid = Number(props.id)
 const router = useRouter()
+const route = useRoute()
 
 const project = ref(null)
 const running = ref(null)
@@ -453,13 +476,40 @@ async function delExposure(id) {
 }
 
 const resultCols = [
-  { title: '状态', key: 'alive', width: 80 },
-  { title: 'URL', dataIndex: 'final_url', ellipsis: true },
-  { title: 'HTTP', dataIndex: 'status_code', width: 80 },
+  { title: '状态', key: 'alive', width: 100 },
+  { title: 'URL', key: 'final_url', ellipsis: true },
+  { title: 'HTTP', dataIndex: 'status_code', width: 70 },
   { title: '标题', dataIndex: 'title', ellipsis: true },
   { title: '指纹', key: 'fps' },
-  { title: '截图', key: 'shot', width: 140 },
+  { title: '截图', key: 'shot', width: 130 },
+  { title: '操作', key: 'detail', width: 70 },
 ]
+
+// 轮次点选 -> 下方直接展示该轮扫描结果
+const selectedScan = ref(null)
+const scanKw = ref('')
+
+const scanRowClick = (record) => ({
+  onClick: () => {
+    if (record.status !== 'done') return
+    selectedScan.value = record
+    scanKw.value = ''
+    if (!scanResults[record.id]) loadScanResults(record.id)
+  },
+})
+const scanRowClass = (record) =>
+  (selectedScan.value?.id === record.id ? 'row-selected ' : '') +
+  (record.status === 'done' ? 'row-clickable' : 'row-disabled')
+
+const filteredScanResults = computed(() => {
+  const rows = scanResults[selectedScan.value?.id] || []
+  const kw = scanKw.value.trim().toLowerCase()
+  if (!kw) return rows
+  return rows.filter((r) =>
+    [r.final_url, r.url, r.title, r.fingerprints, r.protection]
+      .filter(Boolean).join(' ').toLowerCase().includes(kw)
+  )
+})
 
 async function load() {
   const { data } = await api.getProject(pid)
@@ -474,10 +524,19 @@ async function load() {
   loadExposure()
   project.value = data
   running.value = data.running
-  for (const s of data.scans) {
-    if (!scanResults[s.id] && s.status === 'done') {
-      loadScanResults(s.id)
+  // ?tab=scans&scan=N 直达指定轮次；否则默认选中最新一轮已完成的扫描
+  if (route.query.tab === 'scans') tab.value = 'scans'
+  const wantScan = Number(route.query.scan) || null
+  if (!selectedScan.value) {
+    const pick = (wantScan && data.scans.find((s) => s.id === wantScan))
+      || data.scans.find((s) => s.status === 'done')
+    if (pick) {
+      selectedScan.value = pick
+      if (pick.status === 'done') loadScanResults(pick.id)
     }
+  } else {
+    const cur = data.scans.find((s) => s.id === selectedScan.value.id)
+    if (cur) selectedScan.value = cur
   }
   if (running.value && !timer) startPolling()
 }
@@ -493,8 +552,11 @@ function startPolling() {
     if (!running.value) {
       clearInterval(timer)
       timer = null
-      const last = project.value?.scans?.[0]
-      if (last) await loadScanResults(last.id)
+      const last = project.value?.scans?.find((s) => s.status === 'done')
+      if (last) {
+        selectedScan.value = last
+        await loadScanResults(last.id)
+      }
       message.success('扫描完成')
     }
   }, 2500)

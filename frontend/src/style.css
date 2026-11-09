@@ -103,6 +103,20 @@ a:hover {
   border-radius: 10px;
 }
 
+/* selectable scan-run rows */
+.row-clickable > td { cursor: pointer; }
+.row-selected > td { background: #f0f5ff !important; }
+.row-disabled > td { cursor: default; }
+
+/* header row above inline scan results */
+.result-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 18px 0 10px;
+}
+.result-title { font-weight: 600; font-size: 14px; }
+
 .mono {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 12px;
