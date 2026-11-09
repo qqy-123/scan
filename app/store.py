@@ -156,6 +156,11 @@ DEFAULT_SETTINGS = {
     "screenshot": True,         # 扫描默认开启截图
     "connect_timeout": 8,       # httpx 连接超时（秒）
     "read_timeout": 15,         # httpx 读取超时（秒）
+    # 网络空间测绘 API keys（可选配置，配置后暴露面扫描可勾选）
+    "fofa_email": "",           # FOFA 账号邮箱
+    "fofa_key": "",             # FOFA API key
+    "hunter_key": "",           # 奇安信鹰图 API key
+    "quake_key": "",            # 360 Quake API key
 }
 
 
@@ -539,6 +544,24 @@ def delete_exposure_run(rid: int):
     conn.execute("DELETE FROM exposure_runs WHERE id=?", (rid,))
     conn.commit()
     conn.close()
+
+
+def exposure_stats() -> dict:
+    """Aggregate counters for the exposure overview strip."""
+    conn = _conn()
+    def one(q):
+        return conn.execute(q).fetchone()["n"]
+    d = {
+        "runs": one("SELECT COUNT(*) AS n FROM exposure_runs"),
+        "findings": one("SELECT COUNT(*) AS n FROM exposure_results"),
+        "surfaces": one(
+            "SELECT COUNT(*) AS n FROM exposure_results WHERE surface=1"),
+        "projects": one(
+            "SELECT COUNT(DISTINCT project_id) AS n FROM exposure_runs"),
+    }
+    conn.close()
+    d["infos"] = d["findings"] - d["surfaces"]
+    return d
 
 
 # ---------- exposure deep scan (攻击面深扫: 指纹+截图) ----------

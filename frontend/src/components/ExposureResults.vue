@@ -95,9 +95,11 @@ const cols = [
 ]
 
 const kindColor = (k) =>
-  ({ js: 'cyan', dir: 'blue', leak: 'magenta', vuln: 'red', point: 'volcano' })[k] || 'default'
+  ({ js: 'cyan', dir: 'blue', leak: 'magenta', vuln: 'red', point: 'volcano',
+     sub: 'purple', host: 'volcano', net: 'green' })[k] || 'default'
 const kindLabel = (k) =>
-  ({ js: 'JS', dir: 'DIR', leak: '泄露', vuln: '漏洞', point: '攻击点' })[k] || k
+  ({ js: 'JS', dir: 'DIR', leak: '泄露', vuln: '漏洞', point: '攻击点',
+     sub: '子域', host: 'Host碰撞', net: '测绘' })[k] || k
 const statusColor = (s) =>
   s < 300 ? 'green' : s < 400 ? 'geekblue' : s === 401 || s === 403 ? 'orange' : 'red'
 const hintColor = (h) =>

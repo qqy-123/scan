@@ -55,6 +55,39 @@
             这些值作为「发起扫描」弹窗的默认值和引擎的全局参数；单次扫描仍可在弹窗里覆盖。
           </div>
         </a-card>
+
+        <a-card :bordered="false" title="网络空间测绘 API" style="margin-bottom: 16px">
+          <a-form layout="vertical">
+            <a-row :gutter="16">
+              <a-col :span="12">
+                <a-form-item label="FOFA 邮箱">
+                  <a-input v-model:value="form.fofa_email" placeholder="fofa.info 账号邮箱" />
+                </a-form-item>
+              </a-col>
+              <a-col :span="12">
+                <a-form-item label="FOFA Key">
+                  <a-input-password v-model:value="form.fofa_key" placeholder="fofa.info API key" />
+                </a-form-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="16">
+              <a-col :span="12">
+                <a-form-item label="Hunter（鹰图）Key">
+                  <a-input-password v-model:value="form.hunter_key" placeholder="hunter.qianxin.com API key" />
+                </a-form-item>
+              </a-col>
+              <a-col :span="12">
+                <a-form-item label="Quake（360）Key">
+                  <a-input-password v-model:value="form.quake_key" placeholder="quake.360.net API key" />
+                </a-form-item>
+              </a-col>
+            </a-row>
+          </a-form>
+          <div style="color: #a6a6a6; font-size: 12px">
+            用于暴露面扫描的「网络空间测绘」选项（FOFA / 鹰图 / Quake 资产搜索）。
+            已配置的 key 以 **** 掩码显示，输入新值才会覆盖，留空保存不会改变已存 key。
+          </div>
+        </a-card>
       </a-col>
 
       <a-col :span="10">
@@ -98,6 +131,10 @@ const DEFAULTS = {
   screenshot: true,
   connect_timeout: 8,
   read_timeout: 15,
+  fofa_email: '',
+  fofa_key: '',
+  hunter_key: '',
+  quake_key: '',
 }
 
 const form = reactive({ ...DEFAULTS })
@@ -109,6 +146,10 @@ async function save() {
   saving.value = true
   try {
     const payload = { ...form }
+    // 留空或掩码显示的 key 不提交 —— 只有输入新值才覆盖已存 key
+    for (const k of ['fofa_key', 'hunter_key', 'quake_key']) {
+      if (!payload[k] || payload[k].includes('****')) delete payload[k]
+    }
     if (newPassword.value) {
       if (newPassword.value.length < 6) {
         message.warning('密码至少 6 位')
@@ -131,7 +172,8 @@ async function save() {
 }
 
 function reset() {
-  Object.assign(form, DEFAULTS)
+  const { fofa_email, fofa_key, hunter_key, quake_key, ...rest } = DEFAULTS
+  Object.assign(form, rest)  // keys are not part of "恢复默认"
 }
 
 onMounted(async () => {

@@ -196,8 +196,8 @@
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'kinds'">
-                <a-tag v-for="k in parseKinds(record)" :key="k" :color="k === 'js' ? 'cyan' : 'blue'">
-                  {{ k === 'js' ? 'JS接口' : '目录爆破' }}
+                <a-tag v-for="k in parseKinds(record)" :key="k" :color="expKindColor(k)">
+                  {{ expKindLabel(k) }}
                 </a-tag>
               </template>
               <template v-else-if="column.key === 'status'">
@@ -239,7 +239,7 @@
 
     <!-- 暴露面扫描 -->
     <a-modal v-model:open="showExposure" title="暴露面扫描" ok-text="开始" cancel-text="取消"
-             @ok="startExposure">
+             width="560px" @ok="startExposure">
       <a-form layout="vertical">
         <a-form-item label="扫描范围">
           <a-radio-group v-model:value="expOpts.scope">
@@ -247,11 +247,36 @@
             <a-radio value="all">全部目标（{{ project?.targets?.length || 0 }}）</a-radio>
           </a-radio-group>
         </a-form-item>
-        <a-form-item label="扫描方式">
-          <a-checkbox-group v-model:value="expOpts.kinds">
+        <div class="opt-group">站内测绘</div>
+        <a-form-item>
+          <a-checkbox-group v-model:value="expOpts.kinds" class="opt-list">
             <a-checkbox value="js">JS 接口提取（隐藏 API / 后台路径 / sourcemap + 参数攻击点分类 + 敏感信息检测）</a-checkbox>
             <a-checkbox value="dir">目录爆破（内置字典探测后台 / 备份 / 配置，命中页检测 SQL 报错与敏感信息）</a-checkbox>
           </a-checkbox-group>
+        </a-form-item>
+        <div class="opt-group">域名扩展</div>
+        <a-form-item>
+          <a-checkbox-group v-model:value="expOpts.kinds" class="opt-list">
+            <a-checkbox value="sub">子域名收集（crt.sh 证书透明日志，解析到的自动探活）</a-checkbox>
+            <a-checkbox value="brute">子域爆破（内置字典 DNS 枚举 + HTTP 验证）</a-checkbox>
+            <a-checkbox value="host">Host 碰撞（对目标 IP 换 Host 头探隐藏虚拟主机，依赖子域发现结果）</a-checkbox>
+          </a-checkbox-group>
+        </a-form-item>
+        <div class="opt-group">
+          网络空间测绘
+          <a-tooltip title="在「系统配置 → 网络空间测绘 API」里配置 key">
+            <a href="/settings" target="_blank" class="opt-link">去配置 →</a>
+          </a-tooltip>
+        </div>
+        <a-form-item>
+          <a-checkbox-group v-model:value="expOpts.kinds" class="opt-list">
+            <a-checkbox value="net" :disabled="!engines.any">
+              资产搜索引擎（{{ engines.fofa ? 'FOFA✓ ' : 'FOFA✗ ' }}{{ engines.hunter ? '· 鹰图✓ ' : '· 鹰图✗ ' }}{{ engines.quake ? '· Quake✓' : '· Quake✗' }}）
+            </a-checkbox>
+          </a-checkbox-group>
+          <div v-if="!engines.any" style="color: #a6a6a6; font-size: 12px; margin-top: -8px">
+            未配置任何引擎 key —— 到系统配置里填 FOFA / 鹰图 / Quake key 即可启用
+          </div>
         </a-form-item>
         <a-form-item>
           <a-checkbox v-model:checked="expOpts.auto_deep">完成后自动深扫（对真实攻击面截图 + 指纹识别，与首页相同的回声页不算攻击面）</a-checkbox>
@@ -347,7 +372,8 @@ const importFile = ref(null)
 const scanOpts = reactive({ scope: 'all', active_probe: true, screenshot: true, concurrency: 50 })
 const settingsLoaded = ref(false)
 const showExposure = ref(false)
-const expOpts = reactive({ scope: 'alive', kinds: ['js', 'dir'], auto_deep: true })
+const expOpts = reactive({ scope: 'alive', kinds: ['js', 'dir', 'sub'], auto_deep: true })
+const engines = reactive({ fofa: false, hunter: false, quake: false, any: false })
 const expRuns = ref([])
 const expExpanded = ref([])
 const expRunning = computed(() => expRuns.value.some((r) => r.status === 'running'))
@@ -431,6 +457,15 @@ const parseKinds = (r) => {
     return []
   }
 }
+
+const EXP_KIND_LABEL = {
+  js: 'JS接口', dir: '目录爆破', sub: '子域名', brute: '子域爆破',
+  host: 'Host碰撞', net: '网络空间',
+}
+const expKindLabel = (k) => EXP_KIND_LABEL[k] || k
+const expKindColor = (k) =>
+  ({ js: 'cyan', dir: 'blue', sub: 'purple', brute: 'purple',
+     host: 'volcano', net: 'green' })[k] || 'default'
 
 async function loadExposure() {
   expRuns.value = (await api.listExposure(pid)).data
@@ -519,6 +554,10 @@ async function load() {
       scanOpts.active_probe = s.active_probe
       scanOpts.screenshot = s.screenshot
       scanOpts.concurrency = s.concurrency
+      engines.fofa = !!(s.fofa_email && s.fofa_key)
+      engines.hunter = !!s.hunter_key
+      engines.quake = !!s.quake_key
+      engines.any = engines.fofa || engines.hunter || engines.quake
     })
   }
   loadExposure()

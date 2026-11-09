@@ -291,6 +291,12 @@ def list_exposure_all():
     return store.list_exposure_runs()
 
 
+# NOTE: must precede /api/exposure/{rid} or "stats" is parsed as an int rid
+@app.get("/api/exposure/stats")
+def exposure_stats():
+    return store.exposure_stats()
+
+
 @app.get("/api/projects/{pid}/exposure")
 def list_exposure(pid: int):
     return store.list_exposure_runs(pid)
@@ -334,9 +340,19 @@ def delete_exposure(rid: int):
 
 # ---------------- settings / system ----------------
 
+def _mask_keys(cfg: dict) -> dict:
+    """Mask *_key values for display — real keys never leave the server."""
+    out = dict(cfg)
+    for k in out:
+        if k.endswith("_key") and out[k]:
+            s = str(out[k])
+            out[k] = "****" + s[-4:] if len(s) > 4 else "****"
+    return out
+
+
 @app.get("/api/settings")
 def get_settings():
-    return store.get_settings()
+    return _mask_keys(store.get_settings())
 
 
 @app.put("/api/settings")
@@ -348,8 +364,13 @@ def update_settings(body: dict):
         if len(new_pw) < 6:
             raise HTTPException(400, "密码至少 6 位")
         store.set_password(new_pw)  # invalidates all issued tokens
+    # masked or blank key display values are not written back — only real
+    # new keys (an empty *_key can never be a deliberate clear here)
+    body = {k: v for k, v in body.items()
+            if not (k.endswith("_key")
+                    and ("****" in str(v) or not str(v).strip()))}
     store.set_settings(body)
-    return store.get_settings()
+    return _mask_keys(store.get_settings())
 
 
 @app.get("/api/system")

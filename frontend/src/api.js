@@ -56,6 +56,7 @@ export default {
   createExposure: (pid, opts) => api.post(`/api/projects/${pid}/exposure`, opts),
   listExposure: (pid) => api.get(`/api/projects/${pid}/exposure`),
   listExposureAll: () => api.get('/api/exposure'),
+  exposureStats: () => api.get('/api/exposure/stats'),
   getExposure: (rid) => api.get(`/api/exposure/${rid}`),
   deepScanExposure: (rid, limit = 120) => api.post(`/api/exposure/${rid}/deepscan`, { limit }),
   deleteExposure: (rid) => api.delete(`/api/exposure/${rid}`),

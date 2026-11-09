@@ -7,6 +7,37 @@
       </div>
     </div>
 
+    <a-row :gutter="16" style="margin-bottom: 4px">
+      <a-col :span="6">
+        <a-card :bordered="false" class="stat-card">
+          <div class="stat-label"><RadarChartOutlined /> 测绘轮次</div>
+          <div class="stat-num">{{ stats.runs ?? '-' }}</div>
+          <div class="stat-sub">覆盖 {{ stats.projects ?? '-' }} 个项目</div>
+        </a-card>
+      </a-col>
+      <a-col :span="6">
+        <a-card :bordered="false" class="stat-card">
+          <div class="stat-label"><AimOutlined /> 攻击面</div>
+          <div class="stat-num" style="color: var(--red)">{{ stats.surfaces ?? '-' }}</div>
+          <div class="stat-sub">已验证与首页不同的页面</div>
+        </a-card>
+      </a-col>
+      <a-col :span="6">
+        <a-card :bordered="false" class="stat-card">
+          <div class="stat-label"><InfoCircleOutlined /> 信息</div>
+          <div class="stat-num">{{ stats.infos ?? '-' }}</div>
+          <div class="stat-sub">JS/泄露/攻击点等待验证线索</div>
+        </a-card>
+      </a-col>
+      <a-col :span="6">
+        <a-card :bordered="false" class="stat-card">
+          <div class="stat-label"><DatabaseOutlined /> 发现总数</div>
+          <div class="stat-num">{{ stats.findings ?? '-' }}</div>
+          <div class="stat-sub">JS接口 · 目录 · 子域 · 测绘资产</div>
+        </a-card>
+      </a-col>
+    </a-row>
+
     <a-card :bordered="false" title="测绘记录" style="margin-bottom: 16px">
       <a-table :data-source="runs" :columns="runCols" row-key="id" size="small"
                :pagination="{ pageSize: 8 }" :loading="loading"
@@ -16,8 +47,8 @@
             <router-link :to="`/projects/${record.project_id}`" @click.stop>{{ record.project_name }}</router-link>
           </template>
           <template v-else-if="column.key === 'kinds'">
-            <a-tag v-for="k in parseKinds(record)" :key="k" :color="k === 'js' ? 'cyan' : 'blue'">
-              {{ k === 'js' ? 'JS接口' : '目录爆破' }}
+            <a-tag v-for="k in parseKinds(record)" :key="k" :color="kindColor(k)">
+              {{ kindLabel(k) }}
             </a-tag>
           </template>
           <template v-else-if="column.key === 'status'">
@@ -69,10 +100,12 @@
 
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { AimOutlined, DatabaseOutlined, InfoCircleOutlined, RadarChartOutlined } from '@ant-design/icons-vue'
 import api from '../api'
 import ExposureResults from '../components/ExposureResults.vue'
 
 const runs = ref([])
+const stats = ref({})
 const loading = ref(false)
 const selected = ref(null)
 const kw = ref('')
@@ -97,6 +130,15 @@ const parseKinds = (r) => {
     return []
   }
 }
+
+const KIND_LABEL = {
+  js: 'JS接口', dir: '目录爆破', sub: '子域名', brute: '子域爆破',
+  host: 'Host碰撞', net: '网络空间',
+}
+const kindLabel = (k) => KIND_LABEL[k] || k
+const kindColor = (k) =>
+  ({ js: 'cyan', dir: 'blue', sub: 'purple', brute: 'purple',
+     host: 'volcano', net: 'green' })[k] || 'default'
 
 const rowClick = (record) => ({
   onClick: () => {
@@ -124,6 +166,7 @@ async function del(id) {
 async function load() {
   loading.value = true
   try {
+    api.exposureStats().then(({ data }) => { stats.value = data }).catch(() => {})
     runs.value = (await api.listExposureAll()).data
     if (!selected.value && runs.value.length) {
       selected.value = runs.value.find((r) => r.status === 'done') || runs.value[0]
@@ -147,4 +190,24 @@ onBeforeUnmount(() => timer && clearInterval(timer))
 
 <style>
 .row-selected > td { background: #f0f5ff !important; }
+.stat-card :deep(.ant-card-body) { padding: 16px 18px; }
+.stat-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--gray-60);
+  font-size: 12.5px;
+}
+.stat-num {
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-top: 2px;
+  color: var(--ink);
+}
+.stat-sub {
+  font-size: 12px;
+  color: var(--gray-60);
+  margin-top: 2px;
+}
 </style>

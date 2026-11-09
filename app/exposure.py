@@ -6,9 +6,11 @@
 """
 
 import asyncio
+import base64
 import hashlib
 import json
 import re
+import socket
 import uuid
 from pathlib import Path
 from urllib.parse import urljoin, urlsplit
@@ -19,10 +21,14 @@ from . import fingerprint as fp
 from . import probe, store, traffic
 
 DICT_PATH = Path(__file__).resolve().parent.parent / "rules" / "dirs.txt"
+SUB_DICT_PATH = Path(__file__).resolve().parent.parent / "rules" / "subdomains.txt"
 MAX_JS_FILES = 25
 MAX_JS_SIZE = 400_000
 MAX_DIR_HITS = 300
 MAX_LEAK_HITS = 120
+MAX_SUB_CT = 500        # crt.sh names processed per root domain
+MAX_SUB_DEAD = 150      # unresolved subdomains kept as info
+MAX_NET_HITS = 300
 
 # quoted URL-ish strings inside JS bundles
 JS_URL_RE = re.compile(
@@ -283,6 +289,346 @@ def _dict_words() -> list:
     return _dict_words._cache
 
 
+# ------------------------------------------------------------------
+# Domain expansion: subdomain enum/brute, host collision, net engines
+# ------------------------------------------------------------------
+
+_IP_RE = re.compile(r"^\d{1,3}(?:\.\d{1,3}){3}$")
+# compound public suffixes — keep root-domain extraction sane for .com.cn etc.
+COMPOUND_TLDS = {
+    "com.cn", "net.cn", "org.cn", "gov.cn", "edu.cn", "ac.cn", "mil.cn",
+    "com.hk", "com.tw", "com.mo", "co.jp", "or.jp", "ne.jp",
+    "co.uk", "org.uk", "ac.uk", "com.au", "net.au", "co.kr", "or.kr",
+    "co.in", "com.sg", "com.my", "com.br", "com.tr", "com.mx",
+    "com.sa", "com.ph", "com.vn", "com.co", "com.ar", "com.pe",
+}
+
+
+def _is_ip(host: str) -> bool:
+    return bool(host) and (bool(_IP_RE.match(host)) or ":" in host)
+
+
+def _root_domain(host: str) -> str:
+    """example.com / sub.example.com -> example.com; handles com.cn etc."""
+    if not host or _is_ip(host):
+        return host or ""
+    parts = host.lower().strip(".").split(".")
+    if len(parts) <= 2:
+        return ".".join(parts)
+    last2 = ".".join(parts[-2:])
+    if last2 in COMPOUND_TLDS and len(parts) >= 3:
+        return ".".join(parts[-3:])
+    return last2
+
+
+async def _resolve(host: str) -> list:
+    """All A/AAAA records for host, [] on failure. 4s cap."""
+    loop = asyncio.get_running_loop()
+    try:
+        infos = await asyncio.wait_for(
+            loop.run_in_executor(
+                None, socket.getaddrinfo, host, None, socket.AF_UNSPEC,
+                socket.SOCK_STREAM),
+            timeout=4,
+        )
+        return sorted({i[4][0] for i in infos})
+    except Exception:
+        return []
+
+
+async def _probe_host(client, url: str, timeout: float = 8):
+    """Light liveness probe: (status, title, final_url, len, body_hash)."""
+    try:
+        r = await client.get(url, timeout=timeout)
+    except httpx.HTTPError:
+        return None
+    body = r.text[:200_000]
+    title = ""
+    if "html" in r.headers.get("content-type", ""):
+        m = TITLE_RE.search(body)
+        title = re.sub(r"\s+", " ", m.group(1)).strip() if m else ""
+    body_hash = hashlib.sha1(
+        re.sub(r"\s+", "", body[:8000]).encode("utf-8", "ignore")
+    ).hexdigest()
+    return (r.status_code, title, str(r.url), len(r.content), body_hash)
+
+
+def _extract_subs(text: str, root: str) -> set:
+    """Hostnames under <root> embedded in a page/JS body."""
+    if not root or not text:
+        return set()
+    rx = re.compile(
+        r"((?:[a-zA-Z0-9_-]{1,63}\.)+" + re.escape(root) + r")\b")
+    return {m.group(1).lower() for m in rx.finditer(text)}
+
+
+async def subdomain_scan(base_url: str, client: httpx.AsyncClient,
+                         concurrency: int = 40) -> list:
+    """Subdomain discovery via crt.sh certificate-transparency logs, plus
+    names embedded in the homepage body. Names that resolve get an HTTP
+    probe -> surface; unresolved names are kept as info."""
+    host = urlsplit(base_url).hostname
+    root = _root_domain(host)
+    if not root or _is_ip(root):
+        return []
+    names = set()
+    # crt.sh is flaky — one retry
+    for attempt in range(2):
+        try:
+            r = await client.get(f"https://crt.sh/?q=%25.{root}&output=json",
+                                 timeout=30)
+            if r.status_code == 200:
+                for ent in r.json():
+                    for n in str(ent.get("name_value", "")).splitlines():
+                        n = n.strip().lower().lstrip("*.")
+                        if n == root or n.endswith("." + root):
+                            names.add(n)
+                break
+        except Exception:
+            pass
+        if attempt == 0:
+            await asyncio.sleep(2)
+    # subdomains referenced by the page itself
+    try:
+        home = await client.get(base_url, timeout=10)
+        names |= _extract_subs(home.text[:300_000], root)
+    except Exception:
+        pass
+    names = sorted(names)[:MAX_SUB_CT]
+    if not names:
+        return []
+
+    # home signature — a live subdomain that just mirrors the homepage is
+    # info, not a new attack surface
+    sig = await _page_signature(client, base_url)
+    sem = asyncio.Semaphore(concurrency)
+    out = []
+    dead = 0
+
+    async def one(name: str):
+        nonlocal dead
+        async with sem:
+            ips = await _resolve(name)
+            if not ips:
+                if dead < MAX_SUB_DEAD:
+                    dead += 1
+                    out.append({
+                        "kind": "sub", "url": f"https://{name}", "source": "crt.sh",
+                        "status_code": None, "title": None, "length": None,
+                        "hint": "sub:ct", "surface": 0,
+                    })
+                return
+            for scheme in ("https", "http"):
+                hit = await _probe_host(client, f"{scheme}://{name}")
+                if hit:
+                    status, title, fu, ln, bh = hit
+                    same = _same_as_home(sig, fu, title, ln, bh)
+                    fhost = urlsplit(fu).hostname if fu else ""
+                    note = (f" → {fu}" if fhost and fhost != name
+                            else "")   # redirect target kept as a note —
+                                      # url stays the in-scope subdomain
+                    out.append({
+                        "kind": "sub", "url": f"{scheme}://{name}",
+                        "source": "crt.sh", "status_code": status,
+                        "title": (title or f"解析 {ips[0]}") + note,
+                        "length": ln,
+                        "hint": "sub:echo" if same else "sub:alive",
+                        "surface": 0 if same else 1, "server": None,
+                    })
+                    return
+            out.append({
+                "kind": "sub", "url": f"https://{name}", "source": "crt.sh",
+                "status_code": None, "title": f"解析 {ips[0]}", "length": None,
+                "hint": "sub:dns", "surface": 0,
+            })
+
+    await asyncio.gather(*(one(n) for n in names))
+    return out
+
+
+async def subdomain_brute(base_url: str, client: httpx.AsyncClient,
+                          concurrency: int = 60) -> list:
+    """Dictionary DNS brute-force: <word>.<root> -> resolve -> HTTP probe."""
+    host = urlsplit(base_url).hostname
+    root = _root_domain(host)
+    if not root or _is_ip(root) or not SUB_DICT_PATH.exists():
+        return []
+    words = [w.strip() for w in SUB_DICT_PATH.read_text(
+        encoding="utf-8").splitlines() if w.strip() and not w.startswith("#")]
+    sig = await _page_signature(client, base_url)
+    sem = asyncio.Semaphore(concurrency)
+    out = []
+
+    async def one(word: str):
+        fqdn = f"{word}.{root}"
+        async with sem:
+            ips = await _resolve(fqdn)
+            if not ips:
+                return
+            for scheme in ("https", "http"):
+                hit = await _probe_host(client, f"{scheme}://{fqdn}")
+                if hit:
+                    status, title, fu, ln, bh = hit
+                    same = _same_as_home(sig, fu, title, ln, bh)
+                    fhost = urlsplit(fu).hostname if fu else ""
+                    note = f" → {fu}" if fhost and fhost != fqdn else ""
+                    out.append({
+                        "kind": "sub", "url": f"{scheme}://{fqdn}",
+                        "source": "brute", "status_code": status,
+                        "title": (title or f"解析 {ips[0]}") + note,
+                        "length": ln,
+                        "hint": "sub:echo" if same else "sub:alive",
+                        "surface": 0 if same else 1, "server": None,
+                    })
+                    return
+            out.append({
+                "kind": "sub", "url": f"https://{fqdn}", "source": "brute",
+                "status_code": None, "title": f"解析 {ips[0]}", "length": None,
+                "hint": "sub:dns", "surface": 0,
+            })
+
+    await asyncio.gather(*(one(w) for w in words))
+    return out
+
+
+async def host_collision(target_url: str, client: httpx.AsyncClient,
+                         candidates: list, concurrency: int = 30) -> list:
+    """Host-header collision: request the target's IP with Host=<fqdn> —
+    a response different from the bare-IP baseline reveals a hidden vhost."""
+    host = urlsplit(target_url).hostname
+    if _is_ip(host):
+        ip = host
+    else:
+        ips = await _resolve(host)
+        ip = ips[0] if ips else None
+    if not ip:
+        return []
+    scheme = urlsplit(target_url).scheme
+    base = f"{scheme}://{ip}"
+    sig = await _page_signature(client, base)
+    if not sig[0]:  # IP itself doesn't answer — nothing to compare against
+        return []
+    sem = asyncio.Semaphore(concurrency)
+    out = []
+
+    async def one(fqdn: str):
+        async with sem:
+            try:
+                r = await client.get(base, headers={"Host": fqdn},
+                                     timeout=8)
+            except httpx.HTTPError:
+                return
+            body = r.text[:300_000]
+            title = ""
+            if "html" in r.headers.get("content-type", ""):
+                m = TITLE_RE.search(body)
+                title = re.sub(r"\s+", " ", m.group(1)).strip() if m else ""
+            bh = hashlib.sha1(
+                re.sub(r"\s+", "", body[:8000]).encode("utf-8", "ignore")
+            ).hexdigest()
+            if _same_as_home(sig, str(r.url), title, len(r.content), bh):
+                return
+            out.append({
+                "kind": "host", "url": f"{scheme}://{fqdn}",
+                "source": f"host:{ip}", "status_code": r.status_code,
+                "title": title, "length": len(r.content),
+                "hint": "host:vhost", "surface": 1,
+            })
+
+    await asyncio.gather(*(one(c) for c in candidates))
+    return out
+
+
+async def net_search(base_url: str, client: httpx.AsyncClient,
+                     cfg: dict) -> list:
+    """Optional cyberspace engines: FOFA / Hunter / Quake (need API keys
+    from system settings). Returns asset rows as info — deep scan promotes
+    live, distinct pages to surface."""
+    host = urlsplit(base_url).hostname
+    root = _root_domain(host)
+    if not root or _is_ip(root):
+        return []
+    out = []
+
+    # ---- FOFA ----
+    if cfg.get("fofa_key") and cfg.get("fofa_email"):
+        try:
+            q = base64.b64encode(f'domain="{root}"'.encode()).decode()
+            r = await client.get(
+                "https://fofa.info/api/v1/search/all",
+                params={
+                    "email": cfg["fofa_email"], "key": cfg["fofa_key"],
+                    "qbase64": q, "size": 100,
+                    "fields": "host,title,ip,port,server,protocol",
+                }, timeout=20)
+            d = r.json()
+            if not d.get("error"):
+                for row in d.get("results", [])[:MAX_NET_HITS]:
+                    h, t, ip, port, srv, proto = (list(row) + [""] * 6)[:6]
+                    out.append({
+                        "kind": "net", "url": h or f"{proto}://{ip}:{port}",
+                        "source": f"fofa:{ip}:{port}", "status_code": None,
+                        "title": t or srv, "length": None,
+                        "hint": "net:fofa", "surface": 0,
+                    })
+        except Exception:
+            pass
+
+    # ---- Hunter (鹰图) ----
+    if cfg.get("hunter_key"):
+        try:
+            q = base64.urlsafe_b64encode(f'domain="{root}"'.encode()).decode()
+            r = await client.get(
+                "https://hunter.qianxin.com/openApi/search",
+                params={"api-key": cfg["hunter_key"], "search": q,
+                        "page": 1, "page_size": 100, "is_web": 3},
+                timeout=20)
+            d = r.json()
+            for it in (d.get("data") or {}).get("arr", [])[:MAX_NET_HITS]:
+                url = it.get("url") or it.get("domain") or ""
+                out.append({
+                    "kind": "net",
+                    "url": url if "://" in url else f"https://{url}",
+                    "source": f"hunter:{it.get('ip','')}:{it.get('port','')}",
+                    "status_code": it.get("status_code"),
+                    "title": it.get("web_title") or it.get("component"),
+                    "length": None, "hint": "net:hunter", "surface": 0,
+                })
+        except Exception:
+            pass
+
+    # ---- Quake (360) ----
+    if cfg.get("quake_key"):
+        try:
+            r = await client.post(
+                "https://quake.360.net/api/v3/search/quake",
+                headers={"X-QuakeToken": cfg["quake_key"]},
+                json={"query": f'domain:"{root}"', "start": 0, "size": 100,
+                      "latest": True},
+                timeout=20)
+            for it in (r.json().get("data") or [])[:MAX_NET_HITS]:
+                http = it.get("http") or {}
+                h = http.get("host") or it.get("ip") or ""
+                out.append({
+                    "kind": "net",
+                    "url": h if "://" in str(h) else f"https://{h}",
+                    "source": f"quake:{it.get('ip','')}:{it.get('port','')}",
+                    "status_code": http.get("status_code"),
+                    "title": http.get("title"), "length": None,
+                    "hint": "net:quake", "surface": 0,
+                })
+        except Exception:
+            pass
+
+    # dedupe by url
+    seen, dedup = set(), []
+    for r in out:
+        if r["url"] not in seen:
+            seen.add(r["url"])
+            dedup.append(r)
+    return dedup
+
+
 def _interesting_js_path(u: str) -> bool:
     p = urlsplit(u if "://" in u else f"http://x{u if u.startswith('/') else '/' + u}")
     path = p.path or ""
@@ -490,11 +836,43 @@ async def run_exposure(run_id: int):
 
     client = probe.make_client()
     dir_sem = asyncio.Semaphore(4)  # dir scans in parallel across targets
-    target_sem = asyncio.Semaphore(max(1, min(6, cfg["browser_concurrency"])))
+    domain_sem = asyncio.Semaphore(2)  # subdomain/net scans per root domain
+    domain_cache = {}   # root domain -> shared scan task
+    seen_urls = set()   # (kind,url,hint) already saved — no dup rows
+
+    async def _domain_scan(url, host, root):
+        out = []
+        async with domain_sem:
+            if "sub" in kinds:
+                out += await subdomain_scan(
+                    url, client, max(20, cfg["concurrency"] // 2))
+            if "brute" in kinds:
+                out += await subdomain_brute(
+                    url, client, max(30, cfg["concurrency"]))
+            if "net" in kinds:
+                out += await net_search(url, client, cfg)
+            if "host" in kinds:
+                # host collision: probe this IP with discovered FQDNs
+                fqdns = sorted({
+                    urlsplit(r["url"]).hostname
+                    for r in out if r["kind"] == "sub"
+                } - {host, root})
+                if not fqdns and SUB_DICT_PATH.exists():
+                    fqdns = [
+                        f"{w.strip()}.{root}" for w in
+                        SUB_DICT_PATH.read_text(
+                            encoding="utf-8").splitlines()[:120]
+                        if w.strip() and not w.startswith("#")
+                    ]
+                if fqdns:
+                    out += await host_collision(url, client, fqdns)
+        return out
 
     async def per_target(t):
         url = t["url"] if "://" in t["url"] else "https://" + t["url"]
         results = []
+        host = urlsplit(url).hostname
+        root = _root_domain(host)
         try:
             if "js" in kinds:
                 results += await js_scan(url, client)
@@ -503,8 +881,34 @@ async def run_exposure(run_id: int):
                     results += await dir_scan(
                         url, client, concurrency=max(10, cfg["concurrency"] // 2)
                     )
+            # domain-level scans run once per root domain (shared task)
+            if root and not _is_ip(root):
+                task = domain_cache.get(root)
+                if task is None:
+                    task = asyncio.create_task(_domain_scan(url, host, root))
+                    domain_cache[root] = task
+                results += await task
+            # subdomains of this root that JS/目录 findings pointed at —
+            # recorded as unvalidated intel ("sub:js"), deep scan promotes
+            if root and not _is_ip(root):
+                seen_hosts = set()
+                for r in list(results):
+                    h = urlsplit(r.get("url") or "").hostname or ""
+                    if h.endswith("." + root) and h != host \
+                            and h not in seen_hosts:
+                        seen_hosts.add(h)
+                        results.append({
+                            "kind": "sub", "url": f"https://{h}",
+                            "source": "js", "status_code": None,
+                            "title": None, "length": None,
+                            "hint": "sub:js", "surface": 0,
+                        })
         finally:
             for r in results:
+                k = (r.get("kind"), r.get("url"), r.get("hint"))
+                if k in seen_urls:
+                    continue
+                seen_urls.add(k)
                 store.save_exposure_result(run_id, t["id"], r)
             store.bump_exposure_done(run_id)
 
@@ -528,8 +932,9 @@ async def run_exposure(run_id: int):
 # Deep scan: fingerprint + screenshot every discovered in-scope URL
 # ------------------------------------------------------------------
 
-# selection priority for deep scan — attack points and leaks first
-DEEP_PRIORITY = {"vuln": 0, "point": 1, "leak": 2, "dir": 3, "js": 4}
+# selection priority for deep scan — confirmed surfaces and vuln points first
+DEEP_PRIORITY = {"host": 0, "vuln": 0, "point": 1, "sub": 2, "leak": 2,
+                 "dir": 3, "js": 4, "net": 5}
 
 
 async def run_deep_scan(run_id: int, limit: int = 120):
