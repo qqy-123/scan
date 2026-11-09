@@ -1,9 +1,11 @@
 import asyncio
+import hashlib
+import hmac
 import json
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, JSONResponse
 
 from pydantic import BaseModel
 
@@ -14,6 +16,39 @@ BASE = Path(__file__).resolve().parent.parent
 DIST = BASE / "frontend" / "dist"
 
 app = FastAPI(title="scan")
+
+
+# ---------------- auth ----------------
+
+def _expected_token() -> str:
+    """Session token bound to the current password hash: changing the
+    password invalidates every issued token."""
+    return hmac.new(
+        store.auth_secret().encode(), store.password_hash().encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+
+@app.middleware("http")
+async def auth_gate(request: Request, call_next):
+    p = request.url.path
+    if p.startswith("/api/") and p != "/api/login":
+        tok = request.headers.get("authorization", "")
+        tok = tok[7:] if tok.lower().startswith("bearer ") else tok
+        if not hmac.compare_digest(tok, _expected_token()):
+            return JSONResponse({"detail": "unauthorized"}, status_code=401)
+    return await call_next(request)
+
+
+class LoginIn(BaseModel):
+    password: str
+
+
+@app.post("/api/login")
+def login(body: LoginIn):
+    if not store.verify_password(body.password):
+        raise HTTPException(401, "密码错误")
+    return {"token": _expected_token()}
 
 
 @app.on_event("startup")
@@ -305,6 +340,13 @@ def get_settings():
 
 @app.put("/api/settings")
 def update_settings(body: dict):
+    body = dict(body)
+    new_pw = body.pop("new_password", None)
+    if new_pw is not None:
+        new_pw = str(new_pw).strip()
+        if len(new_pw) < 6:
+            raise HTTPException(400, "密码至少 6 位")
+        store.set_password(new_pw)  # invalidates all issued tokens
     store.set_settings(body)
     return store.get_settings()
 

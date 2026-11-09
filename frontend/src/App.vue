@@ -1,6 +1,7 @@
 <template>
   <a-config-provider :theme="theme">
-    <a-layout class="app">
+    <router-view v-if="route.name === 'login'" />
+    <a-layout v-else class="app">
       <!-- ARTEX-style light sidebar -->
       <aside class="sider" :class="{ collapsed }">
         <router-link to="/" class="brand">
@@ -49,6 +50,8 @@
             <a-menu>
               <a-menu-item key="settings" @click="$router.push('/settings')">系统配置</a-menu-item>
               <a-menu-item key="about" @click="showAbout">关于平台</a-menu-item>
+              <a-menu-divider />
+              <a-menu-item key="logout" @click="logout">退出登录</a-menu-item>
             </a-menu>
           </template>
         </a-dropdown>
@@ -65,6 +68,8 @@
               <a-menu>
                 <a-menu-item key="settings" @click="$router.push('/settings')">系统配置</a-menu-item>
                 <a-menu-item key="about" @click="showAbout">关于平台</a-menu-item>
+                <a-menu-divider />
+                <a-menu-item key="logout" @click="logout">退出登录</a-menu-item>
               </a-menu>
             </template>
           </a-dropdown>
@@ -117,6 +122,11 @@ const navMain = [
 
 const isActive = (p) =>
   p === '/' ? route.path === '/' : route.path.startsWith(p)
+
+const logout = () => {
+  localStorage.removeItem('scan_token')
+  router.push('/login')
+}
 
 const showAbout = () =>
   Modal.info({

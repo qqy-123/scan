@@ -1,4 +1,6 @@
+import hashlib
 import json
+import secrets
 import sqlite3
 import time
 from pathlib import Path
@@ -290,6 +292,64 @@ def set_settings(values: dict):
             )
     conn.commit()
     conn.close()
+
+
+# ---------- auth (平台登录密码) ----------
+
+DEFAULT_PASSWORD = "admin@scan123"
+
+
+def _kv_get(key: str) -> str | None:
+    conn = _conn()
+    row = conn.execute("SELECT value FROM settings WHERE key=?", (key,)).fetchone()
+    conn.close()
+    return row["value"] if row else None
+
+
+def _kv_set(key: str, value: str):
+    conn = _conn()
+    conn.execute(
+        "INSERT INTO settings(key, value) VALUES(?,?) "
+        "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+        (key, value),
+    )
+    conn.commit()
+    conn.close()
+
+
+def _hash_pw(password: str, salt: str) -> str:
+    return hashlib.sha256((salt + ":" + password).encode()).hexdigest()
+
+
+def password_hash() -> str:
+    """'salt:digest' record; initialized to DEFAULT_PASSWORD on first use."""
+    rec = _kv_get("password")
+    if not rec:
+        salt = secrets.token_hex(8)
+        rec = f"{salt}:{_hash_pw(DEFAULT_PASSWORD, salt)}"
+        _kv_set("password", rec)
+    return rec
+
+
+def verify_password(password: str) -> bool:
+    try:
+        salt, digest = password_hash().split(":", 1)
+    except ValueError:
+        return False
+    return secrets.compare_digest(_hash_pw(password or "", salt), digest)
+
+
+def set_password(password: str):
+    salt = secrets.token_hex(8)
+    _kv_set("password", f"{salt}:{_hash_pw(password, salt)}")
+
+
+def auth_secret() -> str:
+    s = _kv_get("auth_secret")
+    if not s:
+        s = secrets.token_hex(24)
+        _kv_set("auth_secret", s)
+    return s
 
 
 # ---------- exposure runs (暴露面) ----------

@@ -71,7 +71,7 @@ import { computed, onMounted, ref } from 'vue'
 import { LinkOutlined } from '@ant-design/icons-vue'
 import api from '../api'
 
-const props = defineProps({ runId: Number })
+const props = defineProps({ runId: Number, filter: { type: String, default: '' } })
 const results = ref([])
 const loading = ref(false)
 const expandedKeys = ref([])
@@ -107,8 +107,16 @@ const fpList = (raw) => {
 }
 
 const groups = computed(() => {
+  const kw = (props.filter || '').trim().toLowerCase()
+  const match = (r) => {
+    if (!kw) return true
+    const hay = [r.url, r.title, r.hint, r.source, r.fingerprints]
+      .filter(Boolean).join(' ').toLowerCase()
+    return hay.includes(kw)
+  }
   const m = new Map()
   for (const r of results.value) {
+    if (!match(r)) continue
     const k = r.target_url || '未关联目标'
     if (!m.has(k)) m.set(k, [])
     m.get(k).push(r)

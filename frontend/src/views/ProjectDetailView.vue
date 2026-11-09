@@ -170,6 +170,7 @@
             row-key="id"
             size="middle"
             :pagination="{ pageSize: 10 }"
+            v-model:expandedRowKeys="expExpanded"
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'kinds'">
@@ -322,6 +323,7 @@ const settingsLoaded = ref(false)
 const showExposure = ref(false)
 const expOpts = reactive({ scope: 'alive', kinds: ['js', 'dir'] })
 const expRuns = ref([])
+const expExpanded = ref([])
 const expRunning = computed(() => expRuns.value.some((r) => r.status === 'running'))
 let timer = null
 let expTimer = null
@@ -406,6 +408,10 @@ const parseKinds = (r) => {
 
 async function loadExposure() {
   expRuns.value = (await api.listExposure(pid)).data
+  // auto-expand the newest run so results are visible without clicking
+  if (!expExpanded.value.length && expRuns.value.length) {
+    expExpanded.value = [expRuns.value[0].id]
+  }
   const busy = expRuns.value.some(r => r.status === 'running' || r.deep_status === 'running')
   if (busy && !expTimer) {
     expTimer = setInterval(loadExposure, 4000)

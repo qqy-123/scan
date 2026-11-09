@@ -45,6 +45,11 @@
             <a-form-item label="网页截图默认开启（同时采集渲染后信号）">
               <a-switch v-model:checked="form.screenshot" />
             </a-form-item>
+            <a-divider style="margin: 8px 0 16px" />
+            <a-form-item label="平台登录密码（修改后需要重新登录，至少 6 位；留空则不修改）">
+              <a-input-password v-model:value="newPassword" placeholder="留空保持不变"
+                                style="max-width: 320px" />
+            </a-form-item>
           </a-form>
           <div style="color: #a6a6a6; font-size: 12px">
             这些值作为「发起扫描」弹窗的默认值和引擎的全局参数；单次扫描仍可在弹窗里覆盖。
@@ -98,12 +103,27 @@ const DEFAULTS = {
 const form = reactive({ ...DEFAULTS })
 const info = ref(null)
 const saving = ref(false)
+const newPassword = ref('')
 
 async function save() {
   saving.value = true
   try {
-    const { data } = await api.updateSettings({ ...form })
+    const payload = { ...form }
+    if (newPassword.value) {
+      if (newPassword.value.length < 6) {
+        message.warning('密码至少 6 位')
+        return
+      }
+      payload.new_password = newPassword.value
+    }
+    const { data } = await api.updateSettings(payload)
     Object.assign(form, data)
+    if (newPassword.value) {
+      message.success('密码已修改，请重新登录')
+      localStorage.removeItem('scan_token')
+      setTimeout(() => (location.href = '/login'), 800)
+      return
+    }
     message.success('已保存')
   } finally {
     saving.value = false

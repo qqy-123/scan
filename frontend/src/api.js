@@ -2,7 +2,25 @@ import axios from 'axios'
 
 const api = axios.create({ baseURL: '/', timeout: 60000 })
 
+api.interceptors.request.use((cfg) => {
+  const t = localStorage.getItem('scan_token')
+  if (t) cfg.headers.Authorization = `Bearer ${t}`
+  return cfg
+})
+
+api.interceptors.response.use(
+  (r) => r,
+  (err) => {
+    if (err.response?.status === 401 && location.pathname !== '/login') {
+      localStorage.removeItem('scan_token')
+      location.href = '/login?next=' + encodeURIComponent(location.pathname)
+    }
+    return Promise.reject(err)
+  },
+)
+
 export default {
+  login: (password) => api.post('/api/login', { password }),
   overview: () => api.get('/api/overview'),
   listProjects: () => api.get('/api/projects'),
   createProject: (data) => api.post('/api/projects', data),

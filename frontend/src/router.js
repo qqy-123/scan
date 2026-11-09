@@ -5,10 +5,12 @@ import ProjectDetailView from './views/ProjectDetailView.vue'
 import ResultDetailView from './views/ResultDetailView.vue'
 import FingerprintsView from './views/FingerprintsView.vue'
 import SettingsView from './views/SettingsView.vue'
+import LoginView from './views/LoginView.vue'
 
-export default createRouter({
+const router = createRouter({
   history: createWebHistory(),
   routes: [
+    { path: '/login', name: 'login', component: LoginView },
     { path: '/', name: 'dashboard', component: DashboardView },
     {
       path: '/projects',
@@ -44,3 +46,14 @@ export default createRouter({
     },
   ],
 })
+
+router.beforeEach((to) => {
+  if (to.name !== 'login' && !localStorage.getItem('scan_token')) {
+    return { name: 'login', query: { next: to.fullPath } }
+  }
+  if (to.name === 'login' && localStorage.getItem('scan_token')) {
+    return { name: 'dashboard' }
+  }
+})
+
+export default router
