@@ -68,7 +68,8 @@ async def _collect(resp, packets, tasks_done):
         tasks_done.set()
 
 
-async def capture(url: str, shot_path: Path | None, js_globals: list, dom_selectors: list) -> dict:
+async def capture(url: str, shot_path: Path | None, js_globals: list,
+                  dom_selectors: list, headers: dict | None = None) -> dict:
     """Visit url, capture traffic + rendered signals + optional screenshot.
 
     Returns dict:
@@ -94,7 +95,8 @@ async def capture(url: str, shot_path: Path | None, js_globals: list, dom_select
     try:
         browser = await get_browser()
         ctx = await browser.new_context(
-            ignore_https_errors=True, viewport=VIEWPORT, user_agent=UA
+            ignore_https_errors=True, viewport=VIEWPORT, user_agent=UA,
+            extra_http_headers=headers or None,
         )
         page = await ctx.new_page()
 

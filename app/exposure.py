@@ -18,6 +18,7 @@ from urllib.parse import urljoin, urlsplit
 
 import httpx
 
+from . import bypass
 from . import fingerprint as fp
 from . import probe, store, traffic
 
@@ -960,6 +961,34 @@ DEEP_PRIORITY = {"host": 0, "vuln": 0, "sub": 1, "point": 2, "leak": 2,
                  "dir": 3, "js": 4, "net": 5}
 
 
+async def _bypassed_result(client, url, fields, run_id, shot_sem, cfg):
+    """A protection page was fingerprinted — try to reach the real backend
+    behind it and re-fingerprint/screenshot that response instead."""
+    bp = await bypass.find_bypass(client, url)
+    if not bp:
+        return {}
+    r = bp["resp"]
+    resp = bypass.resp_to_dict(r, bp["url"])
+    out = {
+        "protection": (fields["protection"] or "") + f"→bypass:{bp['mode']}",
+        "status_code": r.status_code,
+        "server": resp["server"],
+    }
+    signals = None
+    if cfg["screenshot"]:
+        shot_name = f"exp{run_id}_{uuid.uuid4().hex[:8]}.png"
+        async with shot_sem:
+            cap = await traffic.capture(
+                bp["url"], traffic.SHOT_DIR / shot_name,
+                fp.js_globals(), fp.dom_selectors(), headers=bp["headers"])
+        if cap["ok"]:
+            out["screenshot"] = shot_name
+            signals = fp.signals_from_capture(cap, resp)
+    fps = await bypass.refingerprint(client, resp, signals)
+    out["fingerprints"] = json.dumps(fps, ensure_ascii=False)
+    return out
+
+
 async def run_deep_scan(run_id: int, limit: int = 120):
     """Re-probe every discovered same-host URL: liveness + fingerprint +
     screenshot, exactly like the main fingerprint pipeline."""
@@ -1077,6 +1106,9 @@ async def run_deep_scan(run_id: int, limit: int = 120):
                     fields["fingerprints"] = json.dumps(fps, ensure_ascii=False)
                     prot = [h["name"] for h in fps if h["category"] == "防护页"]
                     fields["protection"] = ",".join(prot) if prot else None
+                    if prot:
+                        fields.update(await _bypassed_result(
+                            client, url, fields, run_id, shot_sem, cfg))
             store.update_exposure_deep_result(run_id, url, fields)
         except Exception:
             pass

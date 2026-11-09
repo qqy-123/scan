@@ -15,6 +15,10 @@
             </a-tag>
           </span>
         </template>
+        <template v-else-if="record.isTarget">
+          <span class="tgt-url mono">{{ record.url }}</span>
+          <a-tag style="margin-left: 6px">{{ record.count }} 项</a-tag>
+        </template>
         <template v-else-if="record.isAlike">
           <span class="alike-url mono">└ {{ record.url }}</span>
         </template>
@@ -27,17 +31,17 @@
         </template>
       </template>
       <template v-else-if="column.key === 'level'">
-        <a-tag v-if="!record.isSev && !record.isAlike" :color="record.surface ? 'red' : 'default'">
+        <a-tag v-if="!record.isSev && !record.isTarget && !record.isAlike" :color="record.surface ? 'red' : 'default'">
           {{ record.surface ? '攻击面' : '信息' }}
         </a-tag>
       </template>
       <template v-else-if="column.key === 'kind'">
-        <a-tag v-if="!record.isSev" :color="kindColor(record.kind)">
+        <a-tag v-if="!record.isSev && !record.isTarget" :color="kindColor(record.kind)">
           {{ kindLabel(record.kind) }}
         </a-tag>
       </template>
       <template v-else-if="column.key === 'status'">
-        <template v-if="!record.isSev">
+        <template v-if="!record.isSev && !record.isTarget">
           <a-tag v-if="record.status_code" :color="statusColor(record.status_code)">
             {{ record.status_code }}
           </a-tag>
@@ -46,30 +50,30 @@
         </template>
       </template>
       <template v-else-if="column.key === 'hint'">
-        <a-tag v-if="!record.isSev && record.hint && record.hint !== 'other'"
+        <a-tag v-if="!record.isSev && !record.isTarget && record.hint && record.hint !== 'other'"
                :color="hintColor(record.hint)">
           {{ record.hint }}
         </a-tag>
-        <span v-else-if="!record.isSev" style="color: #bfbfbf">-</span>
+        <span v-else-if="!record.isSev && !record.isTarget" style="color: #bfbfbf">-</span>
       </template>
       <template v-else-if="column.key === 'fingerprints'">
-        <template v-if="!record.isSev && !record.isAlike">
+        <template v-if="!record.isSev && !record.isTarget && !record.isAlike">
           <FpTags v-if="record.status_code || record.alive" :raw="record.fingerprints" />
           <span v-else style="color: #bfbfbf" title="未深扫">-</span>
           <span v-if="record.protection" class="prot-tag">🛡 {{ record.protection }}</span>
         </template>
       </template>
       <template v-else-if="column.key === 'screenshot'">
-        <a-image v-if="!record.isSev && !record.isAlike && record.screenshot"
+        <a-image v-if="!record.isSev && !record.isTarget && !record.isAlike && record.screenshot"
                  :src="`/screenshots/${record.screenshot}`" :width="72"
                  style="border: 1px solid #f0f0f0; border-radius: 4px" />
-        <span v-else-if="!record.isSev" style="color: #bfbfbf">-</span>
+        <span v-else-if="!record.isSev && !record.isTarget" style="color: #bfbfbf">-</span>
       </template>
       <template v-else-if="column.key === 'title'">
-        <span v-if="!record.isSev">{{ record.title || '-' }}</span>
+        <span v-if="!record.isSev && !record.isTarget">{{ record.title || '-' }}</span>
       </template>
       <template v-else-if="column.key === 'source'">
-        <span v-if="!record.isSev" class="mono"
+        <span v-if="!record.isSev && !record.isTarget" class="mono"
               style="font-size: 11px; color: #8c8c8c; word-break: break-all">
           {{ record.source || '-' }}
         </span>
@@ -195,7 +199,7 @@ const groups = computed(() => {
     reps.push(rep)
   }
 
-  // group by severity
+  // group by severity -> target -> result -> alike records
   const buckets = [[], [], [], []]
   for (const r of [...reps, ...intelReps]) buckets[sevOf(r)].push(r)
   const out = []
@@ -204,14 +208,25 @@ const groups = computed(() => {
     rs.sort((a, b) =>
       (b.screenshot ? 1 : 0) - (a.screenshot ? 1 : 0)
       || (a.status_code || 999) - (b.status_code || 999) || a.url.localeCompare(b.url))
+    // middle level: group results under their target
+    const tgtMap = new Map()
+    for (const r of rs) {
+      const k = r.target_url || '(无目标)'
+      if (!tgtMap.has(k)) tgtMap.set(k, [])
+      tgtMap.get(k).push(r)
+    }
+    const tgroups = [...tgtMap.entries()].map(([t, trs]) => ({
+      key: `t-${i}-${t}`, isTarget: true, url: t, count: trs.length,
+      children: trs.map((r) => ({
+        ...r, key: `r-${r.id}`,
+        children: (r._alike || []).map((a, j) => ({ ...a, isAlike: true, key: `a-${r.id}-${j}` })),
+      })),
+    }))
     out.push({
       key: `sev-${i}`, isSev: true, sev: i, count: rs.length,
       dupCount: rs.reduce((s, x) => s + (x._alike?.length || 0), 0),
       kindSet: [...new Set(rs.map((x) => x.kind))],
-      children: rs.map((r) => ({
-        ...r, key: `r-${r.id}`,
-        children: (r._alike || []).map((a, j) => ({ ...a, isAlike: true, key: `a-${r.id}-${j}` })),
-      })),
+      children: tgroups,
     })
   })
   return out
@@ -222,8 +237,13 @@ onMounted(async () => {
   try {
     const { data } = await api.getExposure(props.runId)
     results.value = data.results
-    // 高危/中危/信息默认展开, 噪声折叠
-    expandedKeys.value = SEV.map((s, i) => `sev-${i}`).filter((_, i) => SEV[i].open)
+    // 高危/中危/信息默认展开(含目标层), 噪声折叠
+    const keys = []
+    for (const g of groups.value) {
+      if (!SEV[g.sev].open) continue
+      keys.push(g.key, ...g.children.map((t) => t.key))
+    }
+    expandedKeys.value = keys
   } finally {
     loading.value = false
   }
@@ -232,6 +252,7 @@ onMounted(async () => {
 
 <style scoped>
 .sev-url { font-weight: 600; font-size: 13px; }
+.tgt-url { font-weight: 600; font-size: 12px; word-break: break-all; }
 .sev-tag { font-weight: 600; margin-right: 6px; }
 .alike-url { color: #8c8c8c; font-size: 12px; word-break: break-all; }
 .prot-tag { color: #fa8c16; font-size: 11px; margin-left: 4px; }

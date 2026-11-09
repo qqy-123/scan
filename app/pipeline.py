@@ -2,6 +2,7 @@ import asyncio
 import json
 import uuid
 
+from . import bypass
 from . import fingerprint as fp
 from . import probe, store, traffic
 
@@ -109,6 +110,27 @@ async def run_scan(scan_id: int):
         result["fingerprints"] = fps
         prot = [h["name"] for h in fps if h["category"] == "防护页"]
         result["protection"] = ",".join(prot) if prot else None
+
+        # front protection detected? try alternate routes to the real service
+        if prot:
+            bp = await bypass.find_bypass(client, resp["final_url"])
+            if bp:
+                bresp = bypass.resp_to_dict(bp["resp"], bp["url"])
+                result["protection"] += f"→bypass:{bp['mode']}"
+                bsignals = None
+                if opts.get("screenshot", cfg["screenshot"]):
+                    shot_name = f"{scan_id}_{uuid.uuid4().hex[:10]}.png"
+                    async with shot_sem:
+                        cap = await traffic.capture(
+                            bp["url"], traffic.SHOT_DIR / shot_name,
+                            fp.js_globals(), fp.dom_selectors(),
+                            headers=bp["headers"])
+                    if cap["ok"]:
+                        result["screenshot"] = shot_name
+                        bsignals = fp.signals_from_capture(cap, bresp)
+                bfps = await bypass.refingerprint(client, bresp, bsignals)
+                if bfps:
+                    result["fingerprints"] = bfps
         store.save_result(result)
         store.bump_done(scan_id)
 
