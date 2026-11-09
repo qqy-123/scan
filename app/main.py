@@ -264,6 +264,7 @@ def overview():
 class ExposureIn(BaseModel):
     scope: str = "alive"                 # alive | all
     kinds: list = ["js", "dir"]          # js: JS接口提取  dir: 目录爆破
+    auto_deep: bool = True               # 完成后自动深扫(截图+指纹)
 
 
 @app.post("/api/projects/{pid}/exposure")

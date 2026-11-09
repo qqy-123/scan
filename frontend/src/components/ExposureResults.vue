@@ -8,7 +8,8 @@
         <template v-if="record.isGroup">
           <span class="group-url">
             <LinkOutlined /> {{ record.url }}
-            <a-tag color="default" style="margin-left: 8px">{{ record.count }} 个攻击面</a-tag>
+            <a-tag v-if="record.surfaceCount" color="red" style="margin-left: 8px">{{ record.surfaceCount }} 攻击面</a-tag>
+            <a-tag color="default" :style="{ marginLeft: record.surfaceCount ? '2px' : '8px' }">{{ record.count - record.surfaceCount }} 信息</a-tag>
             <a-tag v-for="k in record.kindSet" :key="k" :color="kindColor(k)" style="margin-left: 2px">
               {{ kindLabel(k) }}
             </a-tag>
@@ -16,6 +17,11 @@
         </template>
         <a v-else :href="record.url" target="_blank" rel="noopener" class="mono"
            style="word-break: break-all">{{ record.url }}</a>
+      </template>
+      <template v-else-if="column.key === 'level'">
+        <a-tag v-if="!record.isGroup" :color="record.surface ? 'red' : 'default'">
+          {{ record.surface ? '攻击面' : '信息' }}
+        </a-tag>
       </template>
       <template v-else-if="column.key === 'kind'">
         <a-tag v-if="!record.isGroup" :color="kindColor(record.kind)">
@@ -78,6 +84,7 @@ const expandedKeys = ref([])
 
 const cols = [
   { title: 'URL / 攻击面', key: 'url' },
+  { title: '级别', key: 'level', width: 76 },
   { title: '方式', key: 'kind', width: 70 },
   { title: '状态', key: 'status', width: 80 },
   { title: '分类', key: 'hint', width: 110 },
@@ -123,12 +130,17 @@ const groups = computed(() => {
   }
   const out = []
   for (const [u, rs] of m.entries()) {
+    // 攻击面(surface=1)排在信息前面
+    rs.sort((a, b) => (b.surface || 0) - (a.surface || 0))
     out.push({
       key: 'g-' + u, url: u, isGroup: true, count: rs.length,
+      surfaceCount: rs.filter(x => x.surface).length,
       kindSet: [...new Set(rs.map(x => x.kind))],
       children: rs.map(x => ({ ...x, key: 'r-' + x.id })),
     })
   }
+  // 有攻击面的目标排在前面
+  out.sort((a, b) => (b.surfaceCount || 0) - (a.surfaceCount || 0))
   return out
 })
 

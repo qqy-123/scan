@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS exposure_results(
     length INTEGER,
     hint TEXT,
     alive INTEGER,
+    surface INTEGER,
     final_url TEXT,
     server TEXT,
     fingerprints TEXT,
@@ -118,7 +119,7 @@ def init():
         except sqlite3.OperationalError:
             pass  # column already exists
     for col in (
-        "alive INTEGER", "final_url TEXT", "server TEXT",
+        "alive INTEGER", "surface INTEGER", "final_url TEXT", "server TEXT",
         "fingerprints TEXT", "screenshot TEXT", "protection TEXT",
     ):
         try:
@@ -391,10 +392,11 @@ def save_exposure_result(run_id: int, target_id: int, r: dict):
     conn = _conn()
     conn.execute(
         """INSERT INTO exposure_results(run_id, target_id, kind, url, source,
-               status_code, title, length, hint)
-           VALUES(?,?,?,?,?,?,?,?,?)""",
+               status_code, title, length, hint, surface)
+           VALUES(?,?,?,?,?,?,?,?,?,?)""",
         (run_id, target_id, r.get("kind"), r.get("url"), r.get("source"),
-         r.get("status_code"), r.get("title"), r.get("length"), r.get("hint")),
+         r.get("status_code"), r.get("title"), r.get("length"), r.get("hint"),
+         r.get("surface")),
     )
     conn.execute(
         "UPDATE exposure_runs SET found=(SELECT COUNT(*) FROM exposure_results WHERE run_id=?) WHERE id=?",
@@ -490,11 +492,11 @@ def update_exposure_deep_result(rid: int, url: str, fields: dict):
     """Fill probe/fingerprint/screenshot columns on every row of `url`."""
     conn = _conn()
     conn.execute(
-        """UPDATE exposure_results SET status_code=?, alive=?, final_url=?,
-               server=?, fingerprints=?, screenshot=?, protection=?
+        """UPDATE exposure_results SET status_code=?, alive=?, surface=?,
+               final_url=?, server=?, fingerprints=?, screenshot=?, protection=?
            WHERE run_id=? AND url=?""",
-        (fields.get("status_code"), fields.get("alive"), fields.get("final_url"),
-         fields.get("server"), fields.get("fingerprints"),
+        (fields.get("status_code"), fields.get("alive"), fields.get("surface"),
+         fields.get("final_url"), fields.get("server"), fields.get("fingerprints"),
          fields.get("screenshot"), fields.get("protection"), rid, url),
     )
     conn.commit()

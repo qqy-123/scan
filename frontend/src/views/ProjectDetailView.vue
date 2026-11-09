@@ -231,6 +231,9 @@
             <a-checkbox value="dir">目录爆破（内置字典探测后台 / 备份 / 配置，命中页检测 SQL 报错与敏感信息）</a-checkbox>
           </a-checkbox-group>
         </a-form-item>
+        <a-form-item>
+          <a-checkbox v-model:checked="expOpts.auto_deep">完成后自动深扫（对真实攻击面截图 + 指纹识别，与首页相同的回声页不算攻击面）</a-checkbox>
+        </a-form-item>
       </a-form>
     </a-modal>
 
@@ -321,7 +324,7 @@ const importFile = ref(null)
 const scanOpts = reactive({ scope: 'all', active_probe: true, screenshot: true, concurrency: 50 })
 const settingsLoaded = ref(false)
 const showExposure = ref(false)
-const expOpts = reactive({ scope: 'alive', kinds: ['js', 'dir'] })
+const expOpts = reactive({ scope: 'alive', kinds: ['js', 'dir'], auto_deep: true })
 const expRuns = ref([])
 const expExpanded = ref([])
 const expRunning = computed(() => expRuns.value.some((r) => r.status === 'running'))
