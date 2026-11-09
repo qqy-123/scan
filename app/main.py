@@ -360,14 +360,22 @@ def system_info():
     rules = fp.load_rules()
     shots = list(traffic.SHOT_DIR.glob("*.png")) if traffic.SHOT_DIR.exists() else []
     shot_mb = sum(f.stat().st_size for f in shots) / 1048576
-    db_mb = (
-        store.DB_PATH.stat().st_size / 1048576 if store.DB_PATH.exists() else 0
-    )
+    if store.PG:
+        cfg = store._PG_CFG
+        db_label = f"postgresql://{cfg['host']}:{cfg['port']}/{cfg['dbname']}"
+        db_mb = store.pg_size_mb()
+    else:
+        db_label = "sqlite"
+        db_mb = (
+            store.DB_PATH.stat().st_size / 1048576
+            if store.DB_PATH.exists() else 0
+        )
     browser = traffic._browser
     return {
         "version": "0.5.0",
         "python": sys.version.split()[0],
         "platform": platform.system(),
+        "db_engine": db_label,
         "db_size_mb": round(db_mb, 1),
         "screenshots": len(shots),
         "screenshots_mb": round(shot_mb, 1),

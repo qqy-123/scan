@@ -1,13 +1,62 @@
 import hashlib
 import json
+import os
 import secrets
 import sqlite3
 import time
 from pathlib import Path
+from urllib.parse import urlsplit, unquote
 
 DB_PATH = Path(__file__).resolve().parent.parent / "data.db"
 
-SCHEMA = """
+# DB engine: default SQLite file; set SCAN_DB_URL=postgres://user:pass@host:5432/db
+# to switch to PostgreSQL (long-term multi-writer storage).
+DB_URL = os.environ.get("SCAN_DB_URL", "").strip()
+PG = DB_URL.startswith(("postgres://", "postgresql://", "pgsql://"))
+
+if PG:
+    import psycopg2
+    import psycopg2.extras
+
+    _u = urlsplit(DB_URL)
+    _PG_CFG = {
+        "host": _u.hostname or "127.0.0.1",
+        "port": _u.port or 5432,
+        "user": unquote(_u.username or "postgres"),
+        "password": unquote(_u.password or ""),
+        "dbname": (_u.path or "/scan").lstrip("/") or "scan",
+    }
+    IntegrityError = psycopg2.IntegrityError
+    SchemaError = (psycopg2.ProgrammingError, psycopg2.OperationalError)
+else:
+    IntegrityError = sqlite3.IntegrityError
+    SchemaError = (sqlite3.OperationalError,)
+
+
+class _Compat:
+    """sqlite3-style facade over a psycopg2 connection.
+
+    Translates '?' placeholders to '%s', returns dict rows (RealDictCursor),
+    exposes commit/rollback/close."""
+
+    def __init__(self, conn):
+        self._conn = conn
+
+    def execute(self, sql: str, params=None):
+        cur = self._conn.cursor()
+        cur.execute(sql.replace("?", "%s"), params if params else None)
+        return cur
+
+    def commit(self):
+        self._conn.commit()
+
+    def rollback(self):
+        self._conn.rollback()
+
+    def close(self):
+        self._conn.close()
+
+SCHEMA_SQLITE = """
 CREATE TABLE IF NOT EXISTS projects(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -94,6 +143,12 @@ CREATE TABLE IF NOT EXISTS exposure_results(
 CREATE INDEX IF NOT EXISTS idx_exposure_run ON exposure_results(run_id);
 """
 
+# PostgreSQL schema = sqlite schema with SERIAL instead of AUTOINCREMENT.
+# Everything else (TEXT, TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE,
+# CREATE INDEX IF NOT EXISTS, unquoted key/length) is already valid in PG.
+SCHEMA_PG = SCHEMA_SQLITE.replace(
+    "INTEGER PRIMARY KEY AUTOINCREMENT", "SERIAL PRIMARY KEY")
+
 DEFAULT_SETTINGS = {
     "concurrency": 50,          # 目标并发（探测）
     "browser_concurrency": 4,   # 浏览器并发（抓包/截图）
@@ -105,38 +160,68 @@ DEFAULT_SETTINGS = {
 
 
 def _conn():
+    if PG:
+        conn = psycopg2.connect(
+            **_PG_CFG, cursor_factory=psycopg2.extras.RealDictCursor)
+        return _Compat(conn)
     conn = sqlite3.connect(DB_PATH, timeout=30)
     conn.row_factory = sqlite3.Row
     return conn
 
 
 def init():
-    conn = _conn()
-    conn.executescript(SCHEMA)
-    for col in ("protection TEXT",):
-        try:
-            conn.execute(f"ALTER TABLE results ADD COLUMN {col}")
-        except sqlite3.OperationalError:
-            pass  # column already exists
-    for col in (
-        "alive INTEGER", "surface INTEGER", "final_url TEXT", "server TEXT",
-        "fingerprints TEXT", "screenshot TEXT", "protection TEXT",
+    if PG:
+        # create database first: connect to the maintenance db, check catalog
+        cfg = dict(_PG_CFG)
+        db = cfg.pop("dbname")
+        boot = psycopg2.connect(dbname="postgres", **cfg)
+        boot.autocommit = True
+        with boot.cursor() as c:
+            c.execute("SELECT 1 FROM pg_database WHERE datname=%s", (db,))
+            if not c.fetchone():
+                c.execute(f'CREATE DATABASE "{db}"')
+        boot.close()
+        conn = _conn()
+        for stmt in SCHEMA_PG.split(";"):
+            stmt = stmt.strip()
+            if stmt:
+                conn.execute(stmt)
+    else:
+        conn = _conn()
+        conn.executescript(SCHEMA_SQLITE)
+    # idempotent column migrations: commit each success, rollback each
+    # dup-column failure (PG aborts the whole txn on error otherwise)
+    for table, col in (
+        ("results", "protection TEXT"),
+        ("exposure_results", "alive INTEGER"),
+        ("exposure_results", "surface INTEGER"),
+        ("exposure_results", "final_url TEXT"),
+        ("exposure_results", "server TEXT"),
+        ("exposure_results", "fingerprints TEXT"),
+        ("exposure_results", "screenshot TEXT"),
+        ("exposure_results", "protection TEXT"),
+        ("exposure_runs", "deep_status TEXT DEFAULT 'none'"),
+        ("exposure_runs", "deep_total INTEGER DEFAULT 0"),
+        ("exposure_runs", "deep_done INTEGER DEFAULT 0"),
     ):
         try:
-            conn.execute(f"ALTER TABLE exposure_results ADD COLUMN {col}")
-        except sqlite3.OperationalError:
-            pass  # column already exists
-    for col in (
-        "deep_status TEXT DEFAULT 'none'",
-        "deep_total INTEGER DEFAULT 0",
-        "deep_done INTEGER DEFAULT 0",
-    ):
-        try:
-            conn.execute(f"ALTER TABLE exposure_runs ADD COLUMN {col}")
-        except sqlite3.OperationalError:
-            pass  # column already exists
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {col}")
+            conn.commit()
+        except Exception:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
     conn.commit()
     conn.close()
+
+
+# psycopg2 has no lastrowid — PG inserts get RETURNING id appended
+_INS_SUFFIX = " RETURNING id" if PG else ""
+
+
+def _insert_id(cur) -> int:
+    return cur.fetchone()["id"] if PG else cur.lastrowid
 
 
 # ---------- projects ----------
@@ -144,10 +229,11 @@ def init():
 def create_project(name: str, description: str = "") -> int:
     conn = _conn()
     cur = conn.execute(
-        "INSERT INTO projects(name, description) VALUES(?,?)", (name, description)
+        "INSERT INTO projects(name, description) VALUES(?,?)" + _INS_SUFFIX,
+        (name, description),
     )
+    pid = _insert_id(cur)
     conn.commit()
-    pid = cur.lastrowid
     conn.close()
     return pid
 
@@ -223,7 +309,7 @@ def add_targets(project_id: int, urls: list[str]) -> dict:
                 "INSERT INTO targets(project_id, url) VALUES(?,?)", (project_id, u)
             )
             added += 1
-        except sqlite3.IntegrityError:
+        except IntegrityError:
             dup += 1
     conn.commit()
     conn.close()
@@ -268,6 +354,13 @@ def delete_target(target_id: int):
 
 # ---------- settings ----------
 
+# upsert syntax is identical in SQLite and PostgreSQL
+_SET_SQL = (
+    "INSERT INTO settings(key, value) VALUES(?,?) "
+    "ON CONFLICT(key) DO UPDATE SET value=excluded.value"
+)
+
+
 def get_settings() -> dict:
     conn = _conn()
     rows = conn.execute("SELECT key, value FROM settings").fetchall()
@@ -286,11 +379,7 @@ def set_settings(values: dict):
     conn = _conn()
     for k, v in values.items():
         if k in DEFAULT_SETTINGS:
-            conn.execute(
-                "INSERT INTO settings(key, value) VALUES(?,?) "
-                "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
-                (k, json.dumps(v)),
-            )
+            conn.execute(_SET_SQL, (k, json.dumps(v)))
     conn.commit()
     conn.close()
 
@@ -309,11 +398,7 @@ def _kv_get(key: str) -> str | None:
 
 def _kv_set(key: str, value: str):
     conn = _conn()
-    conn.execute(
-        "INSERT INTO settings(key, value) VALUES(?,?) "
-        "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
-        (key, value),
-    )
+    conn.execute(_SET_SQL, (key, value))
     conn.commit()
     conn.close()
 
@@ -358,10 +443,11 @@ def auth_secret() -> str:
 def create_exposure_run(project_id: int, options: dict, total: int) -> int:
     conn = _conn()
     cur = conn.execute(
-        "INSERT INTO exposure_runs(project_id, options, total) VALUES(?,?,?)",
+        "INSERT INTO exposure_runs(project_id, options, total) VALUES(?,?,?)"
+        + _INS_SUFFIX,
         (project_id, json.dumps(options), total),
     )
-    rid = cur.lastrowid
+    rid = _insert_id(cur)
     conn.commit()
     conn.close()
     return rid
@@ -501,7 +587,6 @@ def update_exposure_deep_result(rid: int, url: str, fields: dict):
     )
     conn.commit()
     conn.close()
-    conn.close()
 
 
 def alive_targets(project_id: int) -> list:
@@ -524,11 +609,12 @@ def alive_targets(project_id: int) -> list:
 def create_scan(project_id: int, kind: str, options: dict, total: int) -> int:
     conn = _conn()
     cur = conn.execute(
-        "INSERT INTO scans(project_id, kind, options, total) VALUES(?,?,?,?)",
+        "INSERT INTO scans(project_id, kind, options, total) VALUES(?,?,?,?)"
+        + _INS_SUFFIX,
         (project_id, kind, json.dumps(options), total),
     )
+    sid = _insert_id(cur)
     conn.commit()
-    sid = cur.lastrowid
     conn.close()
     return sid
 
@@ -610,8 +696,8 @@ def save_result(r: dict) -> int:
             r.get("error"),
         ),
     )
+    rid = _insert_id(cur)
     conn.commit()
-    rid = cur.lastrowid
     conn.close()
     return rid
 
@@ -646,18 +732,18 @@ def get_result(rid: int) -> dict | None:
 def overview() -> dict:
     conn = _conn()
     def one(q):
-        return conn.execute(q).fetchone()[0]
+        return conn.execute(q).fetchone()["n"]
     d = {
-        "projects": one("SELECT COUNT(*) FROM projects"),
-        "targets": one("SELECT COUNT(*) FROM targets"),
-        "scans": one("SELECT COUNT(*) FROM scans"),
-        "running": one("SELECT COUNT(*) FROM scans WHERE status='running'"),
+        "projects": one("SELECT COUNT(*) AS n FROM projects"),
+        "targets": one("SELECT COUNT(*) AS n FROM targets"),
+        "scans": one("SELECT COUNT(*) AS n FROM scans"),
+        "running": one("SELECT COUNT(*) AS n FROM scans WHERE status='running'"),
         "alive": one(
-            """SELECT COUNT(*) FROM (
+            """SELECT COUNT(*) AS n FROM (
                    SELECT r.target_id, r.alive FROM results r
                    WHERE r.id = (SELECT MAX(r2.id) FROM results r2
                                  WHERE r2.target_id = r.target_id)
-               ) WHERE alive=1"""
+               ) t WHERE alive=1"""
         ),
     }
     d["recent_scans"] = [
@@ -668,24 +754,24 @@ def overview() -> dict:
         ).fetchall()
     ]
     d["fp_rows"] = [
-        r[0] for r in conn.execute(
+        r["fingerprints"] for r in conn.execute(
             """SELECT fingerprints FROM results
                WHERE fingerprints != '[]' ORDER BY id DESC LIMIT 3000"""
         ).fetchall()
     ]
     # latest-result view per target: alive / dead / unscanned + status code dist
     d["dead"] = conn.execute(
-        """SELECT COUNT(*) FROM (
+        """SELECT COUNT(*) AS n FROM (
                SELECT r.target_id, r.alive FROM results r
                WHERE r.id = (SELECT MAX(r2.id) FROM results r2
                              WHERE r2.target_id = r.target_id)
-           ) WHERE alive=0"""
-    ).fetchone()[0]
+           ) t WHERE alive=0"""
+    ).fetchone()["n"]
     d["unscanned"] = conn.execute(
-        """SELECT COUNT(*) FROM targets t WHERE NOT EXISTS (
+        """SELECT COUNT(*) AS n FROM targets t WHERE NOT EXISTS (
                SELECT 1 FROM results r WHERE r.target_id = t.id
            )"""
-    ).fetchone()[0]
+    ).fetchone()["n"]
     d["status_dist"] = {
         str(r["status_code"]): r["n"]
         for r in conn.execute(
@@ -713,3 +799,15 @@ def latest_results_by_target(project_id: int) -> dict:
     ).fetchall()
     conn.close()
     return {r["target_id"]: dict(r) for r in rows}
+
+
+def pg_size_mb() -> float:
+    """Total size of the scan database (PostgreSQL only)."""
+    if not PG:
+        return 0.0
+    conn = _conn()
+    row = conn.execute(
+        "SELECT pg_database_size(current_database()) AS n"
+    ).fetchone()
+    conn.close()
+    return float(row["n"] or 0) / 1048576

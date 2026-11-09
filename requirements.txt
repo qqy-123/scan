@@ -5,3 +5,4 @@ mmh3>=4.1
 playwright>=1.43
 openpyxl>=3.1
 python-multipart>=0.0.9
+psycopg2-binary>=2.9
