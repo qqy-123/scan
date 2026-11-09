@@ -69,7 +69,7 @@
               <a-badge :status="info.browser === 'running' ? 'success' : 'default'"
                        :text="info.browser === 'running' ? '运行中' : '空闲'" />
             </a-descriptions-item>
-            <a-descriptions-item label="数据库">{{ info.db_size_mb }} MB</a-descriptions-item>
+            <a-descriptions-item label="数据库">{{ info.db_engine }}（{{ info.db_size_mb }} MB）</a-descriptions-item>
             <a-descriptions-item label="截图存档">{{ info.screenshots }} 张 / {{ info.screenshots_mb }} MB</a-descriptions-item>
           </a-descriptions>
           <a-skeleton v-else active />
