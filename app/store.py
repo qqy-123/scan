@@ -189,6 +189,8 @@ def init():
     else:
         conn = _conn()
         conn.executescript(SCHEMA_SQLITE)
+    conn.commit()  # PG: persist schema before ALTERs — a rollback below
+                   # would otherwise discard the CREATE TABLEs too
     # idempotent column migrations: commit each success, rollback each
     # dup-column failure (PG aborts the whole txn on error otherwise)
     for table, col in (

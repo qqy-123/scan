@@ -5,3 +5,4 @@ data.db
 screenshots/*.png
 frontend/node_modules/
 frontend/dist/
+deploy_ssh.py
