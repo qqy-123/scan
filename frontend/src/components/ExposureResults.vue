@@ -5,31 +5,39 @@
            :scroll="{ y: 560 }">
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'url'">
-        <template v-if="record.isGroup">
-          <span class="group-url">
-            <LinkOutlined /> {{ record.url }}
-            <a-tag v-if="record.surfaceCount" color="red" style="margin-left: 8px">{{ record.surfaceCount }} 攻击面</a-tag>
-            <a-tag color="default" :style="{ marginLeft: record.surfaceCount ? '2px' : '8px' }">{{ record.count - record.surfaceCount }} 信息</a-tag>
+        <template v-if="record.isSev">
+          <span class="sev-url">
+            <a-tag :color="SEV[record.sev].color" class="sev-tag">{{ SEV[record.sev].label }}</a-tag>
+            {{ record.count }} 条结果
+            <a-tag v-if="record.dupCount" style="margin-left: 8px">合并了 {{ record.dupCount }} 条相同记录</a-tag>
             <a-tag v-for="k in record.kindSet" :key="k" :color="kindColor(k)" style="margin-left: 2px">
               {{ kindLabel(k) }}
             </a-tag>
           </span>
         </template>
-        <a v-else :href="record.url" target="_blank" rel="noopener" class="mono"
-           style="word-break: break-all">{{ record.url }}</a>
+        <template v-else-if="record.isAlike">
+          <span class="alike-url mono">└ {{ record.url }}</span>
+        </template>
+        <template v-else>
+          <a :href="record.url" target="_blank" rel="noopener" class="mono"
+             style="word-break: break-all">{{ record.url }}</a>
+          <a-tag v-if="record._alike?.length" color="default" style="margin-left: 6px">
+            ×{{ record._alike.length + 1 }} 相同
+          </a-tag>
+        </template>
       </template>
       <template v-else-if="column.key === 'level'">
-        <a-tag v-if="!record.isGroup" :color="record.surface ? 'red' : 'default'">
+        <a-tag v-if="!record.isSev && !record.isAlike" :color="record.surface ? 'red' : 'default'">
           {{ record.surface ? '攻击面' : '信息' }}
         </a-tag>
       </template>
       <template v-else-if="column.key === 'kind'">
-        <a-tag v-if="!record.isGroup" :color="kindColor(record.kind)">
+        <a-tag v-if="!record.isSev" :color="kindColor(record.kind)">
           {{ kindLabel(record.kind) }}
         </a-tag>
       </template>
       <template v-else-if="column.key === 'status'">
-        <template v-if="!record.isGroup">
+        <template v-if="!record.isSev">
           <a-tag v-if="record.status_code" :color="statusColor(record.status_code)">
             {{ record.status_code }}
           </a-tag>
@@ -38,30 +46,30 @@
         </template>
       </template>
       <template v-else-if="column.key === 'hint'">
-        <a-tag v-if="!record.isGroup && record.hint && record.hint !== 'other'"
+        <a-tag v-if="!record.isSev && record.hint && record.hint !== 'other'"
                :color="hintColor(record.hint)">
           {{ record.hint }}
         </a-tag>
-        <span v-else-if="!record.isGroup" style="color: #bfbfbf">-</span>
+        <span v-else-if="!record.isSev" style="color: #bfbfbf">-</span>
       </template>
       <template v-else-if="column.key === 'fingerprints'">
-        <template v-if="!record.isGroup">
+        <template v-if="!record.isSev && !record.isAlike">
           <FpTags v-if="record.status_code || record.alive" :raw="record.fingerprints" />
           <span v-else style="color: #bfbfbf" title="未深扫">-</span>
           <span v-if="record.protection" class="prot-tag">🛡 {{ record.protection }}</span>
         </template>
       </template>
       <template v-else-if="column.key === 'screenshot'">
-        <a-image v-if="!record.isGroup && record.screenshot"
+        <a-image v-if="!record.isSev && !record.isAlike && record.screenshot"
                  :src="`/screenshots/${record.screenshot}`" :width="72"
                  style="border: 1px solid #f0f0f0; border-radius: 4px" />
-        <span v-else-if="!record.isGroup" style="color: #bfbfbf">-</span>
+        <span v-else-if="!record.isSev" style="color: #bfbfbf">-</span>
       </template>
       <template v-else-if="column.key === 'title'">
-        <span v-if="!record.isGroup">{{ record.title || '-' }}</span>
+        <span v-if="!record.isSev">{{ record.title || '-' }}</span>
       </template>
       <template v-else-if="column.key === 'source'">
-        <span v-if="!record.isGroup" class="mono"
+        <span v-if="!record.isSev" class="mono"
               style="font-size: 11px; color: #8c8c8c; word-break: break-all">
           {{ record.source || '-' }}
         </span>
@@ -106,13 +114,42 @@ const hintColor = (h) =>
      config: 'gold', debug: 'cyan', vuln: 'red', leak: 'magenta',
      point: 'volcano' })[String(h).split(':')[0]] || 'default'
 
-const fpList = (raw) => {
-  if (!raw) return []
-  try {
-    const arr = JSON.parse(raw)
-    return arr.map(f => ({ name: f.name, version: f.version, confirmed: f.confirmed !== false }))
-  } catch { return [] }
+// ---------- 危害分级 ----------
+// 0 高危: 漏洞页/高可信泄露/管理后台面  1 中危: 攻击点/泄露/Host碰撞/已验证攻击面
+// 2 信息: 未验证的资产情报            3 噪声: 已探活但回声页/死链
+const HIGH_LEAK = /rsa|private|aws|github|gitlab|token|jwt|secret|password|passwd|jdbc|oss|s3|shiro|cloud|aliyun|tencent|apikey|aksk|webhook/i
+const ADMIN_URL = /(^|[\/_\-.])(admin|manager|manage|console|backend|backstage|druid|phpmyadmin|nacos|actuator|jolokia|jenkins|sonar|weblogic|grafana|kibana|harbor|rancher|zabbix|sentinel|xxl|apisix|portainer|minio|elasticsearch|swagger|dubbo|nexus|gitlab|gitea|jumpserver|waf)([\/_\-.?]|$)/i
+
+function sevOf(r) {
+  const h = r.hint || ''
+  const u = (r.url || '').toLowerCase()
+  if (h.startsWith('vuln:')) return 0
+  if (h === 'point:admin') return 0
+  if (h.startsWith('leak:') && HIGH_LEAK.test(h)) return 0
+  if (r.surface && ADMIN_URL.test(u)) return 0
+  if (h === 'host:vhost') return 1
+  if (h.startsWith('point:')) return 1
+  if (h.startsWith('leak:')) return 1
+  if (r.surface) return 1
+  if (r.status_code != null || r.alive === 0) return 3   // probed but echo/dead
+  return 2                                              // unverified intel
 }
+
+const SEV = [
+  { label: '高危', color: 'red', open: true },
+  { label: '中危', color: 'orange', open: true },
+  { label: '信息', color: 'blue', open: true },
+  { label: '噪声', color: 'default', open: false },   // collapsed by default
+]
+
+// 相同返回算一个结果: 状态码+标题+长度桶 相同的探活行合并为代表+同类项
+const sigOf = (r) =>
+  r.status_code != null
+    ? `${r.status_code}|${(r.title || '').trim().toLowerCase()}|${Math.round((r.length || 0) / 300)}`
+    : null
+
+// 同域名从多个来源发现(如 crt.name+brute+js)合并为一条
+const INTEL_HINT_RANK = { 'sub:alive': 0, 'sub:dns': 1, 'sub:ct': 2, 'sub:echo': 3, 'sub:js': 4 }
 
 const groups = computed(() => {
   const kw = (props.filter || '').trim().toLowerCase()
@@ -122,26 +159,61 @@ const groups = computed(() => {
       .filter(Boolean).join(' ').toLowerCase()
     return hay.includes(kw)
   }
-  const m = new Map()
-  for (const r of results.value) {
-    if (!match(r)) continue
-    const k = r.target_url || '未关联目标'
-    if (!m.has(k)) m.set(k, [])
-    m.get(k).push(r)
+  const rows = results.value.filter(match)
+
+  // pass 1: intel dedup by url — same asset discovered via several sources
+  const probed = []
+  const intelGroups = new Map()
+  for (const r of rows) {
+    if (sigOf(r)) { probed.push(r); continue }
+    const k = `intel|${r.url}`
+    if (!intelGroups.has(k)) intelGroups.set(k, [])
+    intelGroups.get(k).push(r)
   }
+  const intelReps = []
+  for (const [, rs] of intelGroups) {
+    rs.sort((a, b) => (INTEL_HINT_RANK[a.hint] ?? 9) - (INTEL_HINT_RANK[b.hint] ?? 9))
+    const [rep, ...rest] = rs
+    rep._alike = rest
+    intelReps.push(rep)
+  }
+
+  // pass 2: response-signature dedup among probed rows
+  const bySig = new Map()
+  for (const r of probed) {
+    const k = sigOf(r)
+    if (!bySig.has(k)) bySig.set(k, [])
+    bySig.get(k).push(r)
+  }
+  const reps = []
+  for (const [, rs] of bySig) {
+    rs.sort((a, b) =>
+      sevOf(a) - sevOf(b) || (b.surface || 0) - (a.surface || 0)
+      || (b.screenshot ? 1 : 0) - (a.screenshot ? 1 : 0) || a.url.length - b.url.length)
+    const [rep, ...rest] = rs
+    rep._alike = rest
+    reps.push(rep)
+  }
+
+  // group by severity
+  const buckets = [[], [], [], []]
+  for (const r of [...reps, ...intelReps]) buckets[sevOf(r)].push(r)
   const out = []
-  for (const [u, rs] of m.entries()) {
-    // 攻击面(surface=1)排在信息前面
-    rs.sort((a, b) => (b.surface || 0) - (a.surface || 0))
+  buckets.forEach((rs, i) => {
+    if (!rs.length) return
+    rs.sort((a, b) =>
+      (b.screenshot ? 1 : 0) - (a.screenshot ? 1 : 0)
+      || (a.status_code || 999) - (b.status_code || 999) || a.url.localeCompare(b.url))
     out.push({
-      key: 'g-' + u, url: u, isGroup: true, count: rs.length,
-      surfaceCount: rs.filter(x => x.surface).length,
-      kindSet: [...new Set(rs.map(x => x.kind))],
-      children: rs.map(x => ({ ...x, key: 'r-' + x.id })),
+      key: `sev-${i}`, isSev: true, sev: i, count: rs.length,
+      dupCount: rs.reduce((s, x) => s + (x._alike?.length || 0), 0),
+      kindSet: [...new Set(rs.map((x) => x.kind))],
+      children: rs.map((r) => ({
+        ...r, key: `r-${r.id}`,
+        children: (r._alike || []).map((a, j) => ({ ...a, isAlike: true, key: `a-${r.id}-${j}` })),
+      })),
     })
-  }
-  // 有攻击面的目标排在前面
-  out.sort((a, b) => (b.surfaceCount || 0) - (a.surfaceCount || 0))
+  })
   return out
 })
 
@@ -150,7 +222,8 @@ onMounted(async () => {
   try {
     const { data } = await api.getExposure(props.runId)
     results.value = data.results
-    expandedKeys.value = [...new Set(data.results.map(r => 'g-' + (r.target_url || '未关联目标')))]
+    // 高危/中危/信息默认展开, 噪声折叠
+    expandedKeys.value = SEV.map((s, i) => `sev-${i}`).filter((_, i) => SEV[i].open)
   } finally {
     loading.value = false
   }
@@ -158,6 +231,8 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.group-url { font-weight: 600; font-size: 13px; }
+.sev-url { font-weight: 600; font-size: 13px; }
+.sev-tag { font-weight: 600; margin-right: 6px; }
+.alike-url { color: #8c8c8c; font-size: 12px; word-break: break-all; }
 .prot-tag { color: #fa8c16; font-size: 11px; margin-left: 4px; }
 </style>
