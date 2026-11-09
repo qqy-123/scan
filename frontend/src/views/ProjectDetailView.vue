@@ -18,25 +18,29 @@
         <a-col><a-statistic title="扫描轮次" :value="project?.scans?.length || 0" /></a-col>
         <a-col>
           <a-space>
-            <a-button @click="showImport = true">导入目标</a-button>
+            <a-button @click="showImport = true">
+              <template #icon><ImportOutlined /></template>导入目标
+            </a-button>
             <a-button
               type="primary"
               :disabled="!project?.targets?.length || !!running"
               @click="showScan = true"
             >
-              发起扫描
+              <template #icon><PlayCircleOutlined /></template>发起扫描
             </a-button>
             <a-button
               :disabled="!aliveCount || !!running"
               @click="rescanAlive"
             >
-              二次扫描（存活目标）
+              <template #icon><ReloadOutlined /></template>二次扫描
             </a-button>
             <a-button
+              type="primary"
+              ghost
               :disabled="!aliveCount || !!expRunning"
               @click="showExposure = true"
             >
-              暴露面扫描
+              <template #icon><RadarChartOutlined /></template>暴露面测绘
             </a-button>
             <a-dropdown>
               <a-button><template #icon><EllipsisOutlined /></template></a-button>
@@ -82,11 +86,7 @@
                 <span v-else>-</span>
               </template>
               <template v-else-if="column.key === 'fps'">
-                <template v-for="f in record.fps" :key="f.name">
-                  <a-tag :color="catColor(f.category)">
-                    {{ f.name }}{{ f.version ? ' ' + f.version : '' }}
-                  </a-tag>
-                </template>
+                <FpTags :raw="record.fps" />
               </template>
               <template v-else-if="column.key === 'shot'">
                 <a-image v-if="record.latest?.screenshot" class="shot-thumb"
@@ -163,9 +163,7 @@
                   <a-tag v-if="r.protection" color="volcano" style="margin-left: 4px">防护</a-tag>
                 </template>
                 <template v-else-if="column.key === 'fps'">
-                  <a-tag v-for="f in parseFps(r)" :key="f.name" :color="catColor(f.category)">
-                    {{ f.name }}{{ f.version ? ' ' + f.version : '' }}
-                  </a-tag>
+                  <FpTags :raw="r.fingerprints" />
                 </template>
                 <template v-else-if="column.key === 'shot'">
                   <router-link v-if="r.screenshot" :to="`/results/${r.id}`">
@@ -238,54 +236,8 @@
     </a-card>
 
     <!-- 暴露面扫描 -->
-    <a-modal v-model:open="showExposure" title="暴露面扫描" ok-text="开始" cancel-text="取消"
-             width="560px" @ok="startExposure">
-      <a-form layout="vertical">
-        <a-form-item label="扫描范围">
-          <a-radio-group v-model:value="expOpts.scope">
-            <a-radio value="alive">存活目标（{{ aliveCount }}）</a-radio>
-            <a-radio value="all">全部目标（{{ project?.targets?.length || 0 }}）</a-radio>
-          </a-radio-group>
-        </a-form-item>
-        <div class="opt-group">站内测绘</div>
-        <a-form-item>
-          <a-checkbox-group v-model:value="expOpts.kinds" class="opt-list">
-            <a-checkbox value="js">JS 接口提取（隐藏 API / 后台路径 / sourcemap + 参数攻击点分类 + 敏感信息检测）</a-checkbox>
-            <a-checkbox value="dir">目录爆破（内置字典探测后台 / 备份 / 配置，命中页检测 SQL 报错与敏感信息）</a-checkbox>
-          </a-checkbox-group>
-        </a-form-item>
-        <div class="opt-group">域名扩展</div>
-        <a-form-item>
-          <a-checkbox-group v-model:value="expOpts.kinds" class="opt-list">
-            <a-checkbox value="sub">子域名收集（crt.name / crt.sh 证书透明日志 + 页面提取，解析到的自动探活）</a-checkbox>
-            <a-checkbox value="brute">子域爆破（内置字典 DNS 枚举 + HTTP 验证）</a-checkbox>
-            <a-checkbox value="host">Host 碰撞（对目标 IP 换 Host 头探隐藏虚拟主机，依赖子域发现结果）</a-checkbox>
-          </a-checkbox-group>
-        </a-form-item>
-        <div class="opt-group">
-          网络空间测绘
-          <a-tooltip title="在「系统配置 → 网络空间测绘 API」里配置 key">
-            <a href="/settings" target="_blank" class="opt-link">去配置 →</a>
-          </a-tooltip>
-        </div>
-        <a-form-item>
-          <a-checkbox-group v-model:value="expOpts.kinds" class="opt-list">
-            <a-checkbox value="net" :disabled="!engines.any">
-              资产搜索引擎（{{ engines.fofa ? 'FOFA✓ ' : 'FOFA✗ ' }}{{ engines.hunter ? '· 鹰图✓ ' : '· 鹰图✗ ' }}{{ engines.quake ? '· Quake✓' : '· Quake✗' }}）
-            </a-checkbox>
-          </a-checkbox-group>
-          <div v-if="!engines.any" style="color: #a6a6a6; font-size: 12px; margin-top: -8px">
-            未配置任何引擎 key —— 到系统配置里填 FOFA / 鹰图 / Quake key 即可启用
-          </div>
-        </a-form-item>
-        <a-form-item>
-          <a-checkbox v-model:checked="expOpts.auto_deep">完成后自动深扫（对真实攻击面截图 + 指纹识别，与首页相同的回声页不算攻击面）</a-checkbox>
-        </a-form-item>
-        <a-form-item v-if="expOpts.auto_deep" label="深扫上限（截图+指纹的URL数，存活子域优先）">
-          <a-input-number v-model:value="expOpts.deep_limit" :min="10" :max="1000" style="width: 140px" />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+    <ExposureScanModal v-model:open="showExposure" :project="project"
+                       @started="onExpStarted" />
 
     <!-- 导入目标 -->
     <a-modal v-model:open="showImport" title="导入目标" ok-text="导入" cancel-text="取消"
@@ -355,9 +307,11 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Modal, message } from 'ant-design-vue'
-import { EllipsisOutlined } from '@ant-design/icons-vue'
+import { EllipsisOutlined, ImportOutlined, PlayCircleOutlined, RadarChartOutlined, ReloadOutlined } from '@ant-design/icons-vue'
 import api from '../api'
 import ExposureResults from '../components/ExposureResults.vue'
+import ExposureScanModal from '../components/ExposureScanModal.vue'
+import FpTags from '../components/FpTags.vue'
 
 const props = defineProps({ id: String })
 const pid = Number(props.id)
@@ -375,24 +329,11 @@ const importFile = ref(null)
 const scanOpts = reactive({ scope: 'all', active_probe: true, screenshot: true, concurrency: 50 })
 const settingsLoaded = ref(false)
 const showExposure = ref(false)
-const expOpts = reactive({ scope: 'alive', kinds: ['js', 'dir', 'sub'], auto_deep: true, deep_limit: 200 })
-const engines = reactive({ fofa: false, hunter: false, quake: false, any: false })
 const expRuns = ref([])
 const expExpanded = ref([])
 const expRunning = computed(() => expRuns.value.some((r) => r.status === 'running'))
 let timer = null
 let expTimer = null
-
-const CAT_COLORS = {
-  CMS: 'blue', 'JavaScript framework': 'geekblue', 'JavaScript library': 'cyan',
-  'UI framework': 'cyan', 'JavaScript graphics': 'cyan', 'Build tool': 'cyan',
-  'Web framework': 'geekblue', Runtime: 'geekblue', 'Programming language': 'geekblue',
-  'Web server': 'purple', 'CDN/WAF': 'red', WAF: 'red',
-  OA: 'orange', ERP: 'orange', Middleware: 'gold', 'Ops panel': 'gold',
-  'DevOps': 'green', 'CI/CD': 'green', 'Database tool': 'green',
-  Analytics: 'green', 'API tool': 'green', '防护页': 'volcano',
-}
-const catColor = (c) => CAT_COLORS[c] || 'default'
 
 const aliveCount = computed(() => {
   if (!project.value?.latest) return 0
@@ -485,17 +426,9 @@ async function loadExposure() {
   }
 }
 
-async function startExposure() {
-  if (!expOpts.kinds.length) return message.warning('至少选择一种扫描方式')
-  try {
-    await api.createExposure(pid, { ...expOpts })
-    showExposure.value = false
-    message.success('暴露面扫描已开始')
-    tab.value = 'exposure'
-    loadExposure()
-  } catch (e) {
-    message.error(e.response?.data?.detail || '启动失败')
-  }
+function onExpStarted() {
+  tab.value = 'exposure'
+  loadExposure()
 }
 
 async function deepScan(id) {
@@ -557,10 +490,6 @@ async function load() {
       scanOpts.active_probe = s.active_probe
       scanOpts.screenshot = s.screenshot
       scanOpts.concurrency = s.concurrency
-      engines.fofa = !!(s.fofa_email && s.fofa_key)
-      engines.hunter = !!s.hunter_key
-      engines.quake = !!s.quake_key
-      engines.any = engines.fofa || engines.hunter || engines.quake
     })
   }
   loadExposure()

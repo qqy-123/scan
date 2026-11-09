@@ -360,6 +360,21 @@ def evaluate_probe(rule: dict, body: str) -> dict | None:
     return None
 
 
+def hit_level(h: dict) -> str:
+    """Trust tier for one fingerprint hit:
+      confirmed — deterministic evidence (active probe path hit, favicon
+                    mmh3 match, DOM selector match)
+      high      — score >= 100 from corroborating passive signals
+      low       — weak/partial match or implied-by-another-hit
+    """
+    if h.get("confidence") == "implied":
+        return "low"
+    fields = {e.get("field") for e in h.get("evidence") or []}
+    if fields & {"probe", "favicon", "dom"}:
+        return "confirmed"
+    return "high" if (h.get("score") or 0) >= CONFIRMED else "low"
+
+
 def postprocess(hits: list) -> list:
     """Apply implies / excludes / dedupe; sort confirmed first."""
     by_name = {}
@@ -391,4 +406,6 @@ def postprocess(hits: list) -> list:
             by_name.pop(exc, None)
 
     out = sorted(by_name.values(), key=lambda h: -h["score"])
+    for h in out:
+        h["level"] = hit_level(h)
     return out

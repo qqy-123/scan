@@ -36,8 +36,8 @@
                    size="small" :pagination="false">
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'confidence'">
-                <a-tag :color="{ confirmed: 'green', possible: 'orange', implied: 'blue' }[record.confidence]">
-                  {{ { confirmed: '确认', possible: '疑似', implied: '推断' }[record.confidence] }}
+                <a-tag :color="{ confirmed: 'green', high: 'orange', low: 'default' }[fpLevel(record)]">
+                  {{ { confirmed: '确认', high: '高可信', low: '低可信' }[fpLevel(record)] }}
                 </a-tag>
               </template>
               <template v-else-if="column.key === 'evidence'">
@@ -74,6 +74,15 @@ const fpCols = [
   { title: '版本', dataIndex: 'version', width: 100, customRender: ({ text }) => text || '-' },
   { title: '命中证据', key: 'evidence' },
 ]
+
+// same tiers as backend hit_level(), with fallback for pre-level rows
+function fpLevel(f) {
+  if (f.level) return f.level
+  if (f.confidence === 'implied') return 'low'
+  const fields = new Set((f.evidence || []).map((e) => e.field))
+  if (['probe', 'favicon', 'dom'].some((x) => fields.has(x))) return 'confirmed'
+  return (f.score || 0) >= 100 ? 'high' : 'low'
+}
 
 onMounted(async () => {
   result.value = (await api.getResult(Number(props.id))).data

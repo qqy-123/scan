@@ -39,6 +39,11 @@
     </a-row>
 
     <a-card :bordered="false" title="测绘记录" style="margin-bottom: 16px">
+      <template #extra>
+        <a-button type="primary" size="small" @click="showScan = true">
+          <template #icon><RadarChartOutlined /></template>发起测绘
+        </a-button>
+      </template>
       <a-table :data-source="runs" :columns="runCols" row-key="id" size="small"
                :pagination="{ pageSize: 8 }" :loading="loading"
                :custom-row="rowClick" :row-class-name="rowClass">
@@ -78,8 +83,15 @@
           </template>
         </template>
       </a-table>
-      <a-empty v-if="!loading && !runs.length" description="暂无测绘记录，到项目详情发起「暴露面扫描」" />
+      <a-empty v-if="!loading && !runs.length">
+        <template #description>
+          还没有测绘记录
+          <a-button type="link" size="small" @click="showScan = true">立即发起测绘</a-button>
+        </template>
+      </a-empty>
     </a-card>
+
+    <ExposureScanModal v-model:open="showScan" @started="load" />
 
     <a-card v-if="selected" :bordered="false" :key="selected.id">
       <template #title>
@@ -103,11 +115,13 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { AimOutlined, DatabaseOutlined, InfoCircleOutlined, RadarChartOutlined } from '@ant-design/icons-vue'
 import api from '../api'
 import ExposureResults from '../components/ExposureResults.vue'
+import ExposureScanModal from '../components/ExposureScanModal.vue'
 
 const runs = ref([])
 const stats = ref({})
 const loading = ref(false)
 const selected = ref(null)
+const showScan = ref(false)
 const kw = ref('')
 let timer = null
 

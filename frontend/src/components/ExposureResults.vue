@@ -46,10 +46,8 @@
       </template>
       <template v-else-if="column.key === 'fingerprints'">
         <template v-if="!record.isGroup">
-          <a-tag v-for="f in fpList(record.fingerprints)" :key="f.name"
-                 :color="f.confirmed ? 'green' : 'orange'" style="margin-bottom: 2px">
-            {{ f.name }}{{ f.version ? ' ' + f.version : '' }}
-          </a-tag>
+          <FpTags v-if="record.status_code || record.alive" :raw="record.fingerprints" />
+          <span v-else style="color: #bfbfbf" title="未深扫">-</span>
           <span v-if="record.protection" class="prot-tag">🛡 {{ record.protection }}</span>
         </template>
       </template>
@@ -76,6 +74,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { LinkOutlined } from '@ant-design/icons-vue'
 import api from '../api'
+import FpTags from './FpTags.vue'
 
 const props = defineProps({ runId: Number, filter: { type: String, default: '' } })
 const results = ref([])
