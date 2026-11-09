@@ -9,6 +9,7 @@ import asyncio
 import base64
 import hashlib
 import json
+import random
 import re
 import socket
 import uuid
@@ -26,8 +27,9 @@ MAX_JS_FILES = 25
 MAX_JS_SIZE = 400_000
 MAX_DIR_HITS = 300
 MAX_LEAK_HITS = 120
-MAX_SUB_CT = 500        # crt.sh names processed per root domain
-MAX_SUB_DEAD = 150      # unresolved subdomains kept as info
+MAX_SUB_CT = 1500       # CT names probed per root domain (crt.name can
+                        # return tens of thousands — we random-sample)
+MAX_SUB_DEAD = 300      # unresolved subdomains kept as info
 MAX_NET_HITS = 300
 
 # quoted URL-ish strings inside JS bundles
@@ -371,8 +373,23 @@ async def subdomain_scan(base_url: str, client: httpx.AsyncClient,
     root = _root_domain(host)
     if not root or _is_ip(root):
         return []
-    names = set()
-    # crt.sh is flaky — one retry
+    names = {}          # name -> source label
+    # crt.name — large CT index, free, one subdomain per line
+    for attempt in range(2):
+        try:
+            r = await client.get("https://crt.name/v1/search",
+                                 params={"apex": root}, timeout=30)
+            if r.status_code == 200:
+                for n in r.text.splitlines():
+                    n = n.strip().lower().lstrip("*.")
+                    if n != root and n.endswith("." + root):
+                        names.setdefault(n, "crt.name")
+                break
+        except Exception:
+            pass
+        if attempt == 0:
+            await asyncio.sleep(2)
+    # crt.sh — second CT source (flaky, one retry)
     for attempt in range(2):
         try:
             r = await client.get(f"https://crt.sh/?q=%25.{root}&output=json",
@@ -381,8 +398,8 @@ async def subdomain_scan(base_url: str, client: httpx.AsyncClient,
                 for ent in r.json():
                     for n in str(ent.get("name_value", "")).splitlines():
                         n = n.strip().lower().lstrip("*.")
-                        if n == root or n.endswith("." + root):
-                            names.add(n)
+                        if n != root and n.endswith("." + root):
+                            names.setdefault(n, "crt.sh")
                 break
         except Exception:
             pass
@@ -391,11 +408,16 @@ async def subdomain_scan(base_url: str, client: httpx.AsyncClient,
     # subdomains referenced by the page itself
     try:
         home = await client.get(base_url, timeout=10)
-        names |= _extract_subs(home.text[:300_000], root)
+        for n in _extract_subs(home.text[:300_000], root):
+            if n != root:
+                names.setdefault(n, "page")
     except Exception:
         pass
-    names = sorted(names)[:MAX_SUB_CT]
-    if not names:
+    all_names = sorted(names)
+    if len(all_names) > MAX_SUB_CT:
+        # random sample — alphabetical slicing would bias toward 'a*' names
+        all_names = sorted(random.sample(all_names, MAX_SUB_CT))
+    if not all_names:
         return []
 
     # home signature — a live subdomain that just mirrors the homepage is
@@ -407,13 +429,14 @@ async def subdomain_scan(base_url: str, client: httpx.AsyncClient,
 
     async def one(name: str):
         nonlocal dead
+        src = names.get(name, "crt")
         async with sem:
             ips = await _resolve(name)
             if not ips:
                 if dead < MAX_SUB_DEAD:
                     dead += 1
                     out.append({
-                        "kind": "sub", "url": f"https://{name}", "source": "crt.sh",
+                        "kind": "sub", "url": f"https://{name}", "source": src,
                         "status_code": None, "title": None, "length": None,
                         "hint": "sub:ct", "surface": 0,
                     })
@@ -429,7 +452,7 @@ async def subdomain_scan(base_url: str, client: httpx.AsyncClient,
                                       # url stays the in-scope subdomain
                     out.append({
                         "kind": "sub", "url": f"{scheme}://{name}",
-                        "source": "crt.sh", "status_code": status,
+                        "source": src, "status_code": status,
                         "title": (title or f"解析 {ips[0]}") + note,
                         "length": ln,
                         "hint": "sub:echo" if same else "sub:alive",
@@ -437,12 +460,12 @@ async def subdomain_scan(base_url: str, client: httpx.AsyncClient,
                     })
                     return
             out.append({
-                "kind": "sub", "url": f"https://{name}", "source": "crt.sh",
+                "kind": "sub", "url": f"https://{name}", "source": src,
                 "status_code": None, "title": f"解析 {ips[0]}", "length": None,
                 "hint": "sub:dns", "surface": 0,
             })
 
-    await asyncio.gather(*(one(n) for n in names))
+    await asyncio.gather(*(one(n) for n in all_names))
     return out
 
 
@@ -933,7 +956,7 @@ async def run_exposure(run_id: int):
 # ------------------------------------------------------------------
 
 # selection priority for deep scan — confirmed surfaces and vuln points first
-DEEP_PRIORITY = {"host": 0, "vuln": 0, "point": 1, "sub": 2, "leak": 2,
+DEEP_PRIORITY = {"host": 0, "vuln": 0, "sub": 1, "point": 2, "leak": 2,
                  "dir": 3, "js": 4, "net": 5}
 
 
@@ -960,8 +983,16 @@ async def run_deep_scan(run_id: int, limit: int = 120):
         t = targets.get(r.get("target_id"))
         if not u.startswith("http") or not t:
             continue
-        if urlsplit(u).hostname != host_of(t):
-            continue  # external hosts stay out of authorized scope
+        h = urlsplit(u).hostname or ""
+        th = host_of(t)
+        # scope: exact target host, or a same-root host for domain-expansion
+        # kinds (sub/host/net — they live under the target's own domain);
+        # anything else stays out of authorized scope
+        in_scope = h == th or (
+            r.get("kind") in ("sub", "host", "net")
+            and _root_domain(h) and _root_domain(h) == _root_domain(th))
+        if not in_scope:
+            continue
         pri = DEEP_PRIORITY.get(r.get("kind") or "js", 9)
         surf = 0 if r.get("surface") else 1   # surfaces sort first
         prev = urls.get(u)

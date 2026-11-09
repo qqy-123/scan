@@ -265,6 +265,7 @@ class ExposureIn(BaseModel):
     scope: str = "alive"                 # alive | all
     kinds: list = ["js", "dir"]          # js: JS接口提取  dir: 目录爆破
     auto_deep: bool = True               # 完成后自动深扫(截图+指纹)
+    deep_limit: int = 200                # 自动深扫的URL上限
 
 
 @app.post("/api/projects/{pid}/exposure")
@@ -325,7 +326,7 @@ async def deep_scan_exposure(rid: int, body: DeepScanIn = None):
         raise HTTPException(409, "exposure scan is still running")
     if run.get("deep_status") == "running":
         raise HTTPException(409, "deep scan is already running")
-    limit = min(max(1, (body.limit if body else 120)), 500)
+    limit = min(max(1, (body.limit if body else 120)), 1000)
     asyncio.create_task(exposure.run_deep_scan(rid, limit))
     return {"ok": True}
 
