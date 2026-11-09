@@ -29,6 +29,7 @@
         </template>
         <template v-else-if="column.key === 'op'">
           <a-space :size="6">
+            <a-button size="small" type="primary" @click="router.push(`/projects/${record.id}`)">查看</a-button>
             <a-button size="small" @click="openEdit(record)">编辑</a-button>
             <a-popconfirm
               title="删除项目及其全部目标和扫描记录？"
@@ -67,8 +68,11 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import api from '../api'
+
+const router = useRouter()
 
 const projects = ref([])
 const loading = ref(false)

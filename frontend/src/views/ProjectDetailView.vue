@@ -132,6 +132,10 @@
                          : record.status"
                 />
               </template>
+              <template v-else-if="column.key === 'op'">
+                <a-button size="small" type="primary" :disabled="record.status !== 'done'"
+                          @click="viewScan(record)">查看</a-button>
+              </template>
             </template>
           </a-table>
           <a-empty v-if="!project?.scans?.length" description="还没有扫描记录" />
@@ -215,6 +219,8 @@
               </template>
               <template v-else-if="column.key === 'op'">
                 <a-space :size="6">
+                  <a-button size="small" type="primary" :disabled="record.status !== 'done'"
+                            @click="expExpanded = expExpanded.includes(record.id) ? [] : [record.id]">查看</a-button>
                   <a-button v-if="record.status === 'done' && record.deep_status !== 'running'"
                             size="small" @click="deepScan(record.id)">
                     {{ record.deep_status === 'done' ? '重新深扫' : '深扫' }}
@@ -383,6 +389,7 @@ const scanCols = [
   { title: '存活/总数', customRender: ({ record: r }) => `${r.alive}/${r.total}`, width: 110 },
   { title: '开始时间', dataIndex: 'started_at', width: 200 },
   { title: '结束时间', dataIndex: 'finished_at', width: 200, customRender: ({ text }) => text || '-' },
+  { title: '操作', key: 'op', width: 90 },
 ]
 
 const expCols = [
@@ -462,14 +469,14 @@ const resultCols = [
 const selectedScan = ref(null)
 const scanKw = ref('')
 
-const scanRowClick = (record) => ({
-  onClick: () => {
-    if (record.status !== 'done') return
-    selectedScan.value = record
-    scanKw.value = ''
-    if (!scanResults[record.id]) loadScanResults(record.id)
-  },
-})
+function viewScan(record) {
+  if (record.status !== 'done') return
+  selectedScan.value = record
+  scanKw.value = ''
+  if (!scanResults[record.id]) loadScanResults(record.id)
+}
+
+const scanRowClick = (record) => ({ onClick: () => viewScan(record) })
 const scanRowClass = (record) =>
   (selectedScan.value?.id === record.id ? 'row-selected ' : '') +
   (record.status === 'done' ? 'row-clickable' : 'row-disabled')

@@ -74,6 +74,7 @@
           </template>
           <template v-else-if="column.key === 'op'">
             <a-space :size="6">
+              <a-button size="small" type="primary" @click.stop="viewRun(record)">查看</a-button>
               <a-button v-if="record.status === 'done' && record.deep_status !== 'running'"
                         size="small" @click.stop="deepScan(record.id)">
                 {{ record.deep_status === 'done' ? '重新深扫' : '深扫' }}
@@ -95,7 +96,7 @@
 
     <ExposureScanModal v-model:open="showScan" @started="load" />
 
-    <a-card v-if="selected" :bordered="false" :key="selected.id">
+    <a-card v-if="selected" :bordered="false" :key="selected.id" id="exp-result-card">
       <template #title>
         <span style="font-size: 14px">
           攻击面结果 · 测绘 #{{ selected.id }}
@@ -113,7 +114,7 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { AimOutlined, DatabaseOutlined, InfoCircleOutlined, RadarChartOutlined } from '@ant-design/icons-vue'
 import api from '../api'
 import ExposureResults from '../components/ExposureResults.vue'
@@ -156,12 +157,17 @@ const kindColor = (k) =>
   ({ js: 'cyan', dir: 'blue', sub: 'purple', brute: 'purple',
      host: 'volcano', net: 'green' })[k] || 'default'
 
-const rowClick = (record) => ({
-  onClick: () => {
-    selected.value = record
-    kw.value = ''
-  },
-})
+function viewRun(record) {
+  selected.value = record
+  kw.value = ''
+  // jump to the results panel — on long lists it can be out of view
+  nextTick(() =>
+    document.getElementById('exp-result-card')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+  )
+}
+
+const rowClick = (record) => ({ onClick: () => viewRun(record) })
 const rowClass = (record) => (selected.value?.id === record.id ? 'row-selected' : '')
 
 async function deepScan(id) {

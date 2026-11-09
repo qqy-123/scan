@@ -54,7 +54,7 @@
         <a-card :bordered="false">
           <template #title><ThunderboltOutlined /> 最近扫描</template>
           <template #extra>
-            <router-link to="/projects" class="more">全部 →</router-link>
+            <a-button size="small" @click="router.push('/projects')">全部 →</a-button>
           </template>
           <div v-if="data?.recent_scans?.length" class="feed">
             <div v-for="s in data.recent_scans" :key="s.id" class="feed-item">
@@ -62,15 +62,15 @@
                 {{ s.kind === 'rescan' ? '二次' : '全量' }}
               </a-tag>
               <div class="feed-body">
-                <router-link :to="`/projects/${s.project_id}?tab=scans&scan=${s.id}`" class="feed-title">
-                  {{ s.project_name }}
-                </router-link>
+                <div class="feed-title">{{ s.project_name }}</div>
                 <div class="feed-desc">
                   轮次 #{{ s.id }} ·
                   {{ s.status === 'running' ? `进行中 ${s.done}/${s.total}` : `存活 ${s.alive}/${s.total}` }}
                 </div>
               </div>
               <div class="feed-time">{{ ago(s.started_at) }}</div>
+              <a-button size="small" type="primary" ghost
+                        @click="router.push(`/projects/${s.project_id}?tab=scans&scan=${s.id}`)">查看</a-button>
             </div>
           </div>
           <a-empty v-else description="暂无扫描" :image="simpleImg" />
@@ -80,13 +80,13 @@
         <a-card :bordered="false">
           <template #title><DatabaseOutlined /> 项目存活概览</template>
           <template #extra>
-            <router-link to="/projects" class="more">全部 →</router-link>
+            <a-button size="small" @click="router.push('/projects')">全部 →</a-button>
           </template>
           <div v-if="projects.length" class="plist">
             <div v-for="p in projects" :key="p.id" class="plist-item">
-              <router-link :to="`/projects/${p.id}`" class="plist-name">
-                {{ p.name }}
-              </router-link>
+              <div class="plist-name">{{ p.name }}</div>
+              <a-button size="small" type="primary" ghost style="flex-shrink: 0"
+                        @click="router.push(`/projects/${p.id}`)">查看</a-button>
               <div class="pbar">
                 <div class="seg green" :style="{ width: pct(p.alive_count, p) }" />
                 <div class="seg red" :style="{ width: pct(p.dead_count, p) }" />
@@ -108,6 +108,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { Empty } from 'ant-design-vue'
 import {
   AimOutlined,
@@ -128,6 +129,7 @@ dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
 
 const simpleImg = Empty.PRESENTED_IMAGE_SIMPLE
+const router = useRouter()
 const data = ref(null)
 const projects = ref([])
 
