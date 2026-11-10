@@ -961,6 +961,14 @@ DEEP_PRIORITY = {"host": 0, "vuln": 0, "sub": 1, "point": 2, "leak": 2,
                  "dir": 3, "js": 4, "net": 5}
 
 
+def _dom_sig(html: str) -> str:
+    """Interface signature of a rendered page: only the sequence of tag
+    names is hashed — text/attributes are ignored, so the same interface
+    with different tokens/timestamps still gets the same signature."""
+    tags = re.findall(r"<\s*([a-zA-Z][a-zA-Z0-9]*)", (html or "")[:200_000])
+    return hashlib.sha1(" ".join(tags).encode()).hexdigest()[:16]
+
+
 async def _bypassed_result(client, url, fields, run_id, shot_sem, cfg):
     """A protection page was fingerprinted — try to reach the real backend
     behind it and re-fingerprint/screenshot that response instead."""
@@ -983,6 +991,7 @@ async def _bypassed_result(client, url, fields, run_id, shot_sem, cfg):
                 fp.js_globals(), fp.dom_selectors(), headers=bp["headers"])
         if cap["ok"]:
             out["screenshot"] = shot_name
+            out["shot_sig"] = f"{r.status_code}|{_dom_sig(cap['html'])}"
             signals = fp.signals_from_capture(cap, resp)
     fps = await bypass.refingerprint(client, resp, signals)
     out["fingerprints"] = json.dumps(fps, ensure_ascii=False)
@@ -1080,6 +1089,8 @@ async def run_deep_scan(run_id: int, limit: int = 120):
                             )
                         if cap["ok"]:
                             fields["screenshot"] = shot_name
+                            fields["shot_sig"] = (
+                                f"{resp['status_code']}|{_dom_sig(cap['html'])}")
                             signals = fp.signals_from_capture(cap, resp)
                     if signals is None:
                         favicon_hash = await probe.fetch_favicon_hash(

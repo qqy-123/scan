@@ -205,7 +205,22 @@ const flat = computed(() => {
     reps.push(rep)
   }
 
-  let all = [...reps, ...intelReps]
+  // pass 3: same-interface dedup — screenshots whose rendered DOM
+  // structure is identical (shot_sig) collapse into one result even if
+  // the raw response differs slightly (tokens/timestamps/hosts)
+  reps.sort((a, b) => sevOf(a) - sevOf(b)
+    || (b.screenshot ? 1 : 0) - (a.screenshot ? 1 : 0))
+  const byShot = new Map()
+  const merged = []
+  for (const r of reps) {
+    const s = r.shot_sig
+    if (!s) { merged.push(r); continue }
+    const keep = byShot.get(s)
+    if (!keep) { byShot.set(s, r); merged.push(r); continue }
+    keep._alike = [...(keep._alike || []), r, ...(r._alike || [])]
+  }
+
+  let all = [...merged, ...intelReps]
   const sIdx = sevIdx[sevSel.value]
   if (sIdx !== undefined) all = all.filter((r) => sevOf(r) === sIdx)
   all.sort((a, b) => sevOf(a) - sevOf(b)

@@ -207,6 +207,7 @@ def init():
         ("exposure_results", "fingerprints TEXT"),
         ("exposure_results", "screenshot TEXT"),
         ("exposure_results", "protection TEXT"),
+        ("exposure_results", "shot_sig TEXT"),
         ("exposure_runs", "deep_status TEXT DEFAULT 'none'"),
         ("exposure_runs", "deep_total INTEGER DEFAULT 0"),
         ("exposure_runs", "deep_done INTEGER DEFAULT 0"),
@@ -604,11 +605,13 @@ def update_exposure_deep_result(rid: int, url: str, fields: dict):
     conn = _conn()
     conn.execute(
         """UPDATE exposure_results SET status_code=?, alive=?, surface=?,
-               final_url=?, server=?, fingerprints=?, screenshot=?, protection=?
+               final_url=?, server=?, fingerprints=?, screenshot=?, protection=?,
+               shot_sig=?
            WHERE run_id=? AND url=?""",
         (fields.get("status_code"), fields.get("alive"), fields.get("surface"),
          fields.get("final_url"), fields.get("server"), fields.get("fingerprints"),
-         fields.get("screenshot"), fields.get("protection"), rid, url),
+         fields.get("screenshot"), fields.get("protection"), fields.get("shot_sig"),
+         rid, url),
     )
     conn.commit()
     conn.close()
