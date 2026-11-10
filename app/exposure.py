@@ -823,8 +823,7 @@ async def port_scan(hosts: list, concurrency: int = 150) -> list:
                 if first:
                     title = f"{svc}: {first[0][:60]}"
                 elif port in CRIT_PORTS:
-                    hint = "port:critical"
-                    title = f"{svc} open（无banner，需手工确认）"
+                    title = f"{svc} open（TCP连通，应用层无响应）"
                 url = f"{h}:{port}"
             out.append({
                 "kind": "port", "url": url, "source": f"port:{ip}",
