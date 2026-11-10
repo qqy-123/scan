@@ -24,8 +24,9 @@ from . import probe, store, traffic
 
 DICT_PATH = Path(__file__).resolve().parent.parent / "rules" / "dirs.txt"
 SUB_DICT_PATH = Path(__file__).resolve().parent.parent / "rules" / "subdomains.txt"
-MAX_JS_FILES = 25
-MAX_JS_SIZE = 400_000
+MAX_JS_FILES = 40
+MAX_JS_SIZE = 400_000        # bodies scanned for secrets/errors (regex-heavy)
+MAX_JS_ENDPOINT = 2_500_000  # bodies scanned for endpoint strings (cheap)
 MAX_DIR_HITS = 300
 MAX_LEAK_HITS = 120
 MAX_SUB_CT = 1500       # CT names probed per root domain (crt.name can
@@ -37,8 +38,25 @@ MAX_NET_HITS = 300
 JS_URL_RE = re.compile(
     r"""["'`]((?:https?:)?//[a-zA-Z0-9_\-.]+(?::\d+)?(?:/[a-zA-Z0-9_\-./?&=%~#]*)?|/[a-zA-Z0-9_\-/?&=%~#.]+)['"`]"""
 )
+# relative endpoint paths: "user/info", 'index.php/login', `api/v2/x`
+JS_REL_RE = re.compile(
+    r"""["'`]([a-zA-Z0-9_\-]{2,40}(?:/[a-zA-Z0-9_\-.?=&%~]{1,60}){1,5})['"`]"""
+)
+# url-ish property values: url:"x", href:"x", action:"x", api:"x"
+JS_PROP_RE = re.compile(
+    r"(?:url|href|action|endpoint|target|ajax|api|src|path|uri)"
+    r"\s*[:=]\s*[\"'`]([^\"'`]{2,200})[\"'`]",
+    re.I,
+)
+# nested js references: 'user.min.js?t=1', "modules/x.js"
+JS_FILE_RE = re.compile(r"""["'`]([\w\-./]{2,100}?\.js(?:\?[\w=&.\-]*)?)['"`]""")
 SCRIPT_SRC_RE = re.compile(r'<script[^>]+src\s*=\s*["\']([^"\']+)["\']', re.I)
+INLINE_JS_RE = re.compile(r"<script[^>]*>([\s\S]*?)</script>", re.I)
 TITLE_RE = probe.TITLE_RE
+MIME_SKIP = ("text/", "image/", "audio/", "video/", "application/",
+             "font/", "multipart/", "message/")
+JUNK_HOSTS = ("w3.org", "schemas.", "purl.org", "example.", "localhost",
+              "127.0.0.1", "0.0.0.0", "github.com", "gitee.com")
 
 HINTS = {
     "admin": ("admin", "manage", "houtai", "manager", "console", "backend",
@@ -276,9 +294,14 @@ def _detect_forms(body: str, url: str, source: str, out: list):
 
 def _hint(path: str) -> str:
     p = path.lower()
+    segs = {s for s in re.split(r"[/_.\-?=&%]+", p) if s}
     for name, kws in HINTS.items():
-        if any(k in p for k in kws):
-            return name
+        for kw in kws:
+            if len(kw) <= 3:
+                if kw in segs:      # short hints need an exact segment
+                    return name     #   ('v2.0' dir ≠ api/v2)
+            elif kw in p:
+                return name
     return "other"
 
 
@@ -705,67 +728,140 @@ async def net_search(base_url: str, client: httpx.AsyncClient,
     return dedup
 
 
+STRONG_HINT = ("admin", "manage", "console", "backend", "backstage",
+               "login", "signin", "api", "config", "upload", "download",
+               "debug", "actuator", "env", "token", "secret")
+WEB_FILE_EXT = {"php", "jsp", "asp", "aspx", "do", "action", "cgi",
+                "json", "html", "htm", "xml", "jspx", "shtml", "fcgi"}
+# strings that are formats/module-ids, not endpoints
+NOT_ENDPOINT = re.compile(
+    r"^(?:y+|m+|d+|h+|s+|[\w.]*(?:vue|react|jquery|angular|lodash|moment|"
+    r"dayjs|axios|webpack|babel|core-js|es-module-shims|regenerator)[\w.]*|"
+    r"modules?|vendor|chunk|runtime|manifest|polyfill|sw|worker)",
+    re.I,
+)
+BAD_CHARS = re.compile(r"[^a-zA-Z0-9._~:/?&=%#\-@!$,*]")
+STATIC_DIR = re.compile(
+    r"^/?(?:static|assets?|public|dist|build|images?|img|css|fonts?|media|"
+    r"node_modules|vendor|libs?|plugins?|styles?|pics?|uploads?/)(?:/|$)",
+    re.I,
+)
+
+
 def _interesting_js_path(u: str) -> bool:
     p = urlsplit(u if "://" in u else f"http://x{u if u.startswith('/') else '/' + u}")
     path = p.path or ""
     segs = [s for s in path.split("/") if s]
     if not path or path == "/":
         return False
+    pl = path.lower()
+    if any(j in pl for j in JUNK_HOSTS):
+        return False
+    if STATIC_DIR.match(pl):
+        # asset roots only yield endpoints when the leaf is a web file
+        # or the path itself screams admin/api
+        ext = segs[-1].rsplit(".", 1)[-1] if "." in segs[-1] else ""
+        return ext in WEB_FILE_EXT or any(k in pl for k in STRONG_HINT)
     if ASSET_EXT.search(path):
-        return _hint(path) != "other"  # assets only if path hints admin/api
-    # keep: >=2 segments, or 1 segment that hints, or has file extension (page)
+        # static assets only when the path itself screams admin/api —
+        # a 'v2' version dir on a .png is not an endpoint
+        return any(k in pl for k in STRONG_HINT)
     if len(segs) >= 2:
         return True
     return _hint(path) != "other" or "." in segs[-1]
 
 
 async def js_scan(base_url: str, client: httpx.AsyncClient, dict_urls: list = None) -> list:
-    """Extract endpoints embedded in the site's JS files. Also scans the
-    homepage + JS bodies for secrets, SQL errors and form-level vuln points,
-    and probes `<js>.map` sourcemaps."""
+    """Extract endpoints embedded in the site's JS files. Covers:
+      - <script src> on same host or sibling subdomains of the root
+      - inline <script> bodies (config blobs, JSON endpoints)
+      - one level of nested .js references (module loaders: seajs map,
+        webpack chunks — where the real API calls live)
+    Also scans bodies for secrets, SQL errors, form points, sourcemaps."""
     try:
         resp = await client.get(base_url)
         html = resp.text[:500_000]
     except httpx.HTTPError:
         return []
+    base = urlsplit(base_url)
+    root = _root_domain(base.hostname)
+
+    def allowed_host(h: str) -> bool:
+        return bool(h) and (h == base.hostname or
+                            (root and h.endswith("." + root)))
+
     srcs = []
     for s in SCRIPT_SRC_RE.findall(html):
         u = urljoin(base_url, s)
-        if urlsplit(u).hostname == urlsplit(base_url).hostname:
+        if allowed_host(urlsplit(u).hostname) and u not in srcs:
             srcs.append(u)
     for u in dict_urls or []:
-        if urlsplit(u).hostname == urlsplit(base_url).hostname and u not in srcs:
+        if allowed_host(urlsplit(u).hostname) and u not in srcs:
             srcs.append(u)
     srcs = srcs[:MAX_JS_FILES]
 
     found = {}  # path-or-url -> source js
     extra = []  # leak/vuln/point findings
-    base = urlsplit(base_url)
 
     # homepage itself: secrets, SQL errors, forms
     _scan_sensitive(html, base_url, base_url, extra)
     _detect_forms(html, base_url, base_url, extra)
 
-    async def pull(js_url: str):
+    def harvest(body: str, js_url: str) -> list:
+        """Collect endpoint strings + nested .js refs from a JS body."""
+        _scan_sensitive(body[:MAX_JS_SIZE], js_url, base_url, extra)
+        for rx in (JS_URL_RE, JS_REL_RE, JS_PROP_RE):
+            for m in rx.findall(body):
+                u = m.strip()
+                if len(u) < 3 or u.startswith(
+                        ("data:", "javascript:", "#")):
+                    continue
+                if u.lower().startswith(MIME_SKIP):
+                    continue      # text/javascript, image/png — not endpoints
+                if BAD_CHARS.search(u):      # '+' concat, parens, CJK…
+                    continue
+                if any(j in u for j in JUNK_HOSTS):
+                    continue
+                seg0 = u.split("/")[0].split("?")[0].lower()
+                if NOT_ENDPOINT.search(seg0):
+                    continue                  # module ids, date formats
+                if u.startswith("//"):
+                    u = base.scheme + ":" + u
+                full = urljoin(base_url, u)
+                p = urlsplit(full).path
+                if "/" not in u.split("://")[-1] and \
+                        "." in p and \
+                        p.rsplit(".", 1)[-1].lower() not in WEB_FILE_EXT:
+                    continue      # 'user.figureurl_2' — property, not file
+                if not _interesting_js_path(full):
+                    continue
+                found.setdefault(full.lower(), (full, js_url))
+        nested = []
+        for m in JS_FILE_RE.findall(body):
+            u = urljoin(js_url, m.strip())
+            if allowed_host(urlsplit(u).hostname) and u not in srcs:
+                nested.append(u)
+        return nested
+
+    async def pull(js_url: str, retry_modules: bool = True) -> list:
         try:
             r = await client.get(js_url)
+            if r.status_code == 404 and retry_modules:
+                # seajs-style: real file often lives under <dir>/modules/
+                p = urlsplit(js_url)
+                alt = p._replace(
+                    path=p.path.rsplit("/", 1)[0] + "/modules/" +
+                    p.path.rsplit("/", 1)[-1])
+                return await pull(alt.geturl(), False)
             if r.status_code >= 400:
-                return
-            body = r.text[:MAX_JS_SIZE]
+                return []
+            return harvest(r.text[:MAX_JS_ENDPOINT], js_url)
         except httpx.HTTPError:
-            return
-        _scan_sensitive(body, js_url, base_url, extra)
-        for m in JS_URL_RE.findall(body):
-            u = m.strip()
-            if len(u) < 2 or u.startswith(("data:", "javascript:", "#")):
-                continue
-            if u.startswith("//"):
-                u = base.scheme + ":" + u
-            full = urljoin(base_url, u)
-            if not _interesting_js_path(full):
-                continue
-            key = full.lower()
-            found.setdefault(key, (full, js_url))
+            return []
+
+    # inline <script> bodies count as zero-cost js files
+    for body in INLINE_JS_RE.findall(html)[:10]:
+        harvest(body[:MAX_JS_SIZE], base_url)
 
     async def probe_map(js_url: str):
         """<file>.js.map -> sourcemap often exposes original source paths."""
@@ -780,9 +876,20 @@ async def js_scan(base_url: str, client: httpx.AsyncClient, dict_urls: list = No
         except httpx.HTTPError:
             pass
 
-    await asyncio.gather(*(
+    nested_lists = await asyncio.gather(*(
         [pull(u) for u in srcs] + [probe_map(u) for u in srcs]
     ))
+    # second-level: module-loader bundles (seajs map, webpack chunks)
+    level2 = []
+    for nested in nested_lists:
+        if isinstance(nested, list):
+            for u in nested:
+                if u not in level2:
+                    level2.append(u)
+    level2 = level2[:MAX_JS_FILES]
+    if level2:
+        srcs += level2
+        await asyncio.gather(*(pull(u) for u in level2))
 
     out = []
     for u, src in found.values():
