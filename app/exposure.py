@@ -187,6 +187,11 @@ ADMIN_TITLE_RE = re.compile(
 LOGIN_PAGE_RE = re.compile(
     r"type=[\"']?password[\"'\s>]|用户登录|登录|登陆|"
     r"sign[\s_-]?in|log[\s_-]?in", re.I)
+# admin/login-ish URL path — entry candidates when the page serves
+ENTRY_PATH_RE = re.compile(
+    r"/(admin|manage|console|backend|backstage|login|signin|portal|sso|"
+    r"dashboard|phpmyadmin|wp-admin)(/|\.|\?|$)", re.I)
+ENTRY_HINTS = {"entry", "point:login", "point:admin", "admin", "auth"}
 
 # js sourcemap probe
 SOURCEMAP_RE = re.compile(r'"sources"\s*:\s*\[')
@@ -1464,11 +1469,14 @@ async def _bypassed_result(client, url, fields, run_id, shot_sem, cfg):
         return {}
     r = bp["resp"]
     resp = bypass.resp_to_dict(r, bp["url"])
+    tm = re.search(r"<title[^>]*>(.*?)</title>",
+                   resp.get("html") or "", re.I | re.S)
     out = {
         "protection": (fields["protection"] or "") + f"→bypass:{bp['mode']}",
         "status_code": r.status_code,
         "server": resp["server"],
         "response": _resp_packet(resp),
+        "title": tm.group(1).strip()[:300] if tm else None,
     }
     signals = None
     if cfg["screenshot"]:
@@ -1522,7 +1530,8 @@ async def run_deep_scan(run_id: int, limit: int = 120):
             continue
         pri = DEEP_PRIORITY.get(r.get("kind") or "js", 9)
         hint = r.get("hint") or ""
-        if hint in ("entry", "point:login", "point:admin"):
+        if hint in ENTRY_HINTS or ENTRY_PATH_RE.search(
+                re.sub(r"^[a-z]+://[^/]+", "", u, flags=re.I)):
             pri = 0                         # entries always probe first
         surf = 0 if r.get("surface") else 1   # surfaces sort first
         prev = urls.get(u)
@@ -1590,15 +1599,33 @@ async def run_deep_scan(run_id: int, limit: int = 120):
 
     extra_entry_shots = {"n": 0}    # entries beyond limit still captured
     MAX_ENTRY_SHOTS = 50
+    bypass_sem = asyncio.Semaphore(6)
+    bypass_budget = {"n": 40}       # blocked-entry bypass attempts per run
 
     async def run_group(idx, members):
         p0 = members[0]               # rep = the first-seen distinct page
         resp0 = p0["resp"]
         shared = {"screenshot": None, "shot_sig": None, "html": None}
         signals = None
-        is_entry = p0.get("hint") in ("entry", "point:login", "point:admin")
-        take_shot = idx < limit or (is_entry
-                                    and extra_entry_shots["n"] < MAX_ENTRY_SHOTS)
+        is_entry = (
+            p0.get("hint") in ENTRY_HINTS
+            or (p0["fields"]["alive"] and ENTRY_PATH_RE.search(
+                re.sub(r"^[a-z]+://[^/]+", "", p0["url"], flags=re.I))))
+        # a 401/403 on an entry-looking path: try to bypass FIRST — if the
+        # real page comes through it counts as an entry point
+        rep_attempted = False
+        rep_bypass = None
+        if (resp0.get("status_code") or 0) in (401, 403) and is_entry \
+                and bypass_budget["n"] > 0:
+            rep_attempted = True
+            bypass_budget["n"] -= 1
+            async with bypass_sem:
+                rep_bypass = (await _bypassed_result(
+                    client, p0["url"], p0["fields"], run_id,
+                    shot_sem, cfg)) or None
+        take_shot = (idx < limit or (is_entry
+                                     and extra_entry_shots["n"]
+                                     < MAX_ENTRY_SHOTS)) and not rep_bypass
         if take_shot and idx >= limit:
             extra_entry_shots["n"] += 1
         if take_shot and cfg["screenshot"]:
@@ -1655,9 +1682,27 @@ async def run_deep_scan(run_id: int, limit: int = 120):
                 "response": _resp_packet(
                     p["resp"], shared["html"] if p is p0 else None),
             })
-            if prot:
-                fields.update(await _bypassed_result(
-                    client, p["url"], fields, run_id, shot_sem, cfg))
+            blocked = (p["fields"].get("status_code") or 0) in (401, 403)
+            if p is p0 and rep_bypass:
+                fields.update(rep_bypass)
+            elif prot and not (p is p0 and rep_attempted):
+                async with bypass_sem:
+                    fields.update(await _bypassed_result(
+                        client, p["url"], fields, run_id, shot_sem, cfg))
+            elif (blocked and p is not p0 and bypass_budget["n"] > 0
+                  and (p.get("hint") in ENTRY_HINTS
+                       or ENTRY_PATH_RE.search(re.sub(
+                           r"^[a-z]+://[^/]+", "", p["url"], flags=re.I)))):
+                bypass_budget["n"] -= 1
+                async with bypass_sem:
+                    fields.update(await _bypassed_result(
+                        client, p["url"], fields, run_id, shot_sem, cfg))
+            # bypassed a blocked page -> real entry point, mark it so
+            if blocked and (fields.get("status_code") or 0) < 400:
+                fields["alive"] = 1
+                fields["surface"] = 1
+                if fields.get("hint") in (None, "other"):
+                    fields["hint"] = "entry"
             store.update_exposure_deep_result(run_id, p["url"], fields)
             store.bump_exposure_deep(run_id)
 
