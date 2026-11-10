@@ -25,7 +25,8 @@
         <a-checkbox-group v-model:value="opts.kinds" class="opt-list">
           <a-checkbox value="sub">子域名收集（crt.name / crt.sh 证书透明日志 + 页面提取，解析到的自动探活）</a-checkbox>
           <a-checkbox value="brute">子域爆破（内置字典 DNS 枚举 + HTTP 验证）</a-checkbox>
-          <a-checkbox value="host">Host 碰撞（对目标 IP 换 Host 头探隐藏虚拟主机，依赖子域发现结果）</a-checkbox>
+          <a-checkbox value="host">Host 碰撞（对目标 IP 用 SNI+Host 探隐藏虚拟主机，依赖子域发现结果）</a-checkbox>
+          <a-checkbox value="origin">源站探测 fuckcdn（对子域/测绘 IP 及所在 C 段做 SNI 碰撞，匹配首页签名定位 CDN 后真实源站 IP）</a-checkbox>
         </a-checkbox-group>
       </a-form-item>
       <div class="opt-group">
@@ -47,7 +48,7 @@
       <a-form-item>
         <a-checkbox v-model:checked="opts.auto_deep">完成后自动深扫（对真实攻击面截图 + 指纹识别，与首页相同的回声页不算攻击面）</a-checkbox>
       </a-form-item>
-      <a-form-item v-if="opts.auto_deep" label="深扫上限（截图+指纹的URL数，存活子域优先）">
+      <a-form-item v-if="opts.auto_deep" label="截图上限（探测全部URL，相同页面只截一次，存活子域优先）">
         <a-input-number v-model:value="opts.deep_limit" :min="10" :max="1000" style="width: 140px" />
       </a-form-item>
     </a-form>

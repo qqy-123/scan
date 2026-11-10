@@ -517,8 +517,10 @@ async def subdomain_brute(base_url: str, client: httpx.AsyncClient,
 
 async def host_collision(target_url: str, client: httpx.AsyncClient,
                          candidates: list, concurrency: int = 30) -> list:
-    """Host-header collision: request the target's IP with Host=<fqdn> —
-    a response different from the bare-IP baseline reveals a hidden vhost."""
+    """Host-header collision: connect to the target's IP with SNI+Host set
+    to each candidate fqdn — a response differing from the bare-IP default
+    vhost reveals a hidden virtual host. sni_fetch is required: httpx sends
+    Host but keeps SNI=IP, which misses every SNI-routed vhost."""
     host = urlsplit(target_url).hostname
     if _is_ip(host):
         ip = host
@@ -528,38 +530,88 @@ async def host_collision(target_url: str, client: httpx.AsyncClient,
     if not ip:
         return []
     scheme = urlsplit(target_url).scheme
-    base = f"{scheme}://{ip}"
-    sig = await _page_signature(client, base)
-    if not sig[0]:  # IP itself doesn't answer — nothing to compare against
+    base_r = await probe.sni_fetch(ip, ip, scheme)
+    if not base_r:  # IP's default vhost doesn't answer — nothing to compare
         return []
     sem = asyncio.Semaphore(concurrency)
     out = []
 
     async def one(fqdn: str):
         async with sem:
-            try:
-                r = await client.get(base, headers={"Host": fqdn},
-                                     timeout=8)
-            except httpx.HTTPError:
+            r = await probe.sni_fetch(ip, fqdn, scheme)
+            if not r or r["status"] >= 400:
                 return
-            body = r.text[:300_000]
-            title = ""
-            if "html" in r.headers.get("content-type", ""):
-                m = TITLE_RE.search(body)
-                title = re.sub(r"\s+", " ", m.group(1)).strip() if m else ""
-            bh = hashlib.sha1(
-                re.sub(r"\s+", "", body[:8000]).encode("utf-8", "ignore")
-            ).hexdigest()
-            if _same_as_home(sig, str(r.url), title, len(r.content), bh):
+            same = _same_as_home(
+                ("x", base_r["title"], base_r["length"], base_r["body_hash"]),
+                "", r["title"], r["length"], r["body_hash"])
+            if same:
                 return
             out.append({
                 "kind": "host", "url": f"{scheme}://{fqdn}",
-                "source": f"host:{ip}", "status_code": r.status_code,
-                "title": title, "length": len(r.content),
+                "source": f"host:{ip}", "status_code": r["status"],
+                "title": r["title"], "length": r["length"],
                 "hint": "host:vhost", "surface": 1,
             })
 
     await asyncio.gather(*(one(c) for c in candidates))
+    return out
+
+
+MAX_ORIGIN_CANDS = 320   # candidate IPs probed per domain (incl. /24 fill)
+
+
+async def origin_scan(base_url: str, client: httpx.AsyncClient,
+                      ip_pool: list, concurrency: int = 40) -> list:
+    """fuckcdn-style origin discovery: probe every candidate IP with
+    SNI+Host=<host> — a response matching the live homepage signature
+    exposes the real origin hiding behind the CDN."""
+    host = urlsplit(base_url).hostname
+    if not host or _is_ip(host):
+        return []
+    sig = await _page_signature(client, base_url)  # homepage via CDN
+    if not sig[0]:
+        return []
+    own = set(await _resolve(host))
+    direct, seen = [], set()
+    for ip in ip_pool:
+        if _is_ip(ip) and ":" not in ip and ip not in own and ip not in seen:
+            seen.add(ip)
+            direct.append(ip)
+    # classic fuckcdn move: sweep the /24 around each discovered infra IP
+    cands = list(direct)
+    seen24 = set()
+    for ip in direct:
+        prefix = ip.rsplit(".", 1)[0]
+        if prefix in seen24:
+            continue
+        seen24.add(prefix)
+        for i in range(1, 255):
+            c = f"{prefix}.{i}"
+            if c not in seen:
+                seen.add(c)
+                cands.append(c)
+    cands = cands[:MAX_ORIGIN_CANDS]
+    sem = asyncio.Semaphore(concurrency)
+    out = []
+
+    async def one(ip: str):
+        async with sem:
+            for scheme in ("https", "http"):
+                r = await probe.sni_fetch(ip, host, scheme)
+                if not r or r["status"] >= 400:
+                    continue
+                if not _same_as_home(sig, "", r["title"], r["length"],
+                                     r["body_hash"]):
+                    continue
+                out.append({
+                    "kind": "cdn", "url": f"{scheme}://{ip}",
+                    "source": "fuckcdn", "status_code": r["status"],
+                    "title": f"{host} 源站 · {r['title']}",
+                    "length": r["length"], "hint": "origin", "surface": 1,
+                })
+                return
+
+    await asyncio.gather(*(one(ip) for ip in cands))
     return out
 
 
@@ -890,6 +942,23 @@ async def run_exposure(run_id: int):
                     ]
                 if fqdns:
                     out += await host_collision(url, client, fqdns)
+            if "origin" in kinds:
+                # fuckcdn: candidate IPs = net-engine IPs + resolved subs
+                ip_pool = set()
+                for r in out:
+                    for m in re.finditer(
+                            r"\b\d{1,3}(?:\.\d{1,3}){3}\b",
+                            r.get("source") or ""):
+                        ip_pool.add(m.group(0))
+                sub_hosts = {
+                    urlsplit(r["url"]).hostname
+                    for r in out
+                    if r.get("kind") == "sub" and r.get("status_code")
+                } - {host}
+                for lst in await asyncio.gather(
+                        *(_resolve(h) for h in list(sub_hosts)[:80])):
+                    ip_pool.update(lst)
+                out += await origin_scan(url, client, sorted(ip_pool))
         return out
 
     async def per_target(t):
@@ -957,7 +1026,7 @@ async def run_exposure(run_id: int):
 # ------------------------------------------------------------------
 
 # selection priority for deep scan — confirmed surfaces and vuln points first
-DEEP_PRIORITY = {"host": 0, "vuln": 0, "sub": 1, "point": 2, "leak": 2,
+DEEP_PRIORITY = {"cdn": 0, "host": 0, "vuln": 0, "sub": 1, "point": 2, "leak": 2,
                  "dir": 3, "js": 4, "net": 5}
 
 
@@ -988,7 +1057,8 @@ async def _bypassed_result(client, url, fields, run_id, shot_sem, cfg):
         async with shot_sem:
             cap = await traffic.capture(
                 bp["url"], traffic.SHOT_DIR / shot_name,
-                fp.js_globals(), fp.dom_selectors(), headers=bp["headers"])
+                fp.js_globals(), fp.dom_selectors(), headers=bp["headers"],
+                proxy=cfg.get("proxy") or None)
         if cap["ok"]:
             out["screenshot"] = shot_name
             out["shot_sig"] = f"{r.status_code}|{_dom_sig(cap['html'])}"
@@ -1026,7 +1096,7 @@ async def run_deep_scan(run_id: int, limit: int = 120):
         # scope: exact target host, or a same-root host for domain-expansion
         # kinds (sub/host/net — they live under the target's own domain);
         # anything else stays out of authorized scope
-        in_scope = h == th or (
+        in_scope = h == th or r.get("kind") == "cdn" or (
             r.get("kind") in ("sub", "host", "net")
             and _root_domain(h) and _root_domain(h) == _root_domain(th))
         if not in_scope:
@@ -1036,22 +1106,35 @@ async def run_deep_scan(run_id: int, limit: int = 120):
         prev = urls.get(u)
         if prev is None or (surf, pri) < (prev[0], prev[1]):
             urls[u] = (surf, pri, r["target_id"])
-    ordered = sorted(urls.items(), key=lambda kv: (kv[1][0], kv[1][1], kv[0]))[:limit]
+    # HTTP probing is cheap — cover far more URLs than the capture budget;
+    # `limit` then means "distinct pages to screenshot", not "rows scanned"
+    ordered = sorted(
+        urls.items(), key=lambda kv: (kv[1][0], kv[1][1], kv[0])
+    )[:max(limit * 4, 400)]
 
     store.exposure_deep_start(run_id, len(ordered))
 
     client = probe.make_client()
+    proxy = cfg.get("proxy") or None
     probe_sem = asyncio.Semaphore(max(5, cfg["concurrency"] // 3))
     shot_sem = asyncio.Semaphore(max(1, cfg["browser_concurrency"]))
 
-    # homepage signature per target host — a surface must differ from it
+    # homepage signature per URL host — a surface must differ from it.
+    # lazily fetched so subdomains compare against THEIR OWN homepage
     home_sigs = {}
-    for t in targets.values():
-        u = t["url"] if "://" in t["url"] else "https://" + t["url"]
-        base = f"{urlsplit(u).scheme}://{urlsplit(u).netloc}"
-        home_sigs[urlsplit(u).hostname] = await _page_signature(client, base)
 
-    async def one(url, tid):
+    async def home_sig(host: str):
+        if host not in home_sigs:
+            sig = await _page_signature(client, f"https://{host}")
+            if not sig[0]:
+                sig = await _page_signature(client, f"http://{host}")
+            home_sigs[host] = sig
+        return home_sigs[host]
+
+    # ---- phase 1: probe every URL (cheap), group surfaces by body ----
+    probed = []
+
+    async def phase1(url, _tid):
         try:
             async with probe_sem:
                 resp = await probe.fetch(client, url)
@@ -1064,70 +1147,99 @@ async def run_deep_scan(run_id: int, limit: int = 120):
                 "fingerprints": None,
                 "screenshot": None,
                 "protection": None,
+                "shot_sig": None,
             }
+            bh = ""
             if resp["alive"]:
-                # attack surface = a page genuinely different from homepage
-                host = urlsplit(url).hostname
                 body = (resp.get("html") or "")[:300_000]
-                body_hash = hashlib.sha1(
+                bh = hashlib.sha1(
                     re.sub(r"\s+", "", body[:8000]).encode("utf-8", "ignore")
                 ).hexdigest()
-                same = _same_as_home(
-                    home_sigs.get(host, ("", "", 0, "")),
-                    resp["final_url"], resp["title"] or "",
-                    len(resp.get("html") or ""), body_hash,
-                )
-                if not same:
+                sig = await home_sig(urlsplit(url).hostname or "")
+                if not _same_as_home(
+                        sig, resp["final_url"], resp["title"] or "",
+                        len(resp.get("html") or ""), bh):
                     fields["surface"] = 1
-                    signals = None
-                    shot_name = f"exp{run_id}_{uuid.uuid4().hex[:8]}.png"
-                    if cfg["screenshot"]:
-                        async with shot_sem:
-                            cap = await traffic.capture(
-                                resp["final_url"], traffic.SHOT_DIR / shot_name,
-                                fp.js_globals(), fp.dom_selectors(),
-                            )
-                        if cap["ok"]:
-                            fields["screenshot"] = shot_name
-                            fields["shot_sig"] = (
-                                f"{resp['status_code']}|{_dom_sig(cap['html'])}")
-                            signals = fp.signals_from_capture(cap, resp)
-                    if signals is None:
-                        favicon_hash = await probe.fetch_favicon_hash(
-                            client, resp["final_url"])
-                        signals = fp.signals_from_response(resp, favicon_hash)
-                    matched = fp.match(signals)
-                    hits = list(matched["hits"])
-                    if cfg["active_probe"]:
-                        base = resp["final_url"]
-                        for rule in matched["candidates"]:
-                            for path in rule["probe"]:
-                                try:
-                                    r = await client.get(
-                                        base.rstrip("/") + "/" + path.lstrip("/"))
-                                    if r.status_code >= 400:
-                                        continue
-                                    h = fp.evaluate_probe(rule, r.text[:300_000])
-                                except Exception:
-                                    h = None
-                                if h:
-                                    hits.append(h)
-                                    break
-                    fps = fp.postprocess(hits)
-                    fields["fingerprints"] = json.dumps(fps, ensure_ascii=False)
-                    prot = [h["name"] for h in fps if h["category"] == "防护页"]
-                    fields["protection"] = ",".join(prot) if prot else None
-                    if prot:
-                        fields.update(await _bypassed_result(
-                            client, url, fields, run_id, shot_sem, cfg))
-            store.update_exposure_deep_result(run_id, url, fields)
+            probed.append({"url": url, "resp": resp, "fields": fields,
+                           "bh": bh})
+            if not fields["surface"]:
+                store.update_exposure_deep_result(run_id, url, fields)
+                store.bump_exposure_deep(run_id)
         except Exception:
-            pass
-        finally:
             store.bump_exposure_deep(run_id)
 
+    await asyncio.gather(*(phase1(u, t) for u, (_s, _p, t) in ordered))
+
+    # ---- phase 2: identical bodies share ONE capture + fingerprint ----
+    groups = {}
+    for p in probed:
+        if p["fields"]["surface"]:
+            groups.setdefault(p["bh"], []).append(p)
+    ordered_groups = list(groups.values())  # keeps priority order
+
+    async def run_group(idx, members):
+        p0 = members[0]
+        resp0 = p0["resp"]
+        shared = {"screenshot": None, "shot_sig": None}
+        signals = None
+        if idx < limit and cfg["screenshot"]:
+            shot_name = f"exp{run_id}_{uuid.uuid4().hex[:8]}.png"
+            try:
+                async with shot_sem:
+                    cap = await traffic.capture(
+                        resp0["final_url"], traffic.SHOT_DIR / shot_name,
+                        fp.js_globals(), fp.dom_selectors(), proxy=proxy)
+                if cap["ok"]:
+                    shared["screenshot"] = shot_name
+                    shared["shot_sig"] = (
+                        f"{resp0['status_code']}|{_dom_sig(cap['html'])}")
+                    signals = fp.signals_from_capture(cap, resp0)
+            except Exception:
+                pass
+        if signals is None:
+            fav = await probe.fetch_favicon_hash(client, resp0["final_url"])
+            signals = fp.signals_from_response(resp0, fav)
+        matched = fp.match(signals)
+        hits = list(matched["hits"])
+        if cfg["active_probe"]:
+            base = resp0["final_url"]
+            for rule in matched["candidates"]:
+                for path in rule["probe"]:
+                    try:
+                        r = await client.get(
+                            base.rstrip("/") + "/" + path.lstrip("/"))
+                        if r.status_code >= 400:
+                            continue
+                        h = fp.evaluate_probe(rule, r.text[:300_000])
+                    except Exception:
+                        h = None
+                    if h:
+                        hits.append(h)
+                        break
+        fps = fp.postprocess(hits)
+        fps_json = json.dumps(fps, ensure_ascii=False)
+        prot = [h["name"] for h in fps if h["category"] == "防护页"]
+        prot_str = ",".join(prot) if prot else None
+
+        async def fin(p):
+            fields = dict(p["fields"])
+            fields.update({
+                "screenshot": shared["screenshot"],
+                "shot_sig": shared["shot_sig"],
+                "fingerprints": fps_json,
+                "protection": prot_str,
+            })
+            if prot:
+                fields.update(await _bypassed_result(
+                    client, p["url"], fields, run_id, shot_sem, cfg))
+            store.update_exposure_deep_result(run_id, p["url"], fields)
+            store.bump_exposure_deep(run_id)
+
+        await asyncio.gather(*(fin(p) for p in members))
+
     try:
-        await asyncio.gather(*(one(u, t) for u, (_s, _p, t) in ordered))
+        await asyncio.gather(*(
+            run_group(i, ms) for i, ms in enumerate(ordered_groups)))
         store.finish_exposure_deep(run_id)
     except Exception:
         store.fail_exposure_deep(run_id)

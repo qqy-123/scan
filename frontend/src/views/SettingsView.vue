@@ -45,6 +45,10 @@
             <a-form-item label="网页截图默认开启（同时采集渲染后信号）">
               <a-switch v-model:checked="form.screenshot" />
             </a-form-item>
+            <a-form-item label="出站代理（扫描流量走代理；Host碰撞/源站探测为直连 IP 不受代理影响）">
+              <a-input v-model:value="form.proxy" placeholder="http://127.0.0.1:8080 或 socks5://127.0.0.1:1080，留空直连"
+                       style="max-width: 420px" />
+            </a-form-item>
             <a-divider style="margin: 8px 0 16px" />
             <a-form-item label="平台登录密码（修改后需要重新登录，至少 6 位；留空则不修改）">
               <a-input-password v-model:value="newPassword" placeholder="留空保持不变"
@@ -131,6 +135,7 @@ const DEFAULTS = {
   screenshot: true,
   connect_timeout: 8,
   read_timeout: 15,
+  proxy: '',
   fofa_email: '',
   fofa_key: '',
   hunter_key: '',

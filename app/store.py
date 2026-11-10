@@ -156,6 +156,7 @@ DEFAULT_SETTINGS = {
     "screenshot": True,         # 扫描默认开启截图
     "connect_timeout": 8,       # httpx 连接超时（秒）
     "read_timeout": 15,         # httpx 读取超时（秒）
+    "proxy": "",                # 出站代理 http:// / https:// / socks5://（留空直连）
     # 网络空间测绘 API keys（可选配置，配置后暴露面扫描可勾选）
     "fofa_email": "",           # FOFA 账号邮箱
     "fofa_key": "",             # FOFA API key

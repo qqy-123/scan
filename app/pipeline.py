@@ -71,6 +71,7 @@ async def run_scan(scan_id: int):
                     traffic.SHOT_DIR / shot_name,
                     fp.js_globals(),
                     fp.dom_selectors(),
+                    proxy=cfg.get("proxy") or None,
                 )
             if cap["ok"]:
                 result["screenshot"] = shot_name
@@ -124,7 +125,8 @@ async def run_scan(scan_id: int):
                         cap = await traffic.capture(
                             bp["url"], traffic.SHOT_DIR / shot_name,
                             fp.js_globals(), fp.dom_selectors(),
-                            headers=bp["headers"])
+                            headers=bp["headers"],
+                            proxy=cfg.get("proxy") or None)
                     if cap["ok"]:
                         result["screenshot"] = shot_name
                         bsignals = fp.signals_from_capture(cap, bresp)
