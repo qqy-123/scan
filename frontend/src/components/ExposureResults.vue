@@ -21,6 +21,7 @@
         </template>
         <template v-else-if="record.isAlike">
           <span class="alike-url mono">└ {{ record.url }}</span>
+          <div v-if="record.title" class="sub-line">{{ record.title }}</div>
         </template>
         <template v-else>
           <a :href="record.url" target="_blank" rel="noopener" class="mono"
@@ -28,6 +29,7 @@
           <a-tag v-if="record._alike?.length" color="default" style="margin-left: 6px">
             ×{{ record._alike.length + 1 }} 相同
           </a-tag>
+          <div v-if="record.title" class="sub-line">{{ record.title }}</div>
         </template>
       </template>
       <template v-else-if="column.key === 'level'">
@@ -64,13 +66,12 @@
         </template>
       </template>
       <template v-else-if="column.key === 'screenshot'">
-        <a-image v-if="!record.isSev && !record.isTarget && !record.isAlike && record.screenshot"
-                 :src="`/screenshots/${record.screenshot}`" :width="72"
-                 style="border: 1px solid #f0f0f0; border-radius: 4px" />
+        <a v-if="!record.isSev && !record.isTarget && !record.isAlike && record.screenshot"
+           :href="`/screenshots/${record.screenshot}`" target="_blank" rel="noopener">
+          <img :src="`/screenshots/${record.screenshot}`" loading="lazy"
+               style="width: 72px; border: 1px solid #f0f0f0; border-radius: 4px; display: block" />
+        </a>
         <span v-else-if="!record.isSev && !record.isTarget" style="color: #bfbfbf">-</span>
-      </template>
-      <template v-else-if="column.key === 'title'">
-        <span v-if="!record.isSev && !record.isTarget">{{ record.title || '-' }}</span>
       </template>
       <template v-else-if="column.key === 'source'">
         <span v-if="!record.isSev && !record.isTarget" class="mono"
@@ -94,15 +95,14 @@ const loading = ref(false)
 const expandedKeys = ref([])
 
 const cols = [
-  { title: 'URL / 攻击面', key: 'url' },
-  { title: '级别', key: 'level', width: 76 },
-  { title: '方式', key: 'kind', width: 70 },
-  { title: '状态', key: 'status', width: 80 },
+  { title: 'URL / 标题', key: 'url' },
+  { title: '级别', key: 'level', width: 72 },
+  { title: '方式', key: 'kind', width: 66 },
+  { title: '状态', key: 'status', width: 76 },
   { title: '分类', key: 'hint', width: 110 },
-  { title: '指纹', key: 'fingerprints', width: 220 },
-  { title: '截图', key: 'screenshot', width: 100 },
-  { title: '标题', key: 'title', width: 160, ellipsis: true },
-  { title: '来源', key: 'source', width: 200, ellipsis: true },
+  { title: '指纹', key: 'fingerprints', width: 240 },
+  { title: '截图', key: 'screenshot', width: 92 },
+  { title: '来源', key: 'source', width: 140, ellipsis: true },
 ]
 
 const kindColor = (k) =>
@@ -237,11 +237,13 @@ onMounted(async () => {
   try {
     const { data } = await api.getExposure(props.runId)
     results.value = data.results
-    // 高危/中危/信息默认展开(含目标层), 噪声折叠
+    // 性能: 只默认展开高危组(含其目标层); 中危/信息展开层级行,
+    // 目标/记录层保持折叠 —— 否则几千行+截图一次渲染会卡死页面
     const keys = []
     for (const g of groups.value) {
       if (!SEV[g.sev].open) continue
-      keys.push(g.key, ...g.children.map((t) => t.key))
+      keys.push(g.key)
+      if (g.sev === 0) keys.push(...g.children.map((t) => t.key))
     }
     expandedKeys.value = keys
   } finally {
@@ -253,6 +255,7 @@ onMounted(async () => {
 <style scoped>
 .sev-url { font-weight: 600; font-size: 13px; }
 .tgt-url { font-weight: 600; font-size: 12px; word-break: break-all; }
+.sub-line { font-size: 11px; color: #a6a6a6; margin-top: 2px; word-break: break-all; }
 .sev-tag { font-weight: 600; margin-right: 6px; }
 .alike-url { color: #8c8c8c; font-size: 12px; word-break: break-all; }
 .prot-tag { color: #fa8c16; font-size: 11px; margin-left: 4px; }
