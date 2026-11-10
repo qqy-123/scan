@@ -183,10 +183,13 @@ async def capture(url: str, shot_path: Path | None, js_globals: list,
         out["final_url"] = page.url
 
         if done_events:
-            await asyncio.wait_for(
-                asyncio.gather(*(e.wait() for e in done_events), return_exceptions=True),
-                timeout=10,
-            )
+            try:
+                await asyncio.wait_for(
+                    asyncio.gather(*(e.wait() for e in done_events), return_exceptions=True),
+                    timeout=10,
+                )
+            except Exception:
+                pass  # packet tail-collection is auxiliary — never fail the capture
         out["ok"] = True
         out["error"] = None
     except Exception as e:

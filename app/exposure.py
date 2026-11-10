@@ -1226,17 +1226,22 @@ async def run_deep_scan(run_id: int, limit: int = 120):
     probe_sem = asyncio.Semaphore(max(5, cfg["concurrency"] // 3))
     shot_sem = asyncio.Semaphore(max(1, cfg["browser_concurrency"]))
 
-    # homepage signature per URL host — a surface must differ from it.
-    # lazily fetched so subdomains compare against THEIR OWN homepage
+    # homepage signature per TARGET — a surface is a page that differs
+    # from the target site's own homepage (kills catch-all mirrors).
+    # comparing against the URL's own host homepage would wrongly mark
+    # every subdomain's homepage as "echo" — sub homepages ARE findings.
     home_sigs = {}
 
-    async def home_sig(host: str):
-        if host not in home_sigs:
-            sig = await _page_signature(client, f"https://{host}")
-            if not sig[0]:
-                sig = await _page_signature(client, f"http://{host}")
-            home_sigs[host] = sig
-        return home_sigs[host]
+    async def home_sig(tid: int):
+        if tid not in home_sigs:
+            t = targets.get(tid)
+            sig = ("", "", 0, "")
+            if t:
+                u = t["url"] if "://" in t["url"] else "https://" + t["url"]
+                sig = await _page_signature(
+                    client, f"{urlsplit(u).scheme}://{urlsplit(u).netloc}")
+            home_sigs[tid] = sig
+        return home_sigs[tid]
 
     # ---- phase 1: probe every URL (cheap), group surfaces by body ----
     probed = []
@@ -1262,7 +1267,7 @@ async def run_deep_scan(run_id: int, limit: int = 120):
                 bh = hashlib.sha1(
                     re.sub(r"\s+", "", body[:8000]).encode("utf-8", "ignore")
                 ).hexdigest()
-                sig = await home_sig(urlsplit(url).hostname or "")
+                sig = await home_sig(_tid)
                 if not _same_as_home(
                         sig, resp["final_url"], resp["title"] or "",
                         len(resp.get("html") or ""), bh):
@@ -1301,8 +1306,11 @@ async def run_deep_scan(run_id: int, limit: int = 120):
                     shared["shot_sig"] = (
                         f"{resp0['status_code']}|{_dom_sig(cap['html'])}")
                     signals = fp.signals_from_capture(cap, resp0)
-            except Exception:
-                pass
+                else:
+                    print(f"[deep] capture failed {resp0['final_url']}: "
+                          f"{cap.get('error')}")
+            except Exception as e:
+                print(f"[deep] capture error {resp0['final_url']}: {e}")
         if signals is None:
             fav = await probe.fetch_favicon_hash(client, resp0["final_url"])
             signals = fp.signals_from_response(resp0, fav)
