@@ -84,7 +84,7 @@
               title="未进深扫 / 与首页相同(非攻击面) / 截图失败">-</span>
       </template>
       <template v-else-if="column.key === 'pkt'">
-        <a v-if="!record.isAlike && record.has_response" @click.stop="openPkt(record)">回显</a>
+        <a v-if="!record.isAlike && record.has_response" @click.stop="openPkt(record)">查看</a>
         <span v-else-if="!record.isAlike" style="color: #d9d9d9">-</span>
       </template>
       <template v-else-if="column.key === 'source'">
@@ -159,11 +159,15 @@ function tagsOf(r) {
   const h = r.hint || ''
   const u = (r.url || '').toLowerCase()
   const h0 = h.split(':')[0]
+  const path = u.replace(/^[a-z]+:\/\/[^/]+/i, '')   // path only — never the host
+  const isPage = r.status_code != null && r.status_code < 400 &&
+    r.status_code !== 204 && (r.title || r.screenshot || r.surface)
+  // 入口: content-proven login/admin (hint evidence), or an entry-pattern
+  // URL that actually served a page — intel rows without a page don't count
   if (h0 === 'admin' || h === 'entry' || h === 'point:admin' ||
-      h === 'point:login' || ENTRY_RE.test(u)) t.push('entry')
+      h === 'point:login' || (isPage && ENTRY_RE.test(path))) t.push('entry')
   // 疑似入口: served a real page (status<400 with rendered evidence)
-  if (r.status_code != null && r.status_code < 400 && r.status_code !== 204 &&
-      (r.title || r.screenshot || r.surface)) t.push('entryq')
+  if (isPage) t.push('entryq')
   if (h0 === 'api' || h === 'point:api' || API_RE.test(u)) t.push('api')
   if (h0 === 'upload') t.push('upload')
   if (h0 === 'auth') t.push('auth')
@@ -219,7 +223,7 @@ const cols = [
   { title: '分类', key: 'hint', width: 104 },
   { title: '指纹', key: 'fingerprints', width: 240 },
   { title: '截图', key: 'screenshot', width: 92 },
-  { title: '回显', key: 'pkt', width: 56 },
+  { title: '详情', key: 'pkt', width: 56 },
   { title: '来源', key: 'source', width: 140, ellipsis: true },
 ]
 
@@ -401,26 +405,54 @@ function level(f) {
 const shortPat = (p) => String(p || '').split('\\;')[0].slice(0, 80)
 const escHtml = (s) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 // evidence fields that exist as runtime data, not literal packet text
 const SKIP_HL = new Set(['dom', 'favicon', 'implies', 'js', 'xhr'])
 
 const pktHtml = computed(() => {
+  const reqEnd = `GET ${pkt.url} HTTP/1.1\n`.length
   const text = `GET ${pkt.url} HTTP/1.1\n` + (pkt.response || '')
+  const bodyStart = text.indexOf('\n\n') + 2 || text.length
   const spans = []
+  // run a pattern inside a bounded region only — evidence is credited to
+  // the exact place its field matched, not anywhere in the packet
+  const addPat = (pat, region, color) => {
+    try {
+      const rx = new RegExp(pat, 'gi')
+      const slice = text.slice(region[0], region[1])
+      let m, n = 0
+      while ((m = rx.exec(slice)) && n++ < 60) {
+        if (!m[0]) { rx.lastIndex++; continue }
+        spans.push({
+          s: region[0] + m.index,
+          e: region[0] + m.index + m[0].length, color,
+        })
+      }
+    } catch { /* python-only regex syntax — listed but unlit */ }
+  }
   for (const f of pktFps.value) {
     if (activeFp.value && f.name !== activeFp.value) continue
     const color = lvHex(level(f))
     for (const e of f.evidence || []) {
       if (!e.pattern || SKIP_HL.has(e.field)) continue
       const pat = String(e.pattern).split('\\;')[0]
-      try {
-        const rx = new RegExp(pat, 'gi')
-        let m, n = 0
-        while ((m = rx.exec(text)) && n++ < 60) {
-          if (!m[0]) { rx.lastIndex++; continue }
-          spans.push({ s: m.index, e: m.index + m[0].length, color })
-        }
-      } catch { /* python-only regex syntax — pattern stays listed, unlit */ }
+      if (e.field === 'headers' || e.field === 'cookies') {
+        // only inside that header's own line
+        const keyRx = new RegExp(`^${escRe(e.key)}\\s*:.*$`, 'gim')
+        const km = keyRx.exec(text)
+        if (km) addPat(pat, [km.index, km.index + km[0].length], color)
+      } else if (e.field === 'meta' && e.key) {
+        const keyRx = new RegExp(
+          `<meta[^>]*(?:name|property)=["']?${escRe(e.key)}["']?[^>]*>`, 'gi')
+        const km = keyRx.exec(text)
+        if (km) addPat(pat, [km.index, km.index + km[0].length], color)
+      } else if (e.field === 'url' || e.field === 'probe') {
+        addPat(e.field === 'probe' && e.key ? escRe(e.key) : pat,
+               [0, reqEnd + 4], color)   // the request line only
+      } else {
+        // html / scripts / scriptSrc → body only, never headers
+        if (bodyStart < text.length) addPat(pat, [bodyStart, text.length], color)
+      }
     }
   }
   spans.sort((a, b) => a.s - b.s || b.e - a.e)
