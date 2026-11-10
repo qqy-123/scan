@@ -1510,10 +1510,13 @@ async def run_deep_scan(run_id: int, limit: int = 120):
         if not in_scope:
             continue
         pri = DEEP_PRIORITY.get(r.get("kind") or "js", 9)
+        hint = r.get("hint") or ""
+        if hint in ("entry", "point:login", "point:admin"):
+            pri = 0                         # entries always probe first
         surf = 0 if r.get("surface") else 1   # surfaces sort first
         prev = urls.get(u)
         if prev is None or (surf, pri) < (prev[0], prev[1]):
-            urls[u] = (surf, pri, r["target_id"])
+            urls[u] = (surf, pri, r["target_id"], hint)
     # HTTP probing is cheap — cover far more URLs than the capture budget;
     # `limit` then means "distinct pages to screenshot", not "rows scanned"
     ordered = sorted(
@@ -1530,7 +1533,7 @@ async def run_deep_scan(run_id: int, limit: int = 120):
     # ---- phase 1: probe every URL (cheap) ----
     probed = []
 
-    async def phase1(url, _tid):
+    async def phase1(url, _tid, hint=""):
         try:
             async with probe_sem:
                 resp = await probe.fetch(client, url)
@@ -1555,14 +1558,15 @@ async def run_deep_scan(run_id: int, limit: int = 120):
                         else None,
             }
             probed.append({"url": url, "resp": resp, "fields": fields,
-                           "bh": bh})
+                           "bh": bh, "hint": hint})
             if not fields["alive"]:
                 store.update_exposure_deep_result(run_id, url, fields)
                 store.bump_exposure_deep(run_id)
         except Exception:
             store.bump_exposure_deep(run_id)
 
-    await asyncio.gather(*(phase1(u, t) for u, (_s, _p, t) in ordered))
+    await asyncio.gather(*(phase1(u, t, h)
+                           for u, (_s, _p, t, h) in ordered))
 
     # ---- phase 2: a "surface" is a page not seen before — one per
     # distinct body. identical bodies share ONE capture + fingerprint ----
@@ -1572,12 +1576,20 @@ async def run_deep_scan(run_id: int, limit: int = 120):
             groups.setdefault(p["bh"], []).append(p)
     ordered_groups = list(groups.values())  # keeps priority order
 
+    extra_entry_shots = {"n": 0}    # entries beyond limit still captured
+    MAX_ENTRY_SHOTS = 50
+
     async def run_group(idx, members):
         p0 = members[0]               # rep = the first-seen distinct page
         resp0 = p0["resp"]
         shared = {"screenshot": None, "shot_sig": None}
         signals = None
-        if idx < limit and cfg["screenshot"]:
+        is_entry = p0.get("hint") in ("entry", "point:login", "point:admin")
+        take_shot = idx < limit or (is_entry
+                                    and extra_entry_shots["n"] < MAX_ENTRY_SHOTS)
+        if take_shot and idx >= limit:
+            extra_entry_shots["n"] += 1
+        if take_shot and cfg["screenshot"]:
             shot_name = f"exp{run_id}_{uuid.uuid4().hex[:8]}.png"
             try:
                 async with shot_sem:
