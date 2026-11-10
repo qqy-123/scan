@@ -139,25 +139,32 @@ async def capture(url: str, shot_path: Path | None, js_globals: list,
         out["script_src"] = await page.eval_on_selector_all(
             "script[src]", "els => els.map(e => e.src)"
         )
-        for g in js_globals:
+        # one evaluate per signal class — thousands of fingerprints make
+        # per-item IPC calls prohibitive (was ~10ms × N globals/selectors)
+        if js_globals:
             try:
-                val = await page.evaluate(
-                    f"() => {{ try {{ return String({g}); }} catch(e) {{ return null; }} }}"
-                )
-                if val is not None:
-                    out["js"][g] = str(val)[:300]
+                out["js"] = await page.evaluate(
+                    """(globals) => { const out = {};
+                    for (const g of globals) {
+                        try { const v = eval(g);
+                            if (v !== undefined && v !== null)
+                                out[g] = String(v).slice(0, 300); }
+                        catch (e) {} }
+                    return out; }""", js_globals)
             except Exception:
                 pass
-        for sel in dom_selectors:
+        if dom_selectors:
             try:
-                el = await page.query_selector(sel)
-                if el:
-                    text = await el.inner_text()
-                    out["dom"][sel] = {
-                        "exists": True,
-                        "text": (text or "")[:500],
-                        "attrs": {},
-                    }
+                out["dom"] = await page.evaluate(
+                    """(sels) => { const out = {};
+                    for (const s of sels) {
+                        try { const el = document.querySelector(s);
+                            if (el) out[s] = {
+                                exists: true,
+                                text: (el.innerText || '').slice(0, 500),
+                                attrs: {} }; }
+                        catch (e) {} }
+                    return out; }""", dom_selectors)
             except Exception:
                 pass
 
