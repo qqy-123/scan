@@ -1226,24 +1226,7 @@ async def run_deep_scan(run_id: int, limit: int = 120):
     probe_sem = asyncio.Semaphore(max(5, cfg["concurrency"] // 3))
     shot_sem = asyncio.Semaphore(max(1, cfg["browser_concurrency"]))
 
-    # homepage signature per TARGET — a surface is a page that differs
-    # from the target site's own homepage (kills catch-all mirrors).
-    # comparing against the URL's own host homepage would wrongly mark
-    # every subdomain's homepage as "echo" — sub homepages ARE findings.
-    home_sigs = {}
-
-    async def home_sig(tid: int):
-        if tid not in home_sigs:
-            t = targets.get(tid)
-            sig = ("", "", 0, "")
-            if t:
-                u = t["url"] if "://" in t["url"] else "https://" + t["url"]
-                sig = await _page_signature(
-                    client, f"{urlsplit(u).scheme}://{urlsplit(u).netloc}")
-            home_sigs[tid] = sig
-        return home_sigs[tid]
-
-    # ---- phase 1: probe every URL (cheap), group surfaces by body ----
+    # ---- phase 1: probe every URL (cheap) ----
     probed = []
 
     async def phase1(url, _tid):
@@ -1267,14 +1250,9 @@ async def run_deep_scan(run_id: int, limit: int = 120):
                 bh = hashlib.sha1(
                     re.sub(r"\s+", "", body[:8000]).encode("utf-8", "ignore")
                 ).hexdigest()
-                sig = await home_sig(_tid)
-                if not _same_as_home(
-                        sig, resp["final_url"], resp["title"] or "",
-                        len(resp.get("html") or ""), bh):
-                    fields["surface"] = 1
             probed.append({"url": url, "resp": resp, "fields": fields,
                            "bh": bh})
-            if not fields["surface"]:
+            if not fields["alive"]:
                 store.update_exposure_deep_result(run_id, url, fields)
                 store.bump_exposure_deep(run_id)
         except Exception:
@@ -1282,15 +1260,16 @@ async def run_deep_scan(run_id: int, limit: int = 120):
 
     await asyncio.gather(*(phase1(u, t) for u, (_s, _p, t) in ordered))
 
-    # ---- phase 2: identical bodies share ONE capture + fingerprint ----
+    # ---- phase 2: a "surface" is a page not seen before — one per
+    # distinct body. identical bodies share ONE capture + fingerprint ----
     groups = {}
     for p in probed:
-        if p["fields"]["surface"]:
+        if p["fields"]["alive"]:
             groups.setdefault(p["bh"], []).append(p)
     ordered_groups = list(groups.values())  # keeps priority order
 
     async def run_group(idx, members):
-        p0 = members[0]
+        p0 = members[0]               # rep = the first-seen distinct page
         resp0 = p0["resp"]
         shared = {"screenshot": None, "shot_sig": None}
         signals = None
@@ -1339,6 +1318,7 @@ async def run_deep_scan(run_id: int, limit: int = 120):
         async def fin(p):
             fields = dict(p["fields"])
             fields.update({
+                "surface": 1 if p is p0 else 0,
                 "screenshot": shared["screenshot"],
                 "shot_sig": shared["shot_sig"],
                 "fingerprints": fps_json,
