@@ -8,11 +8,14 @@
     </span>
   </div>
   <a-table :data-source="flat" :columns="cols" row-key="key" size="small"
-           :pagination="pager" :loading="loading"
+           :pagination="pager" :loading="loading" @change="onTableChange"
            :expanded-row-keys="expandedKeys" @update:expandedRowKeys="expandedKeys = $event"
            :scroll="{ y: 560 }">
     <template #bodyCell="{ column, record }">
-      <template v-if="column.key === 'url'">
+      <template v-if="column.key === 'num'">
+        <span :class="record.isAlike ? 'num-sub' : 'num'">{{ record.num }}</span>
+      </template>
+      <template v-else-if="column.key === 'url'">
         <template v-if="record.isAlike">
           <span class="alike-url mono">└ {{ record.url }}</span>
           <div v-if="record.title" class="sub-line">{{ record.title }}</div>
@@ -80,7 +83,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import api from '../api'
 import FpTags from './FpTags.vue'
 
@@ -94,15 +97,25 @@ const sevSel = ref('全部')
 const sevOpts = ['全部', '高危', '中危', '信息', '噪声']
 const sevIdx = { 高危: 0, 中危: 1, 信息: 2, 噪声: 3 }
 
-const pager = {
-  pageSize: 20,
+const page = ref(1)
+const pageSize = ref(20)
+const pager = computed(() => ({
+  current: page.value,
+  pageSize: pageSize.value,
+  total: flat.value.length,
   showSizeChanger: true,
   pageSizeOptions: ['10', '20', '30', '50'],
   showQuickJumper: true,
   showTotal: (t) => `共 ${t} 条`,
+}))
+function onTableChange(p) {
+  page.value = p.current
+  pageSize.value = p.pageSize
 }
+watch([kw, sevSel], () => { page.value = 1 })
 
 const cols = [
+  { title: '#', key: 'num', width: 52 },
   { title: 'URL / 标题', key: 'url' },
   { title: '危害', key: 'sev', width: 66 },
   { title: '级别', key: 'level', width: 70 },
@@ -226,9 +239,11 @@ const flat = computed(() => {
   all.sort((a, b) => sevOf(a) - sevOf(b)
     || (b.screenshot ? 1 : 0) - (a.screenshot ? 1 : 0)
     || (b.surface || 0) - (a.surface || 0) || a.url.localeCompare(b.url))
-  return all.map((r) => ({
-    ...r, key: `r-${r.id}`, sev: sevOf(r),
-    children: (r._alike || []).map((a, j) => ({ ...a, isAlike: true, key: `a-${r.id}-${j}` })),
+  return all.map((r, i) => ({
+    ...r, key: `r-${r.id}`, sev: sevOf(r), num: i + 1,
+    children: (r._alike || []).map((a, j) => ({
+      ...a, isAlike: true, key: `a-${r.id}-${j}`, num: `${i + 1}.${j + 1}`,
+    })),
   }))
 })
 
@@ -254,6 +269,8 @@ onMounted(async () => {
   margin-bottom: 12px;
 }
 .toolbar-count { font-size: 12px; color: #8c8c8c; margin-left: auto; }
+.num { font-size: 12px; color: #595959; font-weight: 500; }
+.num-sub { font-size: 11px; color: #bfbfbf; }
 .alike-url { color: #8c8c8c; font-size: 12px; word-break: break-all; }
 .sub-line { font-size: 11px; color: #a6a6a6; margin-top: 2px; word-break: break-all; }
 .prot-tag { color: #fa8c16; font-size: 11px; margin-left: 4px; }
