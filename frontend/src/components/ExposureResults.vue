@@ -1,13 +1,18 @@
 <template>
   <div class="result-toolbar">
-    <a-select v-model:value="sevSel" :options="SEV_OPTS" mode="multiple"
-              placeholder="全部级别" size="small" allow-clear
-              style="min-width: 170px" :max-tag-count="2" />
-    <a-select v-model:value="tagSel" :options="tagOpts" mode="multiple"
-              placeholder="标签：入口 / API / 子域 / 端口…" size="small" allow-clear
-              style="min-width: 240px" :max-tag-count="3" />
+    <a-checkable-tag v-for="o in SEV_OPTS" :key="o.value"
+                     :checked="sevSel.includes(o.value)"
+                     :style="sevSel.includes(o.value)
+                             ? `background:${SEV[o.value].hex};border-color:${SEV[o.value].hex}` : ''"
+                     class="filter-chip"
+                     @change="toggle(sevSel, o.value)">{{ o.label }}</a-checkable-tag>
+    <span class="toolbar-sep" />
+    <a-checkable-tag v-for="o in tagOpts" :key="o.value"
+                     :checked="tagSel.includes(o.value)"
+                     class="filter-chip"
+                     @change="toggle(tagSel, o.value)">{{ o.label }}</a-checkable-tag>
     <a-input v-model:value="kw" placeholder="搜索 URL / 标题 / 指纹 / 标签" allow-clear
-             size="small" style="width: 240px" />
+             size="small" style="width: 220px; margin-left: auto" />
     <span class="toolbar-count">
       {{ flat.length }} 条结果<template v-if="dupTotal">（合并 {{ dupTotal }} 条相同）</template>
     </span>
@@ -104,6 +109,12 @@ const SEV_OPTS = [
   { value: 0, label: '高危' }, { value: 1, label: '中危' },
   { value: 2, label: '信息' }, { value: 3, label: '噪声' },
 ]
+
+function toggle(list, v) {
+  const i = list.value.indexOf(v)
+  if (i < 0) list.value.push(v)
+  else list.value.splice(i, 1)
+}
 
 const TAG_LABEL = {
   entry: '入口', entryq: '疑似入口', api: 'API', upload: '上传', auth: '认证',
@@ -224,10 +235,10 @@ function sevOf(r) {
 }
 
 const SEV = [
-  { label: '高危', color: 'red' },
-  { label: '中危', color: 'orange' },
-  { label: '信息', color: 'blue' },
-  { label: '噪声', color: 'default' },
+  { label: '高危', color: 'red', hex: '#f5222d' },
+  { label: '中危', color: 'orange', hex: '#fa8c16' },
+  { label: '信息', color: 'blue', hex: '#1677ff' },
+  { label: '噪声', color: 'default', hex: '#8c8c8c' },
 ]
 
 // 相同返回算一个结果: 状态码+标题+长度桶
@@ -332,8 +343,16 @@ onMounted(async () => {
 .result-toolbar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 6px;
   margin-bottom: 12px;
+}
+.filter-chip { margin-inline-end: 0; user-select: none; }
+.toolbar-sep {
+  width: 1px;
+  height: 16px;
+  background: #e0e0e0;
+  margin: 0 6px;
 }
 .toolbar-count { font-size: 12px; color: #8c8c8c; margin-left: auto; }
 .num { font-size: 12px; color: #595959; font-weight: 500; white-space: nowrap; }
