@@ -20,7 +20,7 @@
     ],
     "url": [
       "/phpmyadmin",
-      "/pma/"
+      "/pma/\\;confidence:60"
     ]
   },
   {
@@ -111,7 +111,8 @@
     },
     "url": [
       "/app/kibana",
-      "kbn"
+      "kbn[-_.]",
+      "/kbn/"
     ]
   },
   {
@@ -170,7 +171,7 @@
       ]
     },
     "url": [
-      "/druid/"
+      "/druid/\\;confidence:60"
     ]
   },
   {
@@ -189,7 +190,7 @@
       ]
     },
     "url": [
-      "/console/"
+      "/console/\\;confidence:60"
     ]
   },
   {
@@ -200,7 +201,8 @@
       "server": "JBoss"
     },
     "html": [
-      "JBoss"
+      "JBoss\\;confidence:60",
+      "WildFly|jboss-"
     ],
     "implies": [
       "Java"
@@ -242,7 +244,8 @@
     "html": [
       "/wui/",
       "ecology\\;confidence:60",
-      "weaver"
+      "weaver\\;confidence:60",
+      "泛微"
     ],
     "cookies": {
       "ecology_JSession|loginpageweaver": ".*"
@@ -254,7 +257,7 @@
     },
     "url": [
       "/wui/",
-      "/weaver",
+      "/weaver/",
       "ecology"
     ]
   },
@@ -286,7 +289,7 @@
     ],
     "url": [
       "landray",
-      "/resource/"
+      "/resource/\\;confidence:60"
     ]
   },
   {
@@ -308,12 +311,16 @@
     "category": "OA",
     "website": "https://www.tongda2000.com",
     "html": [
-      "TDOA",
+      "TDOA\\.",
       "通达OA",
-      "/inc/utility"
+      "通达",
+      "tongda2000",
+      "/inc/utility_",
+      "ispirit",
+      "TDOA\\;confidence:60"
     ],
     "url": [
-      "/inc/",
+      "/inc/utility_",
       "/ispirit/"
     ]
   },
@@ -367,13 +374,14 @@
     "website": "https://www.sonatype.com",
     "html": [
       "Nexus Repository",
-      "nexus"
+      "nexus\\;confidence:60"
     ],
     "headers": {
       "server": "Nexus"
     },
     "url": [
-      "nexus"
+      "nexus\\;confidence:60",
+      "/nexus/"
     ]
   },
   {
@@ -385,10 +393,10 @@
     },
     "html": [
       "MinIO Console",
-      "minio"
+      "minio\\;confidence:60"
     ],
     "url": [
-      "minio"
+      "minio\\;confidence:60"
     ]
   },
   {
@@ -411,8 +419,8 @@
     "category": "Middleware",
     "website": "https://github.com/Netflix/eureka",
     "html": [
-      "Eureka",
-      "eureka"
+      "Eureka Dashboard|registered with Eureka|eureka/apps",
+      "eureka\\;confidence:60"
     ]
   }
 ]

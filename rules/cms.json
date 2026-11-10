@@ -81,7 +81,7 @@
     "url": [
       "/dede/",
       "/templets/",
-      "/plus/"
+      "/plus/\\;confidence:60"
     ]
   },
   {
@@ -106,7 +106,7 @@
       "PHP"
     ],
     "url": [
-      "/sites/",
+      "/sites/default",
       "drupal"
     ]
   },
@@ -132,7 +132,7 @@
     ],
     "url": [
       "/media/system",
-      "/administrator/"
+      "/administrator/\\;confidence:60"
     ]
   },
   {
@@ -185,7 +185,9 @@
       ]
     },
     "html": [
-      "hexo"
+      "Powered by Hexo",
+      "hexo-theme",
+      "hexo\\;confidence:50"
     ]
   },
   {

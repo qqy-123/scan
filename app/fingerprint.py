@@ -23,6 +23,20 @@ META_ATTR = {
 }
 SCRIPT_SRC_RE = re.compile(r'<script[^>]+src\s*=\s*["\']([^"\']+)["\']', re.I)
 INLINE_SCRIPT_RE = re.compile(r"<script(?![^>]*\bsrc\b)[^>]*>(.*?)</script>", re.I | re.S)
+# opaque payloads never carry fingerprint markers but DO produce random
+# substrings that short patterns false-match (e.g. "TdOA" inside base64)
+_DATA_URI_RE = re.compile(
+    r"data:[a-z0-9.+-]+/[a-z0-9.+-]*;base64,[a-z0-9+/=\s]+", re.I)
+_LONG_TOKEN_RE = re.compile(r"[a-z0-9+/=_]{80,}", re.I)
+
+
+def _scrub(text: str) -> str:
+    """Drop opaque blobs (data URIs, long base64/hex runs) so pattern
+    matching only sees human-meaningful markup/code."""
+    if not text:
+        return ""
+    return _LONG_TOKEN_RE.sub(
+        " ", _DATA_URI_RE.sub("data:", text))
 
 
 class Pattern:
@@ -31,7 +45,13 @@ class Pattern:
     def __init__(self, raw: str):
         parts = raw.split("\\;")
         self.raw = raw
-        self.regex = re.compile(parts[0] or ".*", re.I | re.S)
+        pat = parts[0] or ".*"
+        # bare short alpha tokens auto-wrap in word boundaries — otherwise
+        # they substring-match inside identifiers/base64 blobs ("TdOA"
+        # inside "1TdOA2LV") and false-positive constantly
+        if re.fullmatch(r"[a-zA-Z]{2,6}", pat):
+            pat = r"\b" + pat + r"\b"
+        self.regex = re.compile(pat, re.I | re.S)
         self.confidence = 100
         self.version = None
         for t in parts[1:]:
@@ -168,11 +188,12 @@ def signals_from_response(resp: dict, favicon_hash=None) -> dict:
         "status": resp.get("status_code"),
         "headers": {k.lower(): v for k, v in (resp.get("headers") or {}).items()},
         "cookies": resp.get("cookies") or {},
-        "html": html,
+        "html": _scrub(html),
         "title": resp.get("title") or "",
         "meta": meta,
         "script_src": SCRIPT_SRC_RE.findall(html),
-        "scripts": "\n".join(INLINE_SCRIPT_RE.findall(html))[:300_000],
+        "scripts": _scrub(
+            "\n".join(INLINE_SCRIPT_RE.findall(html))[:300_000]),
         "favicon": str(favicon_hash) if favicon_hash is not None else "",
         "js": {},
         "dom": {},
@@ -286,7 +307,8 @@ def evaluate(rule: dict, signals: dict) -> dict | None:
 
     # url patterns match final URL and every request URL the page triggered;
     # xhr patterns match only XHR/fetch request URLs
-    url_blob = "\n".join([signals.get("url") or ""] + (signals.get("urls") or []))
+    url_blob = _scrub(
+        "\n".join([signals.get("url") or ""] + (signals.get("urls") or [])))
     s, v = _match_list(rule["url"], url_blob, "url", evidence)
     score += s
     version = version or v
