@@ -333,6 +333,14 @@ async def deep_scan_exposure(rid: int, body: DeepScanIn = None):
     return {"ok": True}
 
 
+@app.get("/api/exposure/result/{row_id}/response")
+def exposure_row_response(row_id: int):
+    row = store.exposure_row_response(row_id)
+    if not row:
+        raise HTTPException(404)
+    return row
+
+
 @app.delete("/api/exposure/{rid}")
 def delete_exposure(rid: int):
     if not store.get_exposure_run(rid):

@@ -83,6 +83,10 @@
         <span v-else-if="!record.isAlike" style="color: #bfbfbf"
               title="未进深扫 / 与首页相同(非攻击面) / 截图失败">-</span>
       </template>
+      <template v-else-if="column.key === 'pkt'">
+        <a v-if="!record.isAlike && record.has_response" @click.stop="openPkt(record)">回显</a>
+        <span v-else-if="!record.isAlike" style="color: #d9d9d9">-</span>
+      </template>
       <template v-else-if="column.key === 'source'">
         <span class="mono" style="font-size: 11px; color: #8c8c8c; word-break: break-all">
           {{ record.source || '-' }}
@@ -90,10 +94,33 @@
       </template>
     </template>
   </a-table>
+
+  <a-modal v-model:open="pkt.open" title="回显数据包" width="880px" :footer="null">
+    <div class="mono" style="font-size: 12px; color: #8c8c8c; word-break: break-all">
+      {{ pkt.url }}
+    </div>
+    <div v-if="pkt.loading" style="text-align: center; padding: 24px"><a-spin /></div>
+    <template v-else>
+      <div class="fp-ev-list" v-if="pktFps.length">
+        <div v-for="f in pktFps" :key="f.name" class="fp-ev">
+          <a-tag :color="lvColor(level(f))" class="fp-ev-tag"
+                 :style="activeFp === f.name ? 'outline:2px solid #1677ff' : ''"
+                 @click="activeFp = activeFp === f.name ? null : f.name">
+            {{ lvText(level(f)) }}·{{ f.name }}{{ f.version ? ' ' + f.version : '' }}
+          </a-tag>
+          <span v-for="(e, i) in f.evidence || []" :key="i" class="ev-line">
+            {{ e.field }}{{ e.key ? '.' + e.key : '' }} ~ {{ shortPat(e.pattern) }}
+          </span>
+        </div>
+        <div style="font-size: 11px; color: #bfbfbf">点击指纹可只看它的命中高亮</div>
+      </div>
+      <pre class="pkt-pre" v-html="pktHtml"></pre>
+    </template>
+  </a-modal>
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import api from '../api'
 import FpTags from './FpTags.vue'
 
@@ -192,6 +219,7 @@ const cols = [
   { title: '分类', key: 'hint', width: 104 },
   { title: '指纹', key: 'fingerprints', width: 240 },
   { title: '截图', key: 'screenshot', width: 92 },
+  { title: '回显', key: 'pkt', width: 56 },
   { title: '来源', key: 'source', width: 140, ellipsis: true },
 ]
 
@@ -328,6 +356,85 @@ const flat = computed(() => {
 const dupTotal = computed(() =>
   flat.value.reduce((s, r) => s + (r._alike?.length || 0), 0))
 
+// ---- response packet viewer with fingerprint-evidence highlights ----
+const pkt = reactive({ open: false, loading: false, url: '', response: '', fingerprints: '' })
+const activeFp = ref(null)
+
+async function openPkt(r) {
+  pkt.open = true
+  pkt.loading = true
+  pkt.url = r.url
+  pkt.response = ''
+  pkt.fingerprints = r.fingerprints || ''
+  activeFp.value = null
+  try {
+    const { data } = await api.exposureRowResponse(r.id)
+    pkt.response = data.response || ''
+    pkt.fingerprints = data.fingerprints || pkt.fingerprints
+  } finally {
+    pkt.loading = false
+  }
+}
+
+const pktFps = computed(() => {
+  try { return JSON.parse(pkt.fingerprints || '[]') || [] }
+  catch { return [] }
+})
+
+const LV = {
+  confirmed: { text: '确认', color: 'green', hex: '#52c41a' },
+  high: { text: '高可信', color: 'orange', hex: '#fa8c16' },
+  low: { text: '低可信', color: 'default', hex: '#8c8c8c' },
+}
+const lvText = (l) => (LV[l] || LV.low).text
+const lvColor = (l) => (LV[l] || LV.low).color
+const lvHex = (l) => (LV[l] || LV.low).hex
+
+function level(f) {
+  if (f.level) return f.level
+  if (f.confidence === 'implied') return 'low'
+  const fields = new Set((f.evidence || []).map((e) => e.field))
+  if (['probe', 'favicon', 'dom'].some((x) => fields.has(x))) return 'confirmed'
+  return (f.score || 0) >= 100 ? 'high' : 'low'
+}
+
+const shortPat = (p) => String(p || '').split('\\;')[0].slice(0, 80)
+const escHtml = (s) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+// evidence fields that exist as runtime data, not literal packet text
+const SKIP_HL = new Set(['dom', 'favicon', 'implies', 'js', 'xhr'])
+
+const pktHtml = computed(() => {
+  const text = `GET ${pkt.url} HTTP/1.1\n` + (pkt.response || '')
+  const spans = []
+  for (const f of pktFps.value) {
+    if (activeFp.value && f.name !== activeFp.value) continue
+    const color = lvHex(level(f))
+    for (const e of f.evidence || []) {
+      if (!e.pattern || SKIP_HL.has(e.field)) continue
+      const pat = String(e.pattern).split('\\;')[0]
+      try {
+        const rx = new RegExp(pat, 'gi')
+        let m, n = 0
+        while ((m = rx.exec(text)) && n++ < 60) {
+          if (!m[0]) { rx.lastIndex++; continue }
+          spans.push({ s: m.index, e: m.index + m[0].length, color })
+        }
+      } catch { /* python-only regex syntax — pattern stays listed, unlit */ }
+    }
+  }
+  spans.sort((a, b) => a.s - b.s || b.e - a.e)
+  let html = '', pos = 0
+  for (const sp of spans) {
+    if (sp.s < pos) continue
+    html += escHtml(text.slice(pos, sp.s))
+      + `<mark style="background:${sp.color}2e;outline:1px solid ${sp.color}">`
+      + escHtml(text.slice(sp.s, sp.e)) + '</mark>'
+    pos = sp.e
+  }
+  return html + escHtml(text.slice(pos))
+})
+
 onMounted(async () => {
   loading.value = true
   try {
@@ -354,6 +461,29 @@ onMounted(async () => {
   background: #e0e0e0;
   margin: 0 6px;
 }
+.fp-ev-list { margin: 10px 0; max-height: 180px; overflow-y: auto; }
+.fp-ev { margin-bottom: 5px; }
+.fp-ev-tag { cursor: pointer; }
+.ev-line {
+  font-size: 11px;
+  color: #8c8c8c;
+  font-family: ui-monospace, monospace;
+  margin-left: 8px;
+  word-break: break-all;
+}
+.pkt-pre {
+  max-height: 460px;
+  overflow: auto;
+  background: #f6f8fa;
+  border: 1px solid #eaecef;
+  border-radius: 6px;
+  font-size: 11.5px;
+  line-height: 1.55;
+  padding: 10px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.pkt-pre mark { padding: 0 1px; border-radius: 2px; }
 .toolbar-count { font-size: 12px; color: #8c8c8c; margin-left: auto; }
 .num { font-size: 12px; color: #595959; font-weight: 500; white-space: nowrap; }
 .num-sub { font-size: 11px; color: #bfbfbf; white-space: nowrap; }

@@ -1438,6 +1438,16 @@ DEEP_PRIORITY = {"cdn": 0, "host": 0, "vuln": 0, "sub": 1, "port": 1,
                  "point": 2, "leak": 2, "url": 2, "dir": 3, "js": 4, "net": 5}
 
 
+def _resp_packet(resp: dict, html: str | None = None) -> str:
+    """Raw-ish response packet for the 回显 viewer: status line + headers
+    + body (rendered DOM when a capture exists, else the fetch body)."""
+    lines = [f"HTTP/1.1 {resp.get('status_code')}"]
+    for k, v in (resp.get("headers") or {}).items():
+        lines.append(f"{k}: {v}")
+    body = html if html is not None else (resp.get("html") or "")
+    return "\n".join(lines) + "\n\n" + body[:96_000]
+
+
 def _dom_sig(html: str) -> str:
     """Interface signature of a rendered page: only the sequence of tag
     names is hashed — text/attributes are ignored, so the same interface
@@ -1458,6 +1468,7 @@ async def _bypassed_result(client, url, fields, run_id, shot_sem, cfg):
         "protection": (fields["protection"] or "") + f"→bypass:{bp['mode']}",
         "status_code": r.status_code,
         "server": resp["server"],
+        "response": _resp_packet(resp),
     }
     signals = None
     if cfg["screenshot"]:
@@ -1554,6 +1565,7 @@ async def run_deep_scan(run_id: int, limit: int = 120):
                 "screenshot": None,
                 "protection": None,
                 "shot_sig": None,
+                "response": None,
                 "hint": "entry" if body and LOGIN_PAGE_RE.search(body)
                         else None,
             }
@@ -1582,7 +1594,7 @@ async def run_deep_scan(run_id: int, limit: int = 120):
     async def run_group(idx, members):
         p0 = members[0]               # rep = the first-seen distinct page
         resp0 = p0["resp"]
-        shared = {"screenshot": None, "shot_sig": None}
+        shared = {"screenshot": None, "shot_sig": None, "html": None}
         signals = None
         is_entry = p0.get("hint") in ("entry", "point:login", "point:admin")
         take_shot = idx < limit or (is_entry
@@ -1598,6 +1610,7 @@ async def run_deep_scan(run_id: int, limit: int = 120):
                         fp.js_globals(), fp.dom_selectors(), proxy=proxy)
                 if cap["ok"]:
                     shared["screenshot"] = shot_name
+                    shared["html"] = cap["html"]
                     shared["shot_sig"] = (
                         f"{resp0['status_code']}|{_dom_sig(cap['html'])}")
                     signals = fp.signals_from_capture(cap, resp0)
@@ -1639,6 +1652,8 @@ async def run_deep_scan(run_id: int, limit: int = 120):
                 "shot_sig": shared["shot_sig"],
                 "fingerprints": fps_json,
                 "protection": prot_str,
+                "response": _resp_packet(
+                    p["resp"], shared["html"] if p is p0 else None),
             })
             if prot:
                 fields.update(await _bypassed_result(

@@ -209,6 +209,7 @@ def init():
         ("exposure_results", "screenshot TEXT"),
         ("exposure_results", "protection TEXT"),
         ("exposure_results", "shot_sig TEXT"),
+        ("exposure_results", "response TEXT"),
         ("exposure_runs", "deep_status TEXT DEFAULT 'none'"),
         ("exposure_runs", "deep_total INTEGER DEFAULT 0"),
         ("exposure_runs", "deep_done INTEGER DEFAULT 0"),
@@ -531,13 +532,30 @@ def fail_exposure(run_id: int):
 def list_exposure_results(run_id: int) -> list:
     conn = _conn()
     rows = conn.execute(
-        """SELECT r.*, t.url AS target_url FROM exposure_results r
+        """SELECT r.id, r.run_id, r.target_id, r.kind, r.url, r.source,
+                  r.status_code, r.title, r.length, r.hint, r.alive,
+                  r.surface, r.final_url, r.server, r.fingerprints,
+                  r.screenshot, r.protection, r.shot_sig, r.created_at,
+                  (r.response IS NOT NULL AND r.response != '')
+                      AS has_response,
+                  t.url AS target_url
+           FROM exposure_results r
            LEFT JOIN targets t ON t.id=r.target_id
            WHERE r.run_id=? ORDER BY r.kind, r.hint, r.url""",
         (run_id,),
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+def exposure_row_response(row_id: int) -> dict | None:
+    conn = _conn()
+    r = conn.execute(
+        "SELECT url, response, fingerprints FROM exposure_results WHERE id=?",
+        (row_id,),
+    ).fetchone()
+    conn.close()
+    return dict(r) if r else None
 
 
 def delete_exposure_run(rid: int):
@@ -607,13 +625,14 @@ def update_exposure_deep_result(rid: int, url: str, fields: dict):
     conn.execute(
         """UPDATE exposure_results SET status_code=?, alive=?, surface=?,
                final_url=?, server=?, fingerprints=?, screenshot=?, protection=?,
-               shot_sig=?,
+               shot_sig=?, response=?,
                hint=CASE WHEN ? IS NOT NULL AND (hint IS NULL OR hint='other')
                          THEN ? ELSE hint END
            WHERE run_id=? AND url=?""",
         (fields.get("status_code"), fields.get("alive"), fields.get("surface"),
          fields.get("final_url"), fields.get("server"), fields.get("fingerprints"),
          fields.get("screenshot"), fields.get("protection"), fields.get("shot_sig"),
+         fields.get("response"),
          fields.get("hint"), fields.get("hint"),
          rid, url),
     )
