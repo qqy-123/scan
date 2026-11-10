@@ -1706,7 +1706,10 @@ async def run_deep_scan(run_id: int, limit: int = 120):
                 fields["surface"] = 1
                 if fields.get("hint") in (None, "other"):
                     fields["hint"] = "entry"
-            store.update_exposure_deep_result(run_id, p["url"], fields)
+            try:
+                store.update_exposure_deep_result(run_id, p["url"], fields)
+            except Exception as e:
+                print(f"[deep] update failed {p['url']}: {e}")
             store.bump_exposure_deep(run_id)
 
         await asyncio.gather(*(fin(p) for p in members))

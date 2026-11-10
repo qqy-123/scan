@@ -490,9 +490,9 @@ def save_exposure_result(run_id: int, target_id: int, r: dict):
         """INSERT INTO exposure_results(run_id, target_id, kind, url, source,
                status_code, title, length, hint, surface)
            VALUES(?,?,?,?,?,?,?,?,?,?)""",
-        (run_id, target_id, r.get("kind"), r.get("url"), r.get("source"),
-         r.get("status_code"), r.get("title"), r.get("length"), r.get("hint"),
-         r.get("surface")),
+        (run_id, target_id, r.get("kind"), _txt(r.get("url")),
+         _txt(r.get("source")), r.get("status_code"), _txt(r.get("title")),
+         r.get("length"), _txt(r.get("hint")), r.get("surface")),
     )
     conn.execute(
         "UPDATE exposure_runs SET found=(SELECT COUNT(*) FROM exposure_results WHERE run_id=?) WHERE id=?",
@@ -619,6 +619,13 @@ def fail_exposure_deep(rid: int):
     conn.close()
 
 
+def _txt(v):
+    """Postgres refuses NUL bytes in string literals — strip them."""
+    if isinstance(v, str) and "\x00" in v:
+        return v.replace("\x00", "")
+    return v
+
+
 def update_exposure_deep_result(rid: int, url: str, fields: dict):
     """Fill probe/fingerprint/screenshot columns on every row of `url`."""
     conn = _conn()
@@ -630,10 +637,11 @@ def update_exposure_deep_result(rid: int, url: str, fields: dict):
                          THEN ? ELSE hint END
            WHERE run_id=? AND url=?""",
         (fields.get("status_code"), fields.get("alive"), fields.get("surface"),
-         fields.get("final_url"), fields.get("server"), fields.get("fingerprints"),
-         fields.get("screenshot"), fields.get("protection"), fields.get("shot_sig"),
-         fields.get("response"), fields.get("title"),
-         fields.get("hint"), fields.get("hint"),
+         _txt(fields.get("final_url")), _txt(fields.get("server")),
+         _txt(fields.get("fingerprints")), fields.get("screenshot"),
+         _txt(fields.get("protection")), fields.get("shot_sig"),
+         _txt(fields.get("response")), _txt(fields.get("title")),
+         _txt(fields.get("hint")), _txt(fields.get("hint")),
          rid, url),
     )
     conn.commit()
