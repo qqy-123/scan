@@ -110,10 +110,10 @@ const SEV_OPTS = [
   { value: 2, label: '信息' }, { value: 3, label: '噪声' },
 ]
 
-function toggle(list, v) {
-  const i = list.value.indexOf(v)
-  if (i < 0) list.value.push(v)
-  else list.value.splice(i, 1)
+function toggle(arr, v) {
+  const i = arr.indexOf(v)
+  if (i < 0) arr.push(v)
+  else arr.splice(i, 1)
 }
 
 const TAG_LABEL = {
