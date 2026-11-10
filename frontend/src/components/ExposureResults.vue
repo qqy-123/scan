@@ -1,8 +1,13 @@
 <template>
   <div class="result-toolbar">
-    <a-segmented v-model:value="sevSel" :options="sevOpts" size="small" />
-    <a-input v-model:value="kw" placeholder="搜索 URL / 标题 / 指纹 / 来源" allow-clear
-             size="small" style="width: 280px" />
+    <a-select v-model:value="sevSel" :options="SEV_OPTS" mode="multiple"
+              placeholder="全部级别" size="small" allow-clear
+              style="min-width: 170px" :max-tag-count="2" />
+    <a-select v-model:value="tagSel" :options="tagOpts" mode="multiple"
+              placeholder="标签：入口 / API / 子域 / 端口…" size="small" allow-clear
+              style="min-width: 240px" :max-tag-count="3" />
+    <a-input v-model:value="kw" placeholder="搜索 URL / 标题 / 指纹 / 标签" allow-clear
+             size="small" style="width: 240px" />
     <span class="toolbar-count">
       {{ flat.length }} 条结果<template v-if="dupTotal">（合并 {{ dupTotal }} 条相同）</template>
     </span>
@@ -92,10 +97,58 @@ const results = ref([])
 const loading = ref(false)
 const expandedKeys = ref([])
 const kw = ref('')
-const sevSel = ref('全部')
+const sevSel = ref([])     // multi-select: [] = all levels
+const tagSel = ref([])     // multi-select tag filter
 
-const sevOpts = ['全部', '高危', '中危', '信息', '噪声']
-const sevIdx = { 高危: 0, 中危: 1, 信息: 2, 噪声: 3 }
+const SEV_OPTS = [
+  { value: 0, label: '高危' }, { value: 1, label: '中危' },
+  { value: 2, label: '信息' }, { value: 3, label: '噪声' },
+]
+
+const TAG_LABEL = {
+  entry: '入口', api: 'API', upload: '上传', auth: '认证',
+  config: '配置', debug: '调试', leak: '泄露', vuln: '漏洞',
+  point: '攻击点', takeover: '接管', origin: '源站', host: 'Host碰撞',
+  port: '端口', sub: '子域', url: '历史URL', net: '测绘',
+  surface: '攻击面', shot: '已截图',
+}
+
+const ENTRY_RE = /\/(admin|manage|console|backend|backstage|login|signin|portal|sso|dashboard|phpmyadmin|wp-admin)(\/|\.|\?|$)/i
+const API_RE = /\/api[\/_.-]|\.api\.|^api\.|\/v\d+(\/|$)/i
+
+function tagsOf(r) {
+  const t = []
+  const h = r.hint || ''
+  const u = (r.url || '').toLowerCase()
+  const h0 = h.split(':')[0]
+  if (h0 === 'admin' || h === 'point:admin' || ENTRY_RE.test(u)) t.push('entry')
+  if (h0 === 'api' || h === 'point:api' || API_RE.test(u)) t.push('api')
+  if (h0 === 'upload') t.push('upload')
+  if (h0 === 'auth') t.push('auth')
+  if (h0 === 'config') t.push('config')
+  if (h0 === 'debug') t.push('debug')
+  if (h.startsWith('leak:')) t.push('leak')
+  if (h.startsWith('vuln:')) t.push('vuln')
+  if (h.startsWith('point:')) t.push('point')
+  if (h === 'takeover') t.push('takeover')
+  if (h === 'origin' || r.kind === 'cdn') t.push('origin')
+  if (r.kind === 'host') t.push('host')
+  if (r.kind === 'port') t.push('port')
+  if (r.kind === 'sub') t.push('sub')
+  if (r.kind === 'url') t.push('url')
+  if (r.kind === 'net') t.push('net')
+  if (r.surface) t.push('surface')
+  if (r.screenshot) t.push('shot')
+  return t
+}
+
+const tagOpts = computed(() => {
+  const present = new Set()
+  for (const r of results.value) for (const t of tagsOf(r)) present.add(t)
+  return Object.entries(TAG_LABEL)
+    .filter(([k]) => present.has(k))
+    .map(([value, label]) => ({ value, label }))
+})
 
 const page = ref(1)
 const pageSize = ref(20)
@@ -112,7 +165,7 @@ function onTableChange(p) {
   page.value = p.current
   pageSize.value = p.pageSize
 }
-watch([kw, sevSel], () => { page.value = 1 })
+watch([kw, sevSel, tagSel], () => { page.value = 1 })
 
 const cols = [
   { title: '#', key: 'num', width: 76 },
@@ -184,9 +237,14 @@ const INTEL_HINT_RANK = { 'sub:alive': 0, 'sub:dns': 1, 'sub:ct': 2, 'sub:echo':
 const flat = computed(() => {
   const search = (kw.value || props.filter || '').trim().toLowerCase()
   const match = (r) => {
+    if (sevSel.value.length && !sevSel.value.includes(sevOf(r))) return false
+    if (tagSel.value.length && !tagsOf(r).some((t) => tagSel.value.includes(t)))
+      return false
     if (!search) return true
-    const hay = [r.url, r.title, r.hint, r.source, r.fingerprints, r.target_url]
-      .filter(Boolean).join(' ').toLowerCase()
+    const hay = [
+      r.url, r.title, r.hint, r.source, r.fingerprints, r.target_url,
+      ...tagsOf(r).map((t) => TAG_LABEL[t]),
+    ].filter(Boolean).join(' ').toLowerCase()
     return hay.includes(search)
   }
   const rows = results.value.filter(match)
@@ -241,8 +299,6 @@ const flat = computed(() => {
   }
 
   let all = [...merged, ...intelReps]
-  const sIdx = sevIdx[sevSel.value]
-  if (sIdx !== undefined) all = all.filter((r) => sevOf(r) === sIdx)
   all.sort((a, b) => sevOf(a) - sevOf(b)
     || (b.screenshot ? 1 : 0) - (a.screenshot ? 1 : 0)
     || (b.surface || 0) - (a.surface || 0) || a.url.localeCompare(b.url))

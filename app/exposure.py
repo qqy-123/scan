@@ -1166,38 +1166,80 @@ async def _probe_path(client, url, baseline, home_sig):
     return results
 
 
-async def dir_scan(base_url: str, client: httpx.AsyncClient, concurrency: int = 40) -> list:
-    """dirsearch-style dictionary scan with soft-404 baseline."""
+def _dirish(url: str, status: int) -> bool:
+    """A directory (route prefix), not a file: extensionless last path
+    segment with a served response — eligible for deeper dict recursion."""
+    seg = urlsplit(url).path.rstrip("/").rsplit("/", 1)[-1]
+    return bool(seg) and "." not in seg and \
+        status in (200, 301, 302, 307, 401, 403)
+
+
+# extended coverage caps: sub-domain roots and entry-prefix dir scans
+DIR_SUB_MAX = 8       # alive subdomains dir-scanned per root
+DIR_ENTRY_MAX = 5     # entry-point prefixes dir-scanned per target
+SUB_DICT_TOP = 400    # truncated dict for sub/entry scans
+
+
+async def dir_scan(base_url: str, client: httpx.AsyncClient,
+                   concurrency: int = 40, depth: int = 0,
+                   max_bases: int = 1, words: list | None = None) -> list:
+    """dirsearch-style dictionary scan with soft-404 baseline.
+
+    Multi-level: hits that look like directories (extensionless served
+    path) are re-scanned with the same dictionary, `depth` levels deep,
+    `max_bases` extra bases in total."""
     p = urlsplit(base_url)
-    base = f"{p.scheme}://{p.netloc}"
-
-    # two random baselines to catch wildcard/soft-404 signatures
-    baseline = []
-    for i in range(2):
-        rnd = f"{base}/scanx-{uuid.uuid4().hex[:12]}"
-        try:
-            r = await client.get(rnd)
-            title = ""
-            if "html" in r.headers.get("content-type", ""):
-                m = TITLE_RE.search(r.text[:300_000])
-                title = re.sub(r"\s+", " ", m.group(1)).strip() if m else ""
-            baseline.append((r.status_code, len(r.content), title))
-        except httpx.HTTPError:
-            baseline.append((0, 0, ""))
-
-    home_sig = await _page_signature(client, base)
+    netloc = f"{p.scheme}://{p.netloc}"
+    words = words or _dict_words()
+    home_sig = await _page_signature(client, netloc)
     sem = asyncio.Semaphore(concurrency)
     hits = []
+    first = (base_url.rstrip("/") + "/") if p.path not in ("", "/") \
+        else netloc + "/"
+    queue = [(first, 0)]
+    seen_bases = set()
 
-    async def one(word):
-        if len(hits) >= MAX_DIR_HITS + MAX_LEAK_HITS:
-            return
-        async with sem:
-            rs = await _probe_path(client, f"{base}/{word.lstrip('/')}",
-                                   baseline, home_sig)
-            hits.extend(rs)
+    while queue and len(hits) < MAX_DIR_HITS + MAX_LEAK_HITS:
+        base, lvl = queue.pop(0)
+        if base in seen_bases or (lvl and len(seen_bases) > max_bases):
+            continue
+        seen_bases.add(base)
+        baseline = []
+        for _ in range(2):
+            rnd = f"{base}scanx-{uuid.uuid4().hex[:12]}"
+            try:
+                r = await client.get(rnd)
+                title = ""
+                if "html" in r.headers.get("content-type", ""):
+                    m = TITLE_RE.search(r.text[:300_000])
+                    title = re.sub(r"\s+", " ", m.group(1)).strip() if m else ""
+                baseline.append((r.status_code, len(r.content), title))
+            except httpx.HTTPError:
+                baseline.append((0, 0, ""))
+        lvl_hits = []
 
-    await asyncio.gather(*(one(w) for w in _dict_words()))
+        async def one(word):
+            if len(hits) >= MAX_DIR_HITS + MAX_LEAK_HITS:
+                return
+            async with sem:
+                rs = await _probe_path(client, base + word.lstrip("/"),
+                                       baseline, home_sig)
+                lvl_hits.extend(rs)
+                hits.extend(rs)
+
+        await asyncio.gather(*(
+            one(w) for w in (words if lvl == 0 else words[:SUB_DICT_TOP])))
+        if lvl:
+            for h in lvl_hits:
+                if h.get("source") is None:
+                    h["source"] = "dir:多级"
+        if lvl < depth:
+            for h in lvl_hits:
+                if h["kind"] == "dir" and _dirish(h["url"],
+                                                h.get("status_code") or 0):
+                    nb = h["url"].rstrip("/") + "/"
+                    if nb not in seen_bases:
+                        queue.append((nb, lvl + 1))
     hits.sort(key=lambda x: (
         0 if x["kind"] in ("leak", "vuln", "point") else 1,
         -(x.get("surface") or 0), x.get("status_code") or 0, x["url"]))
@@ -1293,6 +1335,31 @@ async def run_exposure(run_id: int):
                                 r.get("source") or ""):
                             hosts.add(m.group(0))
                 out += await port_scan(sorted(hosts)[:MAX_PORT_HOSTS])
+            if "dir" in kinds:
+                # extended directory coverage: alive subdomain roots and
+                # entry-point prefixes discovered by js/url/dir collectors
+                sub_roots, entry_dirs = [], []
+                for r in out:
+                    u = r.get("url") or ""
+                    if not u.startswith("http") or not r.get("status_code"):
+                        continue
+                    sp = urlsplit(u)
+                    if r.get("kind") == "sub" and sp.hostname != host:
+                        sub_roots.append(f"{sp.scheme}://{sp.netloc}/")
+                    elif r.get("kind") in ("js", "dir") and \
+                            sp.hostname == host:
+                        seg = sp.path.strip("/").split("/")[0]
+                        if len(seg) > 2 and "." not in seg:
+                            entry_dirs.append(
+                                f"{sp.scheme}://{sp.netloc}/{seg}/")
+                words = _dict_words()[:SUB_DICT_TOP]
+                conc = max(10, cfg["concurrency"] // 2)
+                for b in list(dict.fromkeys(sub_roots))[:DIR_SUB_MAX]:
+                    out += await dir_scan(b, client, conc,
+                                          depth=1, max_bases=2, words=words)
+                for b in list(dict.fromkeys(entry_dirs))[:DIR_ENTRY_MAX]:
+                    out += await dir_scan(b, client, conc,
+                                          depth=1, max_bases=2, words=words)
         return out
 
     async def per_target(t):
@@ -1306,8 +1373,8 @@ async def run_exposure(run_id: int):
             if "dir" in kinds:
                 async with dir_sem:
                     results += await dir_scan(
-                        url, client, concurrency=max(10, cfg["concurrency"] // 2)
-                    )
+                        url, client, concurrency=max(10, cfg["concurrency"] // 2),
+                        depth=2, max_bases=4)
             # domain-level scans run once per root domain (shared task)
             if root and not _is_ip(root):
                 task = domain_cache.get(root)

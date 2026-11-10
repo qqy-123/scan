@@ -17,7 +17,7 @@
       <a-form-item>
         <a-checkbox-group v-model:value="opts.kinds" class="opt-list">
           <a-checkbox value="js">JS 接口提取（隐藏 API / 后台路径 / sourcemap + 参数攻击点分类 + 敏感信息检测）</a-checkbox>
-          <a-checkbox value="dir">目录爆破（内置字典探测后台 / 备份 / 配置，命中页检测 SQL 报错与敏感信息）</a-checkbox>
+          <a-checkbox value="dir">目录爆破（字典探测后台/备份/配置；命中目录自动递归多级；覆盖存活子域根与入口前缀）</a-checkbox>
         </a-checkbox-group>
       </a-form-item>
       <div class="opt-group">域名扩展</div>
