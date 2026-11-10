@@ -115,7 +115,7 @@ function onTableChange(p) {
 watch([kw, sevSel], () => { page.value = 1 })
 
 const cols = [
-  { title: '#', key: 'num', width: 52 },
+  { title: '#', key: 'num', width: 76 },
   { title: 'URL / 标题', key: 'url' },
   { title: '危害', key: 'sev', width: 66 },
   { title: '级别', key: 'level', width: 70 },
@@ -269,8 +269,8 @@ onMounted(async () => {
   margin-bottom: 12px;
 }
 .toolbar-count { font-size: 12px; color: #8c8c8c; margin-left: auto; }
-.num { font-size: 12px; color: #595959; font-weight: 500; }
-.num-sub { font-size: 11px; color: #bfbfbf; }
+.num { font-size: 12px; color: #595959; font-weight: 500; white-space: nowrap; }
+.num-sub { font-size: 11px; color: #bfbfbf; white-space: nowrap; }
 .alike-url { color: #8c8c8c; font-size: 12px; word-break: break-all; }
 .sub-line { font-size: 11px; color: #a6a6a6; margin-top: 2px; word-break: break-all; }
 .prot-tag { color: #fa8c16; font-size: 11px; margin-left: 4px; }
