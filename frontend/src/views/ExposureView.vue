@@ -74,12 +74,23 @@
             <span v-else style="color: #bfbfbf">-</span>
           </template>
           <template v-else-if="column.key === 'op'">
-            <a-space :size="6">
+            <a-space :size="6" wrap>
               <a-button size="small" @click.stop="viewRun(record)">查看</a-button>
               <a-button v-if="record.status === 'done' && record.deep_status !== 'running'"
                         size="small" @click.stop="deepScan(record.id)">
                 {{ record.deep_status === 'done' ? '重新深扫' : '深扫' }}
               </a-button>
+              <a-button v-if="record.status === 'done'" size="small"
+                        @click.stop="showDiff(record)">对比</a-button>
+              <a-dropdown v-if="record.status === 'done'">
+                <a-button size="small" @click.stop>导出</a-button>
+                <template #overlay>
+                  <a-menu @click="({ key }) => download(record.id, key)">
+                    <a-menu-item key="csv">CSV</a-menu-item>
+                    <a-menu-item key="xlsx">Excel</a-menu-item>
+                  </a-menu>
+                </template>
+              </a-dropdown>
               <a-popconfirm title="删除该次测绘及结果？" @confirm="del(record.id)">
                 <a-button size="small" danger @click.stop>删除</a-button>
               </a-popconfirm>
@@ -94,6 +105,35 @@
         </template>
       </a-empty>
     </a-card>
+
+    <a-modal v-model:open="diff.open" title="与上一轮对比" width="760px" :footer="null">
+      <div v-if="diff.loading" style="text-align: center; padding: 32px"><a-spin /></div>
+      <template v-else-if="diff.data">
+        <a-empty v-if="!diff.data.prev" description="该项目第一轮已完成的测绘，无可对比对象" />
+        <template v-else>
+          <div style="margin-bottom: 12px">
+            vs 测绘 #{{ diff.data.prev }}（{{ diff.data.prev_time || '-' }}）
+            <a-tag color="green">+{{ diff.data.new_count }} 新增</a-tag>
+            <a-tag>-{{ diff.data.gone_count }} 消失</a-tag>
+            <a-tag color="orange">~{{ diff.data.changed_count }} 变化</a-tag>
+          </div>
+          <a-tabs size="small">
+            <a-tab-pane key="new" :tab="`新增 ${diff.data.new_count}`">
+              <a-table :data-source="diff.data.new" :columns="diffCols"
+                       size="small" :pagination="{ pageSize: 10 }" row-key="url" />
+            </a-tab-pane>
+            <a-tab-pane key="gone" :tab="`消失 ${diff.data.gone_count}`">
+              <a-table :data-source="diff.data.gone" :columns="diffCols"
+                       size="small" :pagination="{ pageSize: 10 }" row-key="url" />
+            </a-tab-pane>
+            <a-tab-pane key="changed" :tab="`变化 ${diff.data.changed_count}`">
+              <a-table :data-source="diff.data.changed" :columns="diffChangedCols"
+                       size="small" :pagination="{ pageSize: 10 }" row-key="url" />
+            </a-tab-pane>
+          </a-tabs>
+        </template>
+      </template>
+    </a-modal>
 
     <ExposureScanModal v-model:open="showScan" @started="load" />
 
@@ -115,7 +155,7 @@
 </template>
 
 <script setup>
-import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { AimOutlined, DatabaseOutlined, InfoCircleOutlined, RadarChartOutlined } from '@ant-design/icons-vue'
 import api from '../api'
 import ExposureResults from '../components/ExposureResults.vue'
@@ -138,7 +178,7 @@ const runCols = [
   { title: '深扫', key: 'deep', width: 140 },
   { title: '开始时间', dataIndex: 'started_at', width: 170 },
   { title: '结束时间', dataIndex: 'finished_at', width: 170, customRender: ({ text }) => text || '-' },
-  { title: '操作', key: 'op', width: 120 },
+  { title: '操作', key: 'op', width: 240 },
 ]
 
 const parseKinds = (r) => {
@@ -151,12 +191,51 @@ const parseKinds = (r) => {
 
 const KIND_LABEL = {
   js: 'JS接口', dir: '目录爆破', sub: '子域名', brute: '子域爆破',
-  host: 'Host碰撞', net: '网络空间',
+  host: 'Host碰撞', net: '网络空间', origin: '源站探测',
+  takeover: '接管检测', wayback: '历史URL', port: '端口扫描',
 }
 const kindLabel = (k) => KIND_LABEL[k] || k
 const kindColor = (k) =>
   ({ js: 'cyan', dir: 'blue', sub: 'purple', brute: 'purple',
-     host: 'volcano', net: 'green' })[k] || 'default'
+     host: 'volcano', net: 'green', origin: 'red', takeover: 'red',
+     wayback: 'geekblue', port: 'orange' })[k] || 'default'
+
+const diffCols = [
+  { title: 'URL', dataIndex: 'url', ellipsis: true },
+  { title: '类型', dataIndex: 'kind', width: 80 },
+  { title: '提示', dataIndex: 'hint', width: 110, ellipsis: true },
+  { title: '状态', dataIndex: 'status_code', width: 70,
+    customRender: ({ text }) => text ?? '-' },
+]
+const diffChangedCols = [
+  { title: 'URL', dataIndex: 'url', ellipsis: true },
+  { title: '状态', key: 'st', width: 110,
+    customRender: ({ record }) => `${record.old_status ?? '-'} → ${record.new_status ?? '-'}` },
+  { title: '旧标题', dataIndex: 'old_title', ellipsis: true },
+  { title: '新标题', dataIndex: 'new_title', ellipsis: true },
+]
+const diff = reactive({ open: false, loading: false, data: null })
+
+async function showDiff(record) {
+  diff.open = true
+  diff.loading = true
+  diff.data = null
+  try {
+    diff.data = (await api.exposureDiff(record.id)).data
+  } finally {
+    diff.loading = false
+  }
+}
+
+async function download(rid, fmt) {
+  const { data } = await api.exportExposure(rid, fmt)
+  const url = URL.createObjectURL(data)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `exposure_${rid}.${fmt}`
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 function viewRun(record) {
   selected.value = record

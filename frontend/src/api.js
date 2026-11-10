@@ -60,4 +60,7 @@ export default {
   getExposure: (rid) => api.get(`/api/exposure/${rid}`),
   deepScanExposure: (rid, limit = 120) => api.post(`/api/exposure/${rid}/deepscan`, { limit }),
   deleteExposure: (rid) => api.delete(`/api/exposure/${rid}`),
+  exposureDiff: (rid) => api.get(`/api/exposure/${rid}/diff`),
+  exportExposure: (rid, fmt = 'csv') =>
+    api.get(`/api/exposure/${rid}/export?fmt=${fmt}`, { responseType: 'blob' }),
 }

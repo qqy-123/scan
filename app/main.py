@@ -1,11 +1,13 @@
 import asyncio
+import csv
 import hashlib
 import hmac
+import io
 import json
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 
 from pydantic import BaseModel
 
@@ -337,6 +339,96 @@ def delete_exposure(rid: int):
         raise HTTPException(404)
     store.delete_exposure_run(rid)
     return {"ok": True}
+
+
+def _export_row(r: dict) -> list:
+    try:
+        fps = ";".join(
+            f"{f['name']}@{f['version']}" if f.get("version") else f["name"]
+            for f in json.loads(r.get("fingerprints") or "[]"))
+    except Exception:
+        fps = ""
+    return [r.get("url"), r.get("kind"), r.get("hint"), r.get("status_code"),
+            r.get("title"), r.get("surface"), r.get("alive"),
+            r.get("protection"), fps, r.get("source"), r.get("target_url"),
+            r.get("final_url"), r.get("screenshot")]
+
+
+_EXPORT_COLS = ["url", "kind", "hint", "status_code", "title", "surface",
+                "alive", "protection", "fingerprints", "source", "target_url",
+                "final_url", "screenshot"]
+
+
+@app.get("/api/exposure/{rid}/export")
+def export_exposure(rid: int, fmt: str = "csv"):
+    if not store.get_exposure_run(rid):
+        raise HTTPException(404)
+    rows = store.list_exposure_results(rid)
+    fname = f"exposure_{rid}.{fmt}"
+    if fmt == "xlsx":
+        import openpyxl
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "exposure"
+        ws.append(_EXPORT_COLS)
+        for r in rows:
+            ws.append(_export_row(r))
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        return StreamingResponse(
+            buf,
+            media_type="application/vnd.openxmlformats-officedocument."
+                       "spreadsheetml.sheet",
+            headers={"Content-Disposition": f'attachment; filename="{fname}"'})
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(_EXPORT_COLS)
+    for r in rows:
+        w.writerow(_export_row(r))
+    return StreamingResponse(
+        io.BytesIO(buf.getvalue().encode("utf-8-sig")),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{fname}"'})
+
+
+@app.get("/api/exposure/{rid}/diff")
+def exposure_diff(rid: int):
+    """New / gone / changed results vs the previous completed run of the
+    same project — asset-change monitoring."""
+    run = store.get_exposure_run(rid)
+    if not run:
+        raise HTTPException(404)
+    prev = next((r for r in store.list_exposure_runs(run["project_id"])
+                 if r["status"] == "done" and r["id"] < rid), None)
+    if not prev:
+        return {"prev": None, "new": [], "gone": [], "changed": [],
+                "new_count": 0, "gone_count": 0, "changed_count": 0}
+    cur = {r["url"]: r for r in store.list_exposure_results(rid)}
+    old = {r["url"]: r for r in store.list_exposure_results(prev["id"])}
+    pick = lambda r: {k: r.get(k) for k in
+                      ("url", "kind", "hint", "status_code", "title", "surface")}
+    changed = []
+    for u in cur.keys() & old.keys():
+        a, b = old[u], cur[u]
+        if (a.get("status_code"), a.get("title"), a.get("fingerprints")) != \
+                (b.get("status_code"), b.get("title"), b.get("fingerprints")):
+            changed.append({"url": u,
+                            "old_status": a.get("status_code"),
+                            "new_status": b.get("status_code"),
+                            "old_title": a.get("title"),
+                            "new_title": b.get("title")})
+    new_rows = sorted((pick(cur[u]) for u in cur.keys() - old.keys()),
+                      key=lambda x: x["url"])
+    gone_rows = sorted((pick(old[u]) for u in old.keys() - cur.keys()),
+                       key=lambda x: x["url"])
+    return {
+        "prev": prev["id"], "prev_time": prev.get("finished_at"),
+        "new": new_rows[:500], "gone": gone_rows[:500],
+        "changed": changed[:200],
+        "new_count": len(new_rows), "gone_count": len(gone_rows),
+        "changed_count": len(changed),
+    }
 
 
 # ---------------- settings / system ----------------

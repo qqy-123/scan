@@ -27,6 +27,9 @@
           <a-checkbox value="brute">子域爆破（内置字典 DNS 枚举 + HTTP 验证）</a-checkbox>
           <a-checkbox value="host">Host 碰撞（对目标 IP 用 SNI+Host 探隐藏虚拟主机，依赖子域发现结果）</a-checkbox>
           <a-checkbox value="origin">源站探测 fuckcdn（对子域/测绘 IP 及所在 C 段做 SNI 碰撞，匹配首页签名定位 CDN 后真实源站 IP）</a-checkbox>
+          <a-checkbox value="takeover">子域接管检测（CNAME 悬空指向 GitHub/Heroku/S3 等可认领服务的子域）</a-checkbox>
+          <a-checkbox value="wayback">历史 URL（web.archive.org CDX 档案：已下线但可能仍存活的老接口/后台/带参端点）</a-checkbox>
+          <a-checkbox value="port">端口扫描（存活主机 TOP 端口 + banner 识别 + Redis/ES/Mongo/Docker 未授权检测）</a-checkbox>
         </a-checkbox-group>
       </a-form-item>
       <div class="opt-group">

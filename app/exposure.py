@@ -638,6 +638,205 @@ async def origin_scan(base_url: str, client: httpx.AsyncClient,
     return out
 
 
+# ---------------- wayback / takeover / port scan ----------------
+
+async def wayback_scan(base_url: str, client: httpx.AsyncClient,
+                       limit: int = 3000) -> list:
+    """Historical URLs from web.archive.org CDX — dead-but-alive endpoints,
+    legacy admin panels, old parameterized paths that JS extraction
+    can't reach because they're no longer linked."""
+    host = urlsplit(base_url).hostname
+    root = _root_domain(host)
+    if not root or _is_ip(root):
+        return []
+    try:
+        r = await client.get(
+            "https://web.archive.org/cdx/search/cdx",
+            params=[("url", root), ("matchType", "domain"),
+                    ("output", "json"), ("fl", "original"),
+                    ("collapse", "urlkey"), ("limit", str(limit)),
+                    ("filter", "statuscode:200")],
+            timeout=60)
+        if r.status_code != 200:
+            return []
+        data = r.json()
+    except Exception:
+        return []
+    seen, out = set(), []
+    for row in data[1:] if data and data[0] == ["original"] else data:
+        u = row[0] if isinstance(row, list) else row
+        if not isinstance(u, str) or not u.startswith("http"):
+            continue
+        h = urlsplit(u).hostname or ""
+        if h != host and not h.endswith("." + root):
+            continue
+        if not _interesting_js_path(u) or u in seen:
+            continue
+        seen.add(u)
+        sp = urlsplit(u)
+        out.append({
+            "kind": "url", "url": u, "source": "wayback",
+            "status_code": None, "title": None, "length": None,
+            "hint": _classify_params(sp.query) or _hint(sp.path),
+            "surface": 0,
+        })
+    return out
+
+
+TAKEOVER_HOSTS = (
+    "github.io", "herokuapp.com", "herokussl.com", "s3.amazonaws.com",
+    "amazonaws.com", "cloudfront.net", "azurewebsites.net", "cloudapp.net",
+    "azure-api.net", "trafficmanager.net", "blob.core.windows.net",
+    "elasticbeanstalk.com", "wpengine.com", "zendesk.com", "freshdesk.com",
+    "ghost.io", "myshopify.com", "pantheon.io", "webflow.io", "uservoice.com",
+    "unbouncepages.com", "tilda.ws", "readme.io", "surge.sh", "bitbucket.io",
+    "netlify.app", "fly.dev", "squarespace.com", "weebly.com",
+    "strikingly.com", "helpscoutdocs.com", "intercom.io", "launchrock.com",
+    "createsend.com", "getresponse.com", "acquia-sites.com",
+    "hatenablog.com", "thinkific.com", "vercel.app", "web.app",
+    "firebaseapp.com", "pages.dev", "workers.dev", "edgeapp.net",
+    "azureedge.net", "ngrok.io", "kinsta.cloud",
+)
+
+
+async def _cname(name: str, client: httpx.AsyncClient) -> str:
+    """CNAME target via DNS-over-HTTPS (works behind proxies, no dnspython)."""
+    try:
+        r = await client.get("https://dns.google/resolve",
+                             params={"name": name, "type": "CNAME"},
+                             timeout=8)
+        for a in (r.json().get("Answer") or []):
+            if a.get("type") == 5:
+                return str(a["data"]).rstrip(".")
+    except Exception:
+        pass
+    return ""
+
+
+async def takeover_scan(names_status: dict, client: httpx.AsyncClient,
+                        concurrency: int = 60) -> list:
+    """Dangling-CNAME detection: a subdomain whose CNAME points at a
+    claimable third-party service but doesn't serve a live site can be
+    taken over by registering that service."""
+    sem = asyncio.Semaphore(concurrency)
+    out = []
+
+    async def one(name: str, status):
+        async with sem:
+            c = await _cname(name, client)
+            if not c:
+                return
+            if not any(c == p or c.endswith("." + p)
+                       for p in TAKEOVER_HOSTS):
+                return
+            if status is not None and status < 400:
+                return  # serves a live page — service is claimed
+            out.append({
+                "kind": "sub", "url": f"https://{name}",
+                "source": "takeover", "status_code": status,
+                "title": f"CNAME悬空→{c}（可接管）", "length": None,
+                "hint": "takeover", "surface": 0,
+            })
+
+    await asyncio.gather(*(one(n, s) for n, s in names_status.items()))
+    return out
+
+
+TOP_PORTS = {
+    21: "ftp", 22: "ssh", 25: "smtp", 53: "dns", 110: "pop3",
+    143: "imap", 445: "smb", 465: "smtps", 587: "smtp", 993: "imaps",
+    995: "pop3s", 1433: "mssql", 1521: "oracle", 2375: "docker",
+    3306: "mysql", 3389: "rdp", 5432: "postgres", 5900: "vnc",
+    6379: "redis", 8000: "http", 8080: "http", 8443: "https",
+    8888: "http", 9000: "http", 9200: "es", 11211: "memcached",
+    27017: "mongo", 80: "http", 443: "https",
+}
+CRIT_PORTS = {6379, 9200, 27017, 2375, 11211}
+MAX_PORT_HOSTS = 80
+
+
+async def _port_probe(ip: str, host: str, port: int) -> dict | None:
+    """Connect → grab banner; a few unauthenticated-service checks."""
+    try:
+        reader, writer = await asyncio.wait_for(
+            asyncio.open_connection(ip, port), 3)
+    except Exception:
+        return None
+    try:
+        if TOP_PORTS[port].startswith("http") or port in (9200,):
+            writer.write(
+                f"GET / HTTP/1.1\r\nHost: {host}\r\n"
+                f"User-Agent: {probe.UA}\r\nConnection: close\r\n\r\n"
+                .encode())
+        elif port == 6379:
+            writer.write(b"INFO server\r\n")
+        await writer.drain()
+        banner = await asyncio.wait_for(reader.read(4096), 4)
+    except Exception:
+        banner = b""
+    finally:
+        try:
+            writer.close()
+        except Exception:
+            pass
+    return {"banner": banner.decode("utf-8", "ignore")}
+
+
+async def port_scan(hosts: list, concurrency: int = 150) -> list:
+    """TCP-connect TOP ports per discovered host; classify banners and
+    flag unauthenticated services (Redis/ES/Mongo/Docker/Memcached)."""
+    resolved = await asyncio.gather(*(_resolve(h) for h in hosts))
+    todo = [(h, ips[0]) for h, ips in zip(hosts, resolved) if ips]
+    sem = asyncio.Semaphore(concurrency)
+    out = []
+
+    async def one(h: str, ip: str, port: int):
+        async with sem:
+            r = await _port_probe(ip, h, port)
+            if r is None:
+                return
+            svc = TOP_PORTS[port]
+            text = r["banner"]
+            hint, title, status = "port:open", f"{svc} open", None
+            if port == 6379 and "redis_version" in text:
+                hint, title = "port:critical", "Redis 未授权访问"
+            elif port == 9200 and "cluster_name" in text:
+                hint, title = "port:critical", "Elasticsearch 未授权"
+            elif port == 2375 and '"Version"' in text:
+                hint, title = "port:critical", "Docker API 未授权暴露"
+            elif port == 27017 and ("ismaster" in text.lower()
+                                    or "isWritablePrimary" in text):
+                hint, title = "port:critical", "MongoDB 未授权"
+            elif port == 11211 and "STAT " in text:
+                hint, title = "port:critical", "Memcached 未授权"
+            if text.startswith("HTTP/"):
+                m = re.match(r"HTTP/\S+ (\d+)", text)
+                status = int(m.group(1)) if m else None
+                proto = "https" if port in (443, 8443) else "http"
+                hint = "port:http"
+                mt = TITLE_RE.search(text)
+                title = re.sub(r"\s+", " ", mt.group(1)).strip() \
+                    if mt else f"{proto}:{port}"
+                url = f"{proto}://{h}:{port}/"
+            else:
+                first = text.strip().splitlines()
+                if first:
+                    title = f"{svc}: {first[0][:60]}"
+                elif port in CRIT_PORTS:
+                    hint = "port:critical"
+                    title = f"{svc} open（无banner，需手工确认）"
+                url = f"{h}:{port}"
+            out.append({
+                "kind": "port", "url": url, "source": f"port:{ip}",
+                "status_code": status, "title": title, "length": None,
+                "hint": hint, "surface": 1 if status else 0,
+            })
+
+    await asyncio.gather(*(
+        one(h, ip, p) for h, ip in todo for p in TOP_PORTS))
+    return out
+
+
 async def net_search(base_url: str, client: httpx.AsyncClient,
                      cfg: dict) -> list:
     """Optional cyberspace engines: FOFA / Hunter / Quake (need API keys
@@ -1066,6 +1265,35 @@ async def run_exposure(run_id: int):
                         *(_resolve(h) for h in list(sub_hosts)[:80])):
                     ip_pool.update(lst)
                 out += await origin_scan(url, client, sorted(ip_pool))
+            if "wayback" in kinds:
+                out += await wayback_scan(url, client)
+            if "takeover" in kinds:
+                ns = {
+                    urlsplit(r["url"]).hostname: r.get("status_code")
+                    for r in out if r.get("kind") == "sub"
+                }
+                if not ns and SUB_DICT_PATH.exists():
+                    ns = {
+                        f"{w.strip()}.{root}": None for w in
+                        SUB_DICT_PATH.read_text(
+                            encoding="utf-8").splitlines()[:120]
+                        if w.strip() and not w.startswith("#")
+                    }
+                if ns:
+                    out += await takeover_scan(ns, client)
+            if "port" in kinds:
+                hosts = {host}
+                for r in out:
+                    if r.get("kind") == "sub" and r.get("status_code"):
+                        hh = urlsplit(r["url"]).hostname
+                        if hh:
+                            hosts.add(hh)
+                    elif r.get("kind") == "net":
+                        for m in re.finditer(
+                                r"\b\d{1,3}(?:\.\d{1,3}){3}\b",
+                                r.get("source") or ""):
+                            hosts.add(m.group(0))
+                out += await port_scan(sorted(hosts)[:MAX_PORT_HOSTS])
         return out
 
     async def per_target(t):
@@ -1133,8 +1361,8 @@ async def run_exposure(run_id: int):
 # ------------------------------------------------------------------
 
 # selection priority for deep scan — confirmed surfaces and vuln points first
-DEEP_PRIORITY = {"cdn": 0, "host": 0, "vuln": 0, "sub": 1, "point": 2, "leak": 2,
-                 "dir": 3, "js": 4, "net": 5}
+DEEP_PRIORITY = {"cdn": 0, "host": 0, "vuln": 0, "sub": 1, "port": 1,
+                 "point": 2, "leak": 2, "url": 2, "dir": 3, "js": 4, "net": 5}
 
 
 def _dom_sig(html: str) -> str:
@@ -1204,7 +1432,7 @@ async def run_deep_scan(run_id: int, limit: int = 120):
         # kinds (sub/host/net — they live under the target's own domain);
         # anything else stays out of authorized scope
         in_scope = h == th or r.get("kind") == "cdn" or (
-            r.get("kind") in ("sub", "host", "net")
+            r.get("kind") in ("sub", "host", "net", "url", "port")
             and _root_domain(h) and _root_domain(h) == _root_domain(th))
         if not in_scope:
             continue

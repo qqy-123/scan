@@ -129,16 +129,19 @@ const cols = [
 
 const kindColor = (k) =>
   ({ js: 'cyan', dir: 'blue', leak: 'magenta', vuln: 'red', point: 'volcano',
-     sub: 'purple', host: 'volcano', cdn: 'red', net: 'green' })[k] || 'default'
+     sub: 'purple', host: 'volcano', cdn: 'red', net: 'green',
+     url: 'geekblue', port: 'orange' })[k] || 'default'
 const kindLabel = (k) =>
   ({ js: 'JS', dir: 'DIR', leak: '泄露', vuln: '漏洞', point: '攻击点',
-     sub: '子域', host: 'Host碰撞', cdn: '源站', net: '测绘' })[k] || k
+     sub: '子域', host: 'Host碰撞', cdn: '源站', net: '测绘',
+     url: '历史URL', port: '端口' })[k] || k
 const statusColor = (s) =>
   s < 300 ? 'green' : s < 400 ? 'geekblue' : s === 401 || s === 403 ? 'orange' : 'red'
 const hintColor = (h) =>
   ({ admin: 'red', api: 'geekblue', upload: 'orange', auth: 'purple',
      config: 'gold', debug: 'cyan', vuln: 'red', leak: 'magenta',
-     point: 'volcano', origin: 'red', host: 'volcano' })[String(h).split(':')[0]] || 'default'
+     point: 'volcano', origin: 'red', host: 'volcano',
+     takeover: 'red', critical: 'red', port: 'orange' })[String(h).split(':')[0]] || 'default'
 
 // 0 高危 1 中危 2 信息 3 噪声
 const HIGH_LEAK = /rsa|private|aws|github|gitlab|token|jwt|secret|password|passwd|jdbc|oss|s3|shiro|cloud|aliyun|tencent|apikey|aksk|webhook/i
@@ -151,8 +154,11 @@ function sevOf(r) {
   if (h === 'point:admin') return 0
   if (h.startsWith('leak:') && HIGH_LEAK.test(h)) return 0
   if (r.surface && ADMIN_URL.test(u)) return 0
+  if (h === 'takeover') return 0
+  if (h === 'port:critical') return 0
   if (h === 'host:vhost') return 1
   if (h === 'origin') return 1
+  if (h.startsWith('port:')) return 1
   if (h.startsWith('point:')) return 1
   if (h.startsWith('leak:')) return 1
   if (r.surface) return 1
