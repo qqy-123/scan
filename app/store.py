@@ -607,11 +607,14 @@ def update_exposure_deep_result(rid: int, url: str, fields: dict):
     conn.execute(
         """UPDATE exposure_results SET status_code=?, alive=?, surface=?,
                final_url=?, server=?, fingerprints=?, screenshot=?, protection=?,
-               shot_sig=?
+               shot_sig=?,
+               hint=CASE WHEN ? IS NOT NULL AND (hint IS NULL OR hint='other')
+                         THEN ? ELSE hint END
            WHERE run_id=? AND url=?""",
         (fields.get("status_code"), fields.get("alive"), fields.get("surface"),
          fields.get("final_url"), fields.get("server"), fields.get("fingerprints"),
          fields.get("screenshot"), fields.get("protection"), fields.get("shot_sig"),
+         fields.get("hint"), fields.get("hint"),
          rid, url),
     )
     conn.commit()

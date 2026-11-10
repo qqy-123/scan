@@ -183,6 +183,10 @@ PHONE_INPUT_RE = re.compile(
     r"<input[^>]*(?:=[^\"']*手机号[\"']|maxlength=[\"']11[\"'])[^>]*>", re.I)
 ADMIN_TITLE_RE = re.compile(
     r"(?i)<title>.*?(后台|管理|admin|manage|console|dashboard).*?</title>")
+# a served page containing a password input / login wording = entry point
+LOGIN_PAGE_RE = re.compile(
+    r"type=[\"']?password[\"'\s>]|用户登录|登录|登陆|"
+    r"sign[\s_-]?in|log[\s_-]?in", re.I)
 
 # js sourcemap probe
 SOURCEMAP_RE = re.compile(r'"sources"\s*:\s*\[')
@@ -1150,6 +1154,9 @@ async def _probe_path(client, url, baseline, home_sig):
         re.sub(r"\s+", "", body[:8000]).encode("utf-8", "ignore")
     ).hexdigest()
     surface = 0 if _same_as_home(home_sig, str(r.url), title, body_len, body_hash) else 1
+    hint = _classify_params(urlsplit(url).query) or _hint(urlsplit(url).path)
+    if hint == "other" and LOGIN_PAGE_RE.search(body):
+        hint = "entry"
     results = [{
         "kind": "dir",
         "url": url,
@@ -1157,7 +1164,7 @@ async def _probe_path(client, url, baseline, home_sig):
         "status_code": status,
         "title": title or None,
         "length": body_len,
-        "hint": _classify_params(urlsplit(url).query) or _hint(urlsplit(url).path),
+        "hint": hint,
         "surface": surface,
     }]
     _scan_sensitive(body, url, url, results)
@@ -1527,6 +1534,13 @@ async def run_deep_scan(run_id: int, limit: int = 120):
         try:
             async with probe_sem:
                 resp = await probe.fetch(client, url)
+            body = ""
+            bh = ""
+            if resp["alive"]:
+                body = (resp.get("html") or "")[:300_000]
+                bh = hashlib.sha1(
+                    re.sub(r"\s+", "", body[:8000]).encode("utf-8", "ignore")
+                ).hexdigest()
             fields = {
                 "status_code": resp["status_code"],
                 "alive": 1 if resp["alive"] else 0,
@@ -1537,13 +1551,9 @@ async def run_deep_scan(run_id: int, limit: int = 120):
                 "screenshot": None,
                 "protection": None,
                 "shot_sig": None,
+                "hint": "entry" if body and LOGIN_PAGE_RE.search(body)
+                        else None,
             }
-            bh = ""
-            if resp["alive"]:
-                body = (resp.get("html") or "")[:300_000]
-                bh = hashlib.sha1(
-                    re.sub(r"\s+", "", body[:8000]).encode("utf-8", "ignore")
-                ).hexdigest()
             probed.append({"url": url, "resp": resp, "fields": fields,
                            "bh": bh})
             if not fields["alive"]:

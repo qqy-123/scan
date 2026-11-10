@@ -106,7 +106,7 @@ const SEV_OPTS = [
 ]
 
 const TAG_LABEL = {
-  entry: '入口', api: 'API', upload: '上传', auth: '认证',
+  entry: '入口', entryq: '疑似入口', api: 'API', upload: '上传', auth: '认证',
   config: '配置', debug: '调试', leak: '泄露', vuln: '漏洞',
   point: '攻击点', takeover: '接管', origin: '源站', host: 'Host碰撞',
   port: '端口', sub: '子域', url: '历史URL', net: '测绘',
@@ -121,7 +121,11 @@ function tagsOf(r) {
   const h = r.hint || ''
   const u = (r.url || '').toLowerCase()
   const h0 = h.split(':')[0]
-  if (h0 === 'admin' || h === 'point:admin' || ENTRY_RE.test(u)) t.push('entry')
+  if (h0 === 'admin' || h === 'entry' || h === 'point:admin' ||
+      h === 'point:login' || ENTRY_RE.test(u)) t.push('entry')
+  // 疑似入口: served a real page (status<400 with rendered evidence)
+  if (r.status_code != null && r.status_code < 400 && r.status_code !== 204 &&
+      (r.title || r.screenshot || r.surface)) t.push('entryq')
   if (h0 === 'api' || h === 'point:api' || API_RE.test(u)) t.push('api')
   if (h0 === 'upload') t.push('upload')
   if (h0 === 'auth') t.push('auth')
@@ -193,7 +197,7 @@ const statusColor = (s) =>
 const hintColor = (h) =>
   ({ admin: 'red', api: 'geekblue', upload: 'orange', auth: 'purple',
      config: 'gold', debug: 'cyan', vuln: 'red', leak: 'magenta',
-     point: 'volcano', origin: 'red', host: 'volcano',
+     point: 'volcano', origin: 'red', host: 'volcano', entry: 'purple',
      takeover: 'red', critical: 'red', port: 'orange' })[String(h).split(':')[0]] || 'default'
 
 // 0 高危 1 中危 2 信息 3 噪声
