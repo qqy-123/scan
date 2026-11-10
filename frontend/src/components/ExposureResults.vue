@@ -162,11 +162,13 @@ function tagsOf(r) {
   const path = u.replace(/^[a-z]+:\/\/[^/]+/i, '')   // path only — never the host
   const isPage = r.status_code != null && r.status_code < 400 &&
     r.status_code !== 204 && (r.title || r.screenshot || r.surface)
-  // 入口: content-proven login/admin (hint evidence), or an admin-ish /
-  // entry-pattern URL that actually served a page — 403/404 and intel
-  // rows without a page never count
-  if (h === 'entry' || h === 'point:admin' || h === 'point:login' ||
-      (isPage && (h0 === 'admin' || h0 === 'auth' || ENTRY_RE.test(path))))
+  // 入口: entry evidence (content hint / admin keyword / entry-pattern
+  // URL) AND an actually served page — dead rows, 403/404 blocks, intel
+  // rows and unbypassed protection pages never count
+  const blockedByProt = r.protection && !r.protection.includes('bypass')
+  if (isPage && !blockedByProt &&
+      (h === 'entry' || h === 'point:admin' || h === 'point:login'
+       || h0 === 'admin' || h0 === 'auth' || ENTRY_RE.test(path)))
     t.push('entry')
   // 疑似入口: served a real page (status<400 with rendered evidence)
   if (isPage) t.push('entryq')

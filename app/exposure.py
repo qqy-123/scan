@@ -1623,9 +1623,12 @@ async def run_deep_scan(run_id: int, limit: int = 120):
                 rep_bypass = (await _bypassed_result(
                     client, p0["url"], p0["fields"], run_id,
                     shot_sem, cfg)) or None
+        # when the rep bypassed, still capture the blocked page for the
+        # other members — their real view is the block, not the bypass
         take_shot = (idx < limit or (is_entry
                                      and extra_entry_shots["n"]
-                                     < MAX_ENTRY_SHOTS)) and not rep_bypass
+                                     < MAX_ENTRY_SHOTS)) and (
+            not rep_bypass or len(members) > 1)
         if take_shot and idx >= limit:
             extra_entry_shots["n"] += 1
         if take_shot and cfg["screenshot"]:
