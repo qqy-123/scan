@@ -154,6 +154,7 @@ DEFAULT_SETTINGS = {
     "browser_concurrency": 4,   # 浏览器并发（抓包/截图）
     "active_probe": True,       # 扫描默认开启主动探测
     "screenshot": True,         # 扫描默认开启截图
+    "fingerprint": True,        # 扫描默认开启指纹识别
     "connect_timeout": 8,       # httpx 连接超时（秒）
     "read_timeout": 15,         # httpx 读取超时（秒）
     "proxy": "",                # 出站代理 http:// / https:// / socks5://（留空直连）

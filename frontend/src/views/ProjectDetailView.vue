@@ -327,6 +327,9 @@
         <a-form-item label="网页截图（Playwright，同时采集渲染后 DOM/JS 信号）">
           <a-switch v-model:checked="scanOpts.screenshot" />
         </a-form-item>
+        <a-form-item label="指纹识别（规则库匹配；关闭后更快且不产出指纹列）">
+          <a-switch v-model:checked="scanOpts.fingerprint" />
+        </a-form-item>
         <a-form-item label="并发数">
           <a-input-number v-model:value="scanOpts.concurrency" :min="1" :max="200" />
         </a-form-item>
@@ -358,7 +361,7 @@ const showImport = ref(false)
 const showScan = ref(false)
 const importText = ref('')
 const importFiles = ref([])
-const scanOpts = reactive({ scope: 'all', active_probe: true, screenshot: true, concurrency: 50 })
+const scanOpts = reactive({ scope: 'all', active_probe: true, screenshot: true, fingerprint: true, concurrency: 50 })
 const settingsLoaded = ref(false)
 const showExposure = ref(false)
 const expRuns = ref([])
@@ -569,6 +572,7 @@ async function load() {
     api.getSettings().then(({ data: s }) => {
       scanOpts.active_probe = s.active_probe
       scanOpts.screenshot = s.screenshot
+      scanOpts.fingerprint = s.fingerprint !== false
       scanOpts.concurrency = s.concurrency
     })
   }

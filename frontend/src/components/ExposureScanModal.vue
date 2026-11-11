@@ -53,6 +53,7 @@
       </a-form-item>
       <a-form-item v-if="opts.auto_deep" label="截图上限（探测全部URL，相同页面只截一次，存活子域优先）">
         <a-input-number v-model:value="opts.deep_limit" :min="10" :max="1000" style="width: 140px" />
+        <a-checkbox v-model:checked="opts.fingerprint" style="margin-left: 16px">指纹识别</a-checkbox>
       </a-form-item>
     </a-form>
   </a-modal>
@@ -71,6 +72,7 @@ const emit = defineEmits(['update:open', 'started'])
 
 const opts = reactive({
   scope: 'alive', kinds: ['js', 'dir', 'sub'], auto_deep: true, deep_limit: 200,
+  fingerprint: true,
 })
 const projects = ref([])
 const pid = ref(null)

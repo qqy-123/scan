@@ -1429,7 +1429,8 @@ async def run_exposure(run_id: int):
     # 自动深扫: 验证攻击面(与首页不同的真实页面)并截图+指纹
     if opts.get("auto_deep"):
         try:
-            await run_deep_scan(run_id, int(opts.get("deep_limit") or 120))
+            await run_deep_scan(run_id, int(opts.get("deep_limit") or 120),
+                                fingerprint=opts.get("fingerprint", True))
         except Exception:
             pass
 
@@ -1461,7 +1462,8 @@ def _dom_sig(html: str) -> str:
     return hashlib.sha1(" ".join(tags).encode()).hexdigest()[:16]
 
 
-async def _bypassed_result(client, url, fields, run_id, shot_sem, cfg):
+async def _bypassed_result(client, url, fields, run_id, shot_sem, cfg,
+                           want_fp=True):
     """A protection page was fingerprinted — try to reach the real backend
     behind it and re-fingerprint/screenshot that response instead."""
     bp = await bypass.find_bypass(client, url)
@@ -1484,23 +1486,30 @@ async def _bypassed_result(client, url, fields, run_id, shot_sem, cfg):
         async with shot_sem:
             cap = await traffic.capture(
                 bp["url"], traffic.SHOT_DIR / shot_name,
-                fp.js_globals(), fp.dom_selectors(), headers=bp["headers"],
+                fp.js_globals() if want_fp else [],
+                fp.dom_selectors() if want_fp else {},
+                headers=bp["headers"],
                 proxy=cfg.get("proxy") or None)
         if cap["ok"]:
             out["screenshot"] = shot_name
             out["shot_sig"] = f"{r.status_code}|{_dom_sig(cap['html'])}"
             signals = fp.signals_from_capture(cap, resp)
-    fps = await bypass.refingerprint(client, resp, signals)
+    fps = await bypass.refingerprint(client, resp, signals) if want_fp else []
     out["fingerprints"] = json.dumps(fps, ensure_ascii=False)
     return out
 
 
-async def run_deep_scan(run_id: int, limit: int = 120):
+async def run_deep_scan(run_id: int, limit: int = 120,
+                        fingerprint: bool | None = None):
     """Re-probe every discovered same-host URL: liveness + fingerprint +
-    screenshot, exactly like the main fingerprint pipeline."""
+    screenshot, exactly like the main fingerprint pipeline.
+    fingerprint=None -> the exposure run's stored option."""
     run = store.get_exposure_run(run_id)
     if not run:
         return
+    want_fp = (json.loads(run.get("options") or "{}")
+               .get("fingerprint", True) if fingerprint is None
+               else fingerprint)
     project_id = run["project_id"]
     cfg = store.get_settings()
     targets = {t["id"]: t for t in store.list_targets(project_id)}
@@ -1622,7 +1631,7 @@ async def run_deep_scan(run_id: int, limit: int = 120):
             async with bypass_sem:
                 rep_bypass = (await _bypassed_result(
                     client, p0["url"], p0["fields"], run_id,
-                    shot_sem, cfg)) or None
+                    shot_sem, cfg, want_fp)) or None
         # when the rep bypassed, still capture the blocked page for the
         # other members — their real view is the block, not the bypass
         take_shot = (idx < limit or (is_entry
@@ -1637,7 +1646,8 @@ async def run_deep_scan(run_id: int, limit: int = 120):
                 async with shot_sem:
                     cap = await traffic.capture(
                         resp0["final_url"], traffic.SHOT_DIR / shot_name,
-                        fp.js_globals(), fp.dom_selectors(), proxy=proxy)
+                        fp.js_globals() if want_fp else [],
+                        fp.dom_selectors() if want_fp else {}, proxy=proxy)
                 if cap["ok"]:
                     shared["screenshot"] = shot_name
                     shared["html"] = cap["html"]
@@ -1649,27 +1659,28 @@ async def run_deep_scan(run_id: int, limit: int = 120):
                           f"{cap.get('error')}")
             except Exception as e:
                 print(f"[deep] capture error {resp0['final_url']}: {e}")
-        if signals is None:
-            fav = await probe.fetch_favicon_hash(client, resp0["final_url"])
-            signals = fp.signals_from_response(resp0, fav)
-        matched = fp.match(signals)
-        hits = list(matched["hits"])
-        if cfg["active_probe"]:
-            base = resp0["final_url"]
-            for rule in matched["candidates"]:
-                for path in rule["probe"]:
-                    try:
-                        r = await client.get(
-                            base.rstrip("/") + "/" + path.lstrip("/"))
-                        if r.status_code >= 400 or probe.probe_is_fallback(path, r):
-                            continue
-                        h = fp.evaluate_probe(rule, r.text[:300_000])
-                    except Exception:
-                        h = None
-                    if h:
-                        hits.append(h)
-                        break
-        fps = fp.postprocess(hits)
+        if want_fp:
+            if signals is None:
+                fav = await probe.fetch_favicon_hash(client, resp0["final_url"])
+                signals = fp.signals_from_response(resp0, fav)
+            matched = fp.match(signals)
+            hits = list(matched["hits"])
+            if cfg["active_probe"]:
+                base = resp0["final_url"]
+                for rule in matched["candidates"]:
+                    for path in rule["probe"]:
+                        try:
+                            r = await client.get(
+                                base.rstrip("/") + "/" + path.lstrip("/"))
+                            if r.status_code >= 400 or probe.probe_is_fallback(path, r):
+                                continue
+                            h = fp.evaluate_probe(rule, r.text[:300_000])
+                        except Exception:
+                            h = None
+                        if h:
+                            hits.append(h)
+                            break
+        fps = fp.postprocess(hits) if want_fp else []
         fps_json = json.dumps(fps, ensure_ascii=False)
         prot = [h["name"] for h in fps if h["category"] == "防护页"]
         prot_str = ",".join(prot) if prot else None
@@ -1691,7 +1702,8 @@ async def run_deep_scan(run_id: int, limit: int = 120):
             elif prot and not (p is p0 and rep_attempted):
                 async with bypass_sem:
                     fields.update(await _bypassed_result(
-                        client, p["url"], fields, run_id, shot_sem, cfg))
+                        client, p["url"], fields, run_id, shot_sem, cfg,
+                        want_fp))
             elif (blocked and p is not p0 and bypass_budget["n"] > 0
                   and (p.get("hint") in ENTRY_HINTS
                        or ENTRY_PATH_RE.search(re.sub(
@@ -1699,7 +1711,8 @@ async def run_deep_scan(run_id: int, limit: int = 120):
                 bypass_budget["n"] -= 1
                 async with bypass_sem:
                     fields.update(await _bypassed_result(
-                        client, p["url"], fields, run_id, shot_sem, cfg))
+                        client, p["url"], fields, run_id, shot_sem, cfg,
+                        want_fp))
             # bypassed a blocked page -> real entry point, mark it so
             if blocked and (fields.get("status_code") or 0) < 400:
                 fields["alive"] = 1

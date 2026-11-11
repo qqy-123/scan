@@ -45,6 +45,9 @@
             <a-form-item label="网页截图默认开启（同时采集渲染后信号）">
               <a-switch v-model:checked="form.screenshot" />
             </a-form-item>
+            <a-form-item label="指纹识别默认开启（关闭的扫描不产出指纹列）">
+              <a-switch v-model:checked="form.fingerprint" />
+            </a-form-item>
             <a-form-item label="出站代理（扫描流量走代理；Host碰撞/源站探测为直连 IP 不受代理影响）">
               <a-input v-model:value="form.proxy" placeholder="http://127.0.0.1:8080 或 socks5://127.0.0.1:1080，留空直连"
                        style="max-width: 420px" />
@@ -133,6 +136,7 @@ const DEFAULTS = {
   browser_concurrency: 4,
   active_probe: true,
   screenshot: true,
+  fingerprint: true,
   connect_timeout: 8,
   read_timeout: 15,
   proxy: '',

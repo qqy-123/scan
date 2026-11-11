@@ -53,6 +53,10 @@ async def run_scan(scan_id: int):
         """Post-alive pipeline: capture + signals + fingerprints + protection.
         row_id given -> update an existing (previously dead) row in place."""
         result = base_result(target, resp)
+        want_fp = opts.get("fingerprint", cfg["fingerprint"])
+        # no fingerprint pass -> skip the rendered signal collection too
+        js_g = fp.js_globals() if want_fp else []
+        dom_s = fp.dom_selectors() if want_fp else {}
         signals = None
         shot_name = None
 
@@ -67,8 +71,8 @@ async def run_scan(scan_id: int):
                     cap = await traffic.capture(
                         resp["final_url"],
                         traffic.SHOT_DIR / shot_name,
-                        fp.js_globals(),
-                        fp.dom_selectors(),
+                        js_g,
+                        dom_s,
                         proxy=cfg.get("proxy") or None,
                     )
                 if cap["ok"]:
@@ -82,57 +86,59 @@ async def run_scan(scan_id: int):
                 result["error"] = f"browser: {cap['error']}"
                 shot_name = None
 
-        # fallback: httpx signals only
-        if signals is None:
-            favicon_hash = await probe.fetch_favicon_hash(client, resp["final_url"])
-            signals = fp.signals_from_response(resp, favicon_hash)
+        if want_fp:
+            # fallback: httpx signals only
+            if signals is None:
+                favicon_hash = await probe.fetch_favicon_hash(
+                    client, resp["final_url"])
+                signals = fp.signals_from_response(resp, favicon_hash)
 
-        matched = fp.match(signals)
-        hits = list(matched["hits"])
+            matched = fp.match(signals)
+            hits = list(matched["hits"])
 
-        # active probe: extra requests on characteristic paths
-        if opts.get("active_probe", cfg["active_probe"]):
-            base = resp["final_url"]
-            for rule in matched["candidates"]:
-                for path in rule["probe"]:
-                    probe_url = base.rstrip("/") + "/" + path.lstrip("/")
-                    try:
-                        r = await client.get(probe_url)
-                        if r.status_code >= 400 or probe.probe_is_fallback(path, r):
-                            continue  # 404/soft-404/html-fallback echoes would false-positive
-                        h = fp.evaluate_probe(rule, r.text[:300_000])
-                    except Exception:
-                        h = None
-                    if h:
-                        hits.append(h)
-                        break
+            # active probe: extra requests on characteristic paths
+            if opts.get("active_probe", cfg["active_probe"]):
+                base = resp["final_url"]
+                for rule in matched["candidates"]:
+                    for path in rule["probe"]:
+                        probe_url = base.rstrip("/") + "/" + path.lstrip("/")
+                        try:
+                            r = await client.get(probe_url)
+                            if r.status_code >= 400 or probe.probe_is_fallback(path, r):
+                                continue  # 404/soft-404/html-fallback echoes would false-positive
+                            h = fp.evaluate_probe(rule, r.text[:300_000])
+                        except Exception:
+                            h = None
+                        if h:
+                            hits.append(h)
+                            break
 
-        fps = fp.postprocess(hits)
-        result["fingerprints"] = fps
-        prot = [h["name"] for h in fps if h["category"] == "防护页"]
-        result["protection"] = ",".join(prot) if prot else None
+            fps = fp.postprocess(hits)
+            result["fingerprints"] = fps
+            prot = [h["name"] for h in fps if h["category"] == "防护页"]
+            result["protection"] = ",".join(prot) if prot else None
 
-        # front protection detected? try alternate routes to the real service
-        if prot:
-            bp = await bypass.find_bypass(client, resp["final_url"])
-            if bp:
-                bresp = bypass.resp_to_dict(bp["resp"], bp["url"])
-                result["protection"] += f"→bypass:{bp['mode']}"
-                bsignals = None
-                if opts.get("screenshot", cfg["screenshot"]):
-                    shot_name = f"{scan_id}_{uuid.uuid4().hex[:10]}.png"
-                    async with shot_sem:
-                        cap = await traffic.capture(
-                            bp["url"], traffic.SHOT_DIR / shot_name,
-                            fp.js_globals(), fp.dom_selectors(),
-                            headers=bp["headers"],
-                            proxy=cfg.get("proxy") or None)
-                    if cap["ok"]:
-                        result["screenshot"] = shot_name
-                        bsignals = fp.signals_from_capture(cap, bresp)
-                bfps = await bypass.refingerprint(client, bresp, bsignals)
-                if bfps:
-                    result["fingerprints"] = bfps
+            # front protection detected? try alternate routes to the real service
+            if prot:
+                bp = await bypass.find_bypass(client, resp["final_url"])
+                if bp:
+                    bresp = bypass.resp_to_dict(bp["resp"], bp["url"])
+                    result["protection"] += f"→bypass:{bp['mode']}"
+                    bsignals = None
+                    if opts.get("screenshot", cfg["screenshot"]):
+                        shot_name = f"{scan_id}_{uuid.uuid4().hex[:10]}.png"
+                        async with shot_sem:
+                            cap = await traffic.capture(
+                                bp["url"], traffic.SHOT_DIR / shot_name,
+                                js_g, dom_s,
+                                headers=bp["headers"],
+                                proxy=cfg.get("proxy") or None)
+                        if cap["ok"]:
+                            result["screenshot"] = shot_name
+                            bsignals = fp.signals_from_capture(cap, bresp)
+                    bfps = await bypass.refingerprint(client, bresp, bsignals)
+                    if bfps:
+                        result["fingerprints"] = bfps
         if row_id:
             store.update_result(row_id, result)
         else:

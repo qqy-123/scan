@@ -181,6 +181,7 @@ class ScanIn(BaseModel):
     scope: str = "all"            # all | alive (二次扫描: 仅对存活目标重扫)
     active_probe: bool = True     # 主动探测开关
     screenshot: bool = True
+    fingerprint: bool = True      # 指纹识别开关
     concurrency: int = 50
 
 
@@ -277,6 +278,7 @@ class ExposureIn(BaseModel):
     kinds: list = ["js", "dir"]          # js: JS接口提取  dir: 目录爆破
     auto_deep: bool = True               # 完成后自动深扫(截图+指纹)
     deep_limit: int = 200                # 自动深扫的URL上限
+    fingerprint: bool = True             # 深扫指纹识别开关
 
 
 @app.post("/api/projects/{pid}/exposure")
@@ -326,6 +328,7 @@ def get_exposure(rid: int):
 
 class DeepScanIn(BaseModel):
     limit: int = 120                    # max discovered urls to deep-scan
+    fingerprint: bool | None = None     # None -> 沿用测绘轮次保存的选项
 
 
 @app.post("/api/exposure/{rid}/deepscan")
@@ -338,7 +341,8 @@ async def deep_scan_exposure(rid: int, body: DeepScanIn = None):
     if run.get("deep_status") == "running":
         raise HTTPException(409, "deep scan is already running")
     limit = min(max(1, (body.limit if body else 120)), 1000)
-    asyncio.create_task(exposure.run_deep_scan(rid, limit))
+    asyncio.create_task(exposure.run_deep_scan(
+        rid, limit, fingerprint=body.fingerprint if body else None))
     return {"ok": True}
 
 
