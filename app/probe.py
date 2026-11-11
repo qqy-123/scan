@@ -53,11 +53,10 @@ async def fetch(client: httpx.AsyncClient, url: str) -> dict:
                 }
             except httpx.HTTPError as e:
                 last_err = f"{type(e).__name__}: {e}"
-        if not last_err or not last_err.startswith(
+        if attempt or not last_err or not last_err.startswith(
             ("ConnectTimeout", "ConnectError", "PoolTimeout")
         ):
             break
-        last_err = None
         await asyncio.sleep(0.5)
     return {
         "alive": False,
