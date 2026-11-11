@@ -27,7 +27,158 @@ _browser = None
 _lock = asyncio.Lock()
 
 CHALLENGE_HINTS = ("just a moment", "cf-chl", "challenge-platform", "安全检查中",
-                   "window._cf_chl_opt", "safedog", "verify you are human")
+                   "window._cf_chl_opt", "safedog", "verify you are human",
+                   "/_guard/", "security verification", "click in sequence",
+                   "安全验证", "请依次点击")
+
+
+# /_guard/-style click-captcha solver: the word sprite (a window into the same
+# source image, positioned via background-position) is template-matched against
+# the scene region — required icons are clicked in order.
+_GUARD_SOLVER_JS = r"""
+async () => {
+  const scene = document.querySelector('.clickableImg');
+  const word = document.querySelector('.word');
+  if (!scene || !word) return { err: 'dom' };
+  const cs = getComputedStyle(scene), cw = getComputedStyle(word);
+  const urlOf = s => (s.match(/url\(["']?([^"')]+)/) || [])[1];
+  const src = urlOf(cs.backgroundImage) || urlOf(cw.backgroundImage);
+  if (!src) return { err: 'bg' };
+  const im = new Image();
+  im.src = new URL(src, location.href).href;
+  try { await im.decode(); } catch (e) { return { err: 'decode' }; }
+  const W = im.naturalWidth, H = im.naturalHeight;
+  // only natural-size backgrounds handled (background-size: auto)
+  if (!/^auto/.test(cs.backgroundSize)) return { err: 'bsize:' + cs.backgroundSize };
+  const posCoord = (tok, imgLen, boxLen) => {
+    tok = (tok || '0%').toLowerCase().trim();
+    if (tok.endsWith('%')) return (imgLen - boxLen) * parseFloat(tok) / 100;
+    if (tok.endsWith('px')) return -parseFloat(tok);
+    const kw = { left: 0, top: 0, center: .5, right: 1, bottom: 1 };
+    return (imgLen - boxLen) * (tok in kw ? kw[tok] : 0);
+  };
+  const sPos = cs.backgroundPosition.split(/\s+/);
+  const wPos = cw.backgroundPosition.split(/\s+/);
+  const sRect = scene.getBoundingClientRect();
+  const wRect = word.getBoundingClientRect();
+  const sx0 = Math.round(posCoord(sPos[0], W, sRect.width));
+  const sy0 = Math.round(posCoord(sPos[1] || sPos[0], H, sRect.height));
+  const sw = Math.round(sRect.width), sh = Math.round(sRect.height);
+  const wx0 = Math.round(posCoord(wPos[0], W, wRect.width));
+  const wy0 = Math.round(posCoord(wPos[1] || wPos[0], H, wRect.height));
+  const ww = Math.round(wRect.width), wh = Math.round(wRect.height);
+  if (wx0 < 0 || wy0 < 0 || wx0 + ww > W || wy0 + wh > H
+      || sx0 < 0 || sy0 < 0 || sx0 + sw > W || sy0 + sh > H)
+    return { err: 'win', dbg: [sx0, sy0, sw, sh, wx0, wy0, ww, wh, W, H] };
+  const cvs = document.createElement('canvas');
+  cvs.width = W; cvs.height = H;
+  const g = cvs.getContext('2d', { willReadFrequently: true });
+  g.drawImage(im, 0, 0);
+  const sd = g.getImageData(sx0, sy0, sw, sh).data;
+  // scan the full-width strip rows — icons near the visible window's edge
+  // would otherwise be clipped
+  const wd = g.getImageData(0, wy0, W, wh).data;
+  const nonWhite = (d, i) => d[i] < 235 || d[i+1] < 235 || d[i+2] < 235;
+  const gray = (d, i) => .299*d[i] + .587*d[i+1] + .114*d[i+2];
+  const runs = [];
+  let s0 = -1;
+  for (let x = 0; x < W; x++) {
+    let has = false;
+    for (let y = 0; y < wh; y += 2)
+      if (nonWhite(wd, (y * W + x) * 4)) { has = true; break; }
+    if (has) { if (s0 < 0) s0 = x; }
+    else if (s0 >= 0) { if (x - s0 > 6) runs.push([s0, x]); s0 = -1; }
+  }
+  if (s0 >= 0 && W - s0 > 6) runs.push([s0, W]);
+  if (!runs.length || runs.length > 12) return { err: 'runs:' + runs.length };
+  const icons = [];
+  for (const [x0, x1] of runs) {
+    let y0 = wh, y1 = 0;
+    for (let x = x0; x < x1; x++)
+      for (let y = 0; y < wh; y++)
+        if (nonWhite(wd, (y * W + x) * 4)) {
+          if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    // icons are ~square ~28px; separator arrows are flat (~7px tall)
+    if (x1 - x0 >= 10 && x1 - x0 <= 80 && y1 - y0 >= 14)
+      icons.push({ x0, x1, y0, y1: y1 + 1 });
+  }
+  if (!icons.length || icons.length > 8) return { err: 'icons:' + icons.length };
+  // grayscale NCC over non-white template pixels (icon art may sit on a photo)
+  const scoreAt = (ic, tw, th, px, py) => {
+    let num = 0, a2 = 0, b2 = 0, n = 0;
+    for (let y = 0; y < th; y++) for (let x = 0; x < tw; x++) {
+      const ti = ((ic.y0 + y) * W + ic.x0 + x) * 4;
+      if (!nonWhite(wd, ti)) continue;
+      const si = ((py + y) * sw + px + x) * 4;
+      const a = gray(wd, ti), b = gray(sd, si);
+      num += a * b; a2 += a * a; b2 += b * b; n++;
+    }
+    return n < 30 ? -1 : num / (Math.sqrt(a2 * b2) || 1);
+  };
+  const clicks = [], scores = [];
+  for (const ic of icons) {
+    const tw = ic.x1 - ic.x0, th = ic.y1 - ic.y0;
+    // visual center = centroid of non-white template pixels (asymmetric
+    // icons like ☂️ have bbox center != clickable art center)
+    let cx = 0, cy = 0, cn = 0;
+    for (let y = 0; y < th; y++) for (let x = 0; x < tw; x++)
+      if (nonWhite(wd, ((ic.y0 + y) * W + ic.x0 + x) * 4)) {
+        cx += x; cy += y; cn++; }
+    cx /= cn; cy /= cn;
+    let best = -1, bx = 0, by = 0;
+    for (let y = 0; y + th < sh; y += 2)
+      for (let x = 0; x + tw < sw; x += 2) {
+        const s = scoreAt(ic, tw, th, x, y);
+        if (s > best) { best = s; bx = x; by = y; } }
+    // fine pass: stride-1 rescan around the coarse peak
+    for (let y = Math.max(0, by - 4); y + th < sh && y <= by + 4; y++)
+      for (let x = Math.max(0, bx - 4); x + tw < sw && x <= bx + 4; x++) {
+        const s = scoreAt(ic, tw, th, x, y);
+        if (s > best) { best = s; bx = x; by = y; } }
+    scores.push(+best.toFixed(3));
+    if (best < 0.72) return { err: 'score', scores };
+    clicks.push([sRect.left + bx + cx, sRect.top + by + cy]);
+  }
+  return { ok: clicks, scores };
+}
+"""
+
+
+async def _solve_guard_captcha(page) -> bool:
+    """Best-effort solver for /_guard/ click-in-order image captchas."""
+    try:
+        res = await page.evaluate(_GUARD_SOLVER_JS)
+    except Exception:
+        return False
+    if not res or "ok" not in res:
+        return False
+    try:
+        px = py = None
+        for x, y in res["ok"]:
+            if px is not None:  # human-ish cursor path between clicks
+                steps = 6
+                for i in range(1, steps):
+                    await page.mouse.move(
+                        px + (x - px) * i / steps,
+                        py + (y - py) * i / steps,
+                    )
+                    await page.wait_for_timeout(30)
+            await page.mouse.click(x, y)
+            px, py = x, y
+            await page.wait_for_timeout(350)
+        # the gate reloads the page after the last click — poll until it
+        # navigates away from the verification page
+        await page.wait_for_timeout(1500)
+        for _ in range(14):
+            title = (await page.title() or "").lower()
+            if not any(
+                t in title for t in ("security verification", "安全验证")
+            ):
+                return True
+            await page.wait_for_timeout(500)
+        return False
+    except Exception:
+        return False
 
 
 async def get_browser():
@@ -129,10 +280,31 @@ async def capture(url: str, shot_path: Path | None, js_globals: list,
             if not any(h in html.lower() for h in CHALLENGE_HINTS):
                 out["challenge"] = False  # challenge passed, real page now
             else:
-                try:
-                    await page.wait_for_load_state("networkidle", timeout=8000)
-                except Exception:
-                    pass
+                # interactive captcha (/_guard/ click-in-order etc.) —
+                # try solving it so signals/screenshot see the real page;
+                # reload once for a fresh captcha if the first attempt fails
+                for _attempt in range(2):
+                    if await _solve_guard_captcha(page):
+                        break
+                    if _attempt == 0:
+                        try:
+                            await page.reload(
+                                wait_until="domcontentloaded", timeout=30000
+                            )
+                        except Exception:
+                            pass
+                        await page.wait_for_timeout(8000)
+                html = await page.content()
+                out["challenge"] = any(
+                    h in html.lower() for h in CHALLENGE_HINTS
+                )
+                if out["challenge"]:
+                    try:
+                        await page.wait_for_load_state(
+                            "networkidle", timeout=8000
+                        )
+                    except Exception:
+                        pass
 
         out["html"] = html
         out["title"] = await page.title()
@@ -182,10 +354,17 @@ async def capture(url: str, shot_path: Path | None, js_globals: list,
 
         if shot_path is not None:
             shot_path.parent.mkdir(parents=True, exist_ok=True)
-            try:
-                await page.screenshot(path=str(shot_path))
-            except Exception:
-                pass
+            for _try in range(2):
+                try:
+                    await page.screenshot(path=str(shot_path))
+                    # a solid-color page compresses to a few KB — give it one
+                    # settle window (JS redirect / lazy render) and reshoot
+                    if _try == 0 and shot_path.stat().st_size < 9_000:
+                        await page.wait_for_timeout(3000)
+                        continue
+                    break
+                except Exception:
+                    break
 
         # favicon from the page's declared icon, fallback /favicon.ico
         icon_url = await page.evaluate(
