@@ -29,26 +29,36 @@ async def fetch(client: httpx.AsyncClient, url: str) -> dict:
         else [url]
     )
     last_err = None
-    for cand in candidates:
-        start = time.monotonic()
-        try:
-            resp = await client.get(cand)
-            elapsed = int((time.monotonic() - start) * 1000)
-            body = resp.text[:500_000]
-            return {
-                "alive": True,
-                "status_code": resp.status_code,
-                "final_url": str(resp.url),
-                "title": _title(body),
-                "server": resp.headers.get("server", ""),
-                "elapsed_ms": elapsed,
-                "headers": dict(resp.headers),
-                "cookies": dict(resp.cookies),
-                "html": body,
-                "error": None,
-            }
-        except httpx.HTTPError as e:
-            last_err = f"{type(e).__name__}: {e}"
+    # connect-level failures deserve one retry: under browser-capture load a
+    # wave of connects can starve past the timeout and mass-mark live targets
+    # dead. Read/write errors stay single-shot.
+    for attempt in range(2):
+        for cand in candidates:
+            start = time.monotonic()
+            try:
+                resp = await client.get(cand)
+                elapsed = int((time.monotonic() - start) * 1000)
+                body = resp.text[:500_000]
+                return {
+                    "alive": True,
+                    "status_code": resp.status_code,
+                    "final_url": str(resp.url),
+                    "title": _title(body),
+                    "server": resp.headers.get("server", ""),
+                    "elapsed_ms": elapsed,
+                    "headers": dict(resp.headers),
+                    "cookies": dict(resp.cookies),
+                    "html": body,
+                    "error": None,
+                }
+            except httpx.HTTPError as e:
+                last_err = f"{type(e).__name__}: {e}"
+        if not last_err or not last_err.startswith(
+            ("ConnectTimeout", "ConnectError", "PoolTimeout")
+        ):
+            break
+        last_err = None
+        await asyncio.sleep(0.5)
     return {
         "alive": False,
         "status_code": None,
