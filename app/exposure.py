@@ -1661,7 +1661,7 @@ async def run_deep_scan(run_id: int, limit: int = 120):
                     try:
                         r = await client.get(
                             base.rstrip("/") + "/" + path.lstrip("/"))
-                        if r.status_code >= 400:
+                        if r.status_code >= 400 or probe.probe_is_fallback(path, r):
                             continue
                         h = fp.evaluate_probe(rule, r.text[:300_000])
                     except Exception:

@@ -124,6 +124,9 @@ def _rule_tokens(raw: dict) -> set | None:
                 for pats in (cond.get("attributes") or {}).values():
                     for pat in (pats if isinstance(pats, list) else [pats]):
                         feed(pat)
+                for pats in (cond.get("properties") or {}).values():
+                    for pat in (pats if isinstance(pats, list) else [pats]):
+                        feed(pat)
     except _TokenlessPattern:
         return None
     return toks
@@ -249,11 +252,20 @@ def js_globals() -> list:
     return sorted(out)
 
 
-def dom_selectors() -> list:
-    out = set()
+def dom_selectors() -> dict:
+    """selector -> {attrs: [names], props: [names]} — what the capture
+    pass must collect per selector for dom-condition evaluation."""
+    out = {}
     for r in load_rules():
-        out.update(r["dom"].keys())
-    return sorted(out)
+        for sel, cond in r["dom"].items():
+            need = out.setdefault(sel, {"attrs": set(), "props": set()})
+            if isinstance(cond, dict):
+                need["attrs"].update((cond.get("attributes") or {}).keys())
+                need["props"].update((cond.get("properties") or {}).keys())
+    return {
+        s: {"attrs": sorted(n["attrs"]), "props": sorted(n["props"])}
+        for s, n in out.items()
+    }
 
 
 # ---------------- signal collection ----------------
@@ -402,13 +414,24 @@ def evaluate(rule: dict, signals: dict) -> dict | None:
         if not d or not d.get("exists"):
             continue
         ok = True
-        for sub, pats in _pmap(cond.get("attributes", {})).items() if isinstance(cond, dict) else []:
-            if not any(p.search(str(d.get("attrs", {}).get(sub, ""))) for p in pats):
-                ok = False
-        if isinstance(cond, dict) and cond.get("text"):
-            ok = ok and any(
-                p.search(d.get("text") or "") for p in _plist(cond["text"])
-            )
+        if isinstance(cond, str):
+            # bare string cond = element text pattern
+            ok = any(p.search(d.get("text") or "") for p in _plist(cond))
+        elif isinstance(cond, dict):
+            # attribute/property conditions must see the REAL value —
+            # a missing attr/prop fails the condition (never vacuous pass)
+            for sub, pats in _pmap(cond.get("attributes", {})).items():
+                val = (d.get("attrs") or {}).get(sub)
+                if val is None or not any(p.search(str(val)) for p in pats):
+                    ok = False
+            for sub, pats in _pmap(cond.get("properties", {})).items():
+                val = (d.get("props") or {}).get(sub)
+                if val is None or not any(p.search(str(val)) for p in pats):
+                    ok = False
+            if cond.get("text"):
+                ok = ok and any(
+                    p.search(d.get("text") or "") for p in _plist(cond["text"])
+                )
         if ok:
             score += 100
             evidence.append({"field": "dom", "key": sel, "pattern": str(cond)})

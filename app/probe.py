@@ -72,6 +72,23 @@ async def fetch(client: httpx.AsyncClient, url: str) -> dict:
     }
 
 
+STATIC_PROBE_EXT = {
+    "svg", "png", "jpg", "jpeg", "gif", "ico", "css", "js", "map", "json",
+    "xml", "txt", "webp", "woff", "woff2", "ttf", "eot", "pdf", "zip",
+}
+
+
+def probe_is_fallback(path: str, resp: httpx.Response) -> bool:
+    """SPA/static hosts answer EVERY path with 200 + index.html — a probe
+    for a static-extension file answered as HTML is the fallback page,
+    not the real file (existence probes would hit on every such host)."""
+    name = path.rsplit("/", 1)[-1]
+    ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+    return ext in STATIC_PROBE_EXT and "html" in (
+        resp.headers.get("content-type") or ""
+    )
+
+
 async def fetch_favicon_hash(client: httpx.AsyncClient, final_url: str) -> int | None:
     import base64
 

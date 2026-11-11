@@ -156,13 +156,25 @@ async def capture(url: str, shot_path: Path | None, js_globals: list,
         if dom_selectors:
             try:
                 out["dom"] = await page.evaluate(
-                    """(sels) => { const out = {};
-                    for (const s of sels) {
+                    """(spec) => { const out = {};
+                    const items = Array.isArray(spec)
+                        ? spec.map(s => [s, {}]) : Object.entries(spec);
+                    for (const it of items) {
+                        const s = it[0], need = it[1] || {};
                         try { const el = document.querySelector(s);
-                            if (el) out[s] = {
-                                exists: true,
+                            if (!el) continue;
+                            const attrs = {};
+                            for (const a of (need.attrs || [])) {
+                                const v = el.getAttribute(a);
+                                if (v !== null) attrs[a] = v.slice(0, 200); }
+                            const props = {};
+                            for (const p of (need.props || [])) {
+                                const v = el[p];
+                                if (v !== undefined && v !== null)
+                                    props[p] = String(v).slice(0, 200); }
+                            out[s] = { exists: true,
                                 text: (el.innerText || '').slice(0, 500),
-                                attrs: {} }; }
+                                attrs: attrs, props: props }; }
                         catch (e) {} }
                     return out; }""", dom_selectors)
             except Exception:

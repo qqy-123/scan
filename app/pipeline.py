@@ -98,8 +98,8 @@ async def run_scan(scan_id: int):
                     probe_url = base.rstrip("/") + "/" + path.lstrip("/")
                     try:
                         r = await client.get(probe_url)
-                        if r.status_code >= 400:
-                            continue  # 404/soft-404 echoes would false-positive
+                        if r.status_code >= 400 or probe.probe_is_fallback(path, r):
+                            continue  # 404/soft-404/html-fallback echoes would false-positive
                         h = fp.evaluate_probe(rule, r.text[:300_000])
                     except Exception:
                         h = None
