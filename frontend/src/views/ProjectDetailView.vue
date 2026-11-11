@@ -64,9 +64,18 @@
     <a-card :bordered="false">
       <a-tabs v-model:activeKey="tab">
         <a-tab-pane key="targets" :tab="`目标 (${project?.targets?.length || 0})`">
+          <a-space style="margin-bottom: 8px">
+            <a-popconfirm :title="`删除选中的 ${targetSel.length} 个目标？`"
+                          :disabled="!targetSel.length" @confirm="delSelected">
+              <a-button size="small" danger :disabled="!targetSel.length">
+                删除选中{{ targetSel.length ? ` (${targetSel.length})` : '' }}
+              </a-button>
+            </a-popconfirm>
+          </a-space>
           <a-table
             :data-source="targetRows"
             :columns="targetCols"
+            :row-selection="targetRowSel"
             row-key="id"
             size="middle"
             :pagination="{ pageSize: 20, showSizeChanger: true, showQuickJumper: true,
@@ -377,7 +386,22 @@ function parseFps(r) {
   }
 }
 
+const targetSel = ref([])
+const targetRowSel = computed(() => ({
+  selectedRowKeys: targetSel.value,
+  onChange: (keys) => { targetSel.value = keys },
+}))
+
+async function delSelected() {
+  if (!targetSel.value.length) return
+  const res = (await api.batchDeleteTargets(targetSel.value)).data
+  message.success(`已删除 ${res.deleted} 个目标`)
+  targetSel.value = []
+  load()
+}
+
 const targetCols = [
+  { title: '#', key: 'idx', width: 55, customRender: ({ index }) => index + 1 },
   { title: 'URL', dataIndex: 'url', ellipsis: true },
   { title: '状态', key: 'status', width: 90 },
   { title: 'HTTP', key: 'code', width: 80 },
@@ -511,6 +535,8 @@ async function load() {
   loadExposure()
   project.value = data
   running.value = data.running
+  const ids = new Set((data.targets || []).map((t) => t.id))
+  targetSel.value = targetSel.value.filter((id) => ids.has(id))
   // ?tab=scans&scan=N 直达指定轮次；否则默认选中最新一轮已完成的扫描
   if (route.query.tab === 'scans') tab.value = 'scans'
   const wantScan = Number(route.query.scan) || null
@@ -605,6 +631,7 @@ function rescanAlive() {
 
 async function delTarget(tid) {
   await api.deleteTarget(tid)
+  targetSel.value = targetSel.value.filter((id) => id !== tid)
   load()
 }
 

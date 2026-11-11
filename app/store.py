@@ -313,17 +313,41 @@ def delete_project(pid: int):
 def add_targets(project_id: int, urls: list[str]) -> dict:
     conn = _conn()
     added, dup = 0, 0
-    for u in urls:
-        try:
-            conn.execute(
-                "INSERT INTO targets(project_id, url) VALUES(?,?)", (project_id, u)
+    if PG:
+        # ON CONFLICT keeps a duplicate from aborting the whole transaction
+        # (a bare IntegrityError would poison every INSERT after it).
+        for u in urls:
+            cur = conn.execute(
+                "INSERT INTO targets(project_id, url) VALUES(?,?)"
+                " ON CONFLICT DO NOTHING",
+                (project_id, u),
             )
-            added += 1
-        except IntegrityError:
-            dup += 1
+            added += cur.rowcount
+            dup += 1 - cur.rowcount
+    else:
+        for u in urls:
+            try:
+                conn.execute(
+                    "INSERT INTO targets(project_id, url) VALUES(?,?)", (project_id, u)
+                )
+                added += 1
+            except IntegrityError:
+                dup += 1
     conn.commit()
     conn.close()
     return {"added": added, "duplicates": dup}
+
+
+def delete_targets(ids: list[int]) -> int:
+    if not ids:
+        return 0
+    conn = _conn()
+    ph = ",".join("?" for _ in ids)
+    cur = conn.execute(f"DELETE FROM targets WHERE id IN ({ph})", list(ids))
+    n = cur.rowcount
+    conn.commit()
+    conn.close()
+    return n
 
 
 def list_targets(project_id: int) -> list:

@@ -35,6 +35,7 @@ export default {
     return api.post(`/api/projects/${pid}/targets/upload`, fd)
   },
   deleteTarget: (tid) => api.delete(`/api/targets/${tid}`),
+  batchDeleteTargets: (ids) => api.post('/api/targets/batch-delete', { ids }),
   updateTarget: (tid, url) => api.put(`/api/targets/${tid}`, { url }),
   createScan: (pid, opts) => api.post(`/api/projects/${pid}/scans`, opts),
   getScan: (sid) => api.get(`/api/scans/${sid}`),

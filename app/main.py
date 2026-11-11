@@ -166,6 +166,15 @@ def delete_target(tid: int):
     return {"ok": True}
 
 
+class IdsIn(BaseModel):
+    ids: list[int]
+
+
+@app.post("/api/targets/batch-delete")
+def batch_delete_targets(body: IdsIn):
+    return {"deleted": store.delete_targets(body.ids[:2000])}
+
+
 # ---------------- scans ----------------
 
 class ScanIn(BaseModel):
