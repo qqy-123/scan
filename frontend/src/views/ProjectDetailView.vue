@@ -71,9 +71,15 @@
                 删除选中{{ targetSel.length ? ` (${targetSel.length})` : '' }}
               </a-button>
             </a-popconfirm>
+            <a-radio-group v-model:value="targetFilter" size="small" option-type="button">
+              <a-radio-button value="all">全部</a-radio-button>
+              <a-radio-button value="alive">存活</a-radio-button>
+              <a-radio-button value="dead">失活</a-radio-button>
+              <a-radio-button value="unscanned">未扫描</a-radio-button>
+            </a-radio-group>
           </a-space>
           <a-table
-            :data-source="targetRows"
+            :data-source="filteredTargets"
             :columns="targetCols"
             :row-selection="targetRowSel"
             row-key="id"
@@ -387,6 +393,16 @@ function parseFps(r) {
 }
 
 const targetSel = ref([])
+const targetFilter = ref('all')
+
+const filteredTargets = computed(() => {
+  const rows = targetRows.value
+  if (targetFilter.value === 'alive') return rows.filter((r) => r.latest?.alive)
+  if (targetFilter.value === 'dead') return rows.filter((r) => r.latest && !r.latest.alive)
+  if (targetFilter.value === 'unscanned') return rows.filter((r) => !r.latest)
+  return rows
+})
+
 const targetRowSel = computed(() => ({
   selectedRowKeys: targetSel.value,
   onChange: (keys) => { targetSel.value = keys },
