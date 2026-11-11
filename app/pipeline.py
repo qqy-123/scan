@@ -62,17 +62,23 @@ async def run_scan(scan_id: int):
         signals = None
         shot_name = None
 
-        # browser pass: traffic + rendered signals + screenshot
+        # browser pass: traffic + rendered signals + screenshot.
+        # capture is retried once — navigation races are the common
+        # transient failure and a live target should always get its shot
         if opts.get("screenshot", cfg["screenshot"]):
-            async with shot_sem:
-                shot_name = f"{scan_id}_{uuid.uuid4().hex[:10]}.png"
-                cap = await traffic.capture(
-                    resp["final_url"],
-                    traffic.SHOT_DIR / shot_name,
-                    fp.js_globals(),
-                    fp.dom_selectors(),
-                    proxy=cfg.get("proxy") or None,
-                )
+            cap = {"ok": False, "error": "not attempted"}
+            for attempt in range(2):
+                async with shot_sem:
+                    shot_name = f"{scan_id}_{uuid.uuid4().hex[:10]}.png"
+                    cap = await traffic.capture(
+                        resp["final_url"],
+                        traffic.SHOT_DIR / shot_name,
+                        fp.js_globals(),
+                        fp.dom_selectors(),
+                        proxy=cfg.get("proxy") or None,
+                    )
+                if cap["ok"]:
+                    break
             if cap["ok"]:
                 result["screenshot"] = shot_name
                 signals = fp.signals_from_capture(cap, resp)

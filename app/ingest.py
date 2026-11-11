@@ -45,3 +45,27 @@ def from_xlsx(data: bytes) -> list[str]:
                     continue
     wb.close()
     return dedupe(found)
+
+
+def from_xls(data: bytes) -> list[str]:
+    """Legacy .xls (OLE) workbook — openpyxl can't read it, xlrd can."""
+    import xlrd
+
+    wb = xlrd.open_workbook(file_contents=data)
+    found = []
+    for ws in wb.sheets():
+        for rx in range(ws.nrows):
+            for cell in ws.row_values(rx):
+                if isinstance(cell, str):
+                    found.extend(URL_RE.findall(cell))
+    return dedupe(found)
+
+
+def from_file(name: str, data: bytes) -> list[str]:
+    """Dispatch by extension; anything else is treated as text."""
+    ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+    if ext in ("xlsx", "xlsm"):
+        return from_xlsx(data)
+    if ext == "xls":
+        return from_xls(data)
+    return from_text(data.decode("utf-8", "ignore"))

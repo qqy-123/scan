@@ -135,10 +135,10 @@ async def add_targets_file(pid: int, file: UploadFile):
     if not store.get_project(pid):
         raise HTTPException(404)
     data = await file.read()
-    if file.filename.lower().endswith((".xlsx", ".xlsm")):
-        urls = ingest.from_xlsx(data)
-    else:
-        urls = ingest.from_text(data.decode("utf-8", "ignore"))
+    try:
+        urls = ingest.from_file(file.filename or "", data)
+    except Exception as e:
+        raise HTTPException(400, f"文件解析失败：{e}")
     res = store.add_targets(pid, urls)
     res["parsed"] = len(urls)
     return res

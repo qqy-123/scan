@@ -149,6 +149,7 @@
                 </a-tag>
                 <a-tag color="default">存活 {{ selectedScan.alive }}/{{ selectedScan.total }}</a-tag>
               </span>
+              <a-checkbox v-model:checked="onlyAlive" style="margin: 0 10px">只看存活</a-checkbox>
               <a-input-search v-model:value="scanKw" placeholder="过滤 URL / 标题 / 指纹"
                               style="width: 240px" size="small" allow-clear />
             </div>
@@ -255,11 +256,15 @@
           <a-textarea v-model:value="importText" :rows="8"
                       placeholder="每行一个，支持 http(s)://host/path、域名、IP:端口" />
         </a-tab-pane>
-        <a-tab-pane key="file" tab="上传 xlsx / txt">
-          <a-upload-dragger :before-upload="pickFile" :max-count="1" accept=".xlsx,.txt,.csv">
-            <p style="padding: 24px 0">点击或拖拽文件到此处（xlsx 会自动提取所有 URL）</p>
+        <a-tab-pane key="file" tab="上传 xlsx / xls / txt">
+          <a-upload-dragger :before-upload="pickFile" :max-count="10" multiple
+                            :file-list="importFiles" accept=".xlsx,.xls,.xlsm,.txt,.csv"
+                            @remove="onRemoveFile">
+            <p style="padding: 24px 0">点击或拖拽文件（可多选），xlsx/xls 自动提取所有 URL</p>
           </a-upload-dragger>
-          <div v-if="importFile" style="margin-top: 8px" class="mono">{{ importFile.name }}</div>
+          <div v-if="importFiles.length" class="mono" style="margin-top: 8px">
+            <div v-for="f in importFiles" :key="f.uid">{{ f.name }}</div>
+          </div>
         </a-tab-pane>
       </a-tabs>
     </a-modal>
@@ -333,7 +338,7 @@ const tab = ref('targets')
 const showImport = ref(false)
 const showScan = ref(false)
 const importText = ref('')
-const importFile = ref(null)
+const importFiles = ref([])
 const scanOpts = reactive({ scope: 'all', active_probe: true, screenshot: true, concurrency: 50 })
 const settingsLoaded = ref(false)
 const showExposure = ref(false)
@@ -468,6 +473,7 @@ const resultCols = [
 // 轮次点选 -> 下方直接展示该轮扫描结果
 const selectedScan = ref(null)
 const scanKw = ref('')
+const onlyAlive = ref(false)
 
 function viewScan(record) {
   if (record.status !== 'done') return
@@ -484,11 +490,12 @@ const scanRowClass = (record) =>
 const filteredScanResults = computed(() => {
   const rows = scanResults[selectedScan.value?.id] || []
   const kw = scanKw.value.trim().toLowerCase()
-  if (!kw) return rows
-  return rows.filter((r) =>
-    [r.final_url, r.url, r.title, r.fingerprints, r.protection]
+  return rows.filter((r) => {
+    if (onlyAlive.value && !r.alive) return false
+    if (!kw) return true
+    return [r.final_url, r.url, r.title, r.fingerprints, r.protection]
       .filter(Boolean).join(' ').toLowerCase().includes(kw)
-  )
+  })
 })
 
 async function load() {
@@ -542,23 +549,37 @@ function startPolling() {
   }, 2500)
 }
 
-function pickFile(file) {
-  importFile.value = file
+function pickFile(_file, fileList) {
+  importFiles.value = fileList
   return false
+}
+
+function onRemoveFile(file) {
+  importFiles.value = importFiles.value.filter((f) => f.uid !== file.uid)
 }
 
 async function doImport() {
   try {
-    let res
-    if (importFile.value) {
-      res = (await api.uploadTargets(pid, importFile.value)).data
+    if (importFiles.value.length) {
+      let parsed = 0, added = 0, duplicates = 0
+      const failed = []
+      for (const f of importFiles.value) {
+        try {
+          const r = (await api.uploadTargets(pid, f)).data
+          parsed += r.parsed; added += r.added; duplicates += r.duplicates
+        } catch (e) {
+          failed.push(`${f.name}: ${e.response?.data?.detail || '解析失败'}`)
+        }
+      }
+      message.success(`解析 ${parsed} 个，新增 ${added}，重复 ${duplicates}`)
+      if (failed.length) message.warning(`部分文件失败——${failed.join('；')}`, 8)
     } else {
-      res = (await api.addTargets(pid, importText.value)).data
+      const res = (await api.addTargets(pid, importText.value)).data
+      message.success(`解析 ${res.parsed} 个，新增 ${res.added}，重复 ${res.duplicates}`)
     }
-    message.success(`解析 ${res.parsed} 个，新增 ${res.added}，重复 ${res.duplicates}`)
     showImport.value = false
     importText.value = ''
-    importFile.value = null
+    importFiles.value = []
     load()
   } catch (e) {
     message.error(e.response?.data?.detail || '导入失败')

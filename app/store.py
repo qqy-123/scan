@@ -738,21 +738,21 @@ def save_result(r: dict) -> int:
     cur = conn.execute(
         """INSERT INTO results(scan_id, target_id, url, alive, status_code, final_url,
                                title, server, elapsed_ms, fingerprints, screenshot, protection, error)
-           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""" + _INS_SUFFIX,
         (
             r.get("scan_id"),
             r.get("target_id"),
-            r.get("url"),
+            _txt(r.get("url")),
             r.get("alive"),
             r.get("status_code"),
-            r.get("final_url"),
-            r.get("title"),
-            r.get("server"),
+            _txt(r.get("final_url")),
+            _txt(r.get("title")),
+            _txt(r.get("server")),
             r.get("elapsed_ms"),
             json.dumps(r.get("fingerprints", []), ensure_ascii=False),
             r.get("screenshot"),
-            r.get("protection"),
-            r.get("error"),
+            _txt(r.get("protection")),
+            _txt(r.get("error")),
         ),
     )
     rid = _insert_id(cur)
