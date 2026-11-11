@@ -788,6 +788,7 @@ def save_result(r: dict) -> int:
 def update_result(rid: int, fields: dict):
     if "fingerprints" in fields:
         fields["fingerprints"] = json.dumps(fields["fingerprints"], ensure_ascii=False)
+    fields = {k: _txt(v) for k, v in fields.items()}
     conn = _conn()
     sets = ", ".join(f"{k}=?" for k in fields)
     conn.execute(f"UPDATE results SET {sets} WHERE id=?", (*fields.values(), rid))
@@ -801,6 +802,16 @@ def list_results(scan_id: int, alive_only: bool = False) -> list:
     if alive_only:
         q += " AND alive=1"
     rows = conn.execute(q + " ORDER BY id", (scan_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def dead_results(scan_id: int) -> list:
+    conn = _conn()
+    rows = conn.execute(
+        "SELECT id, target_id, url FROM results WHERE scan_id=? AND alive=0",
+        (scan_id,),
+    ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 

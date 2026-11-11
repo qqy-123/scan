@@ -32,16 +32,11 @@ async def run_scan(scan_id: int):
     client = probe.make_client()
     alive_count = 0
 
-    async def process(target):
-        nonlocal alive_count
-        url = target["url"]
-        async with probe_sem:
-            resp = await probe.fetch(client, url)
-
-        result = {
+    def base_result(target, resp):
+        return {
             "scan_id": scan_id,
             "target_id": target["id"],
-            "url": url,
+            "url": target["url"],
             "alive": 1 if resp["alive"] else 0,
             "status_code": resp["status_code"],
             "final_url": resp["final_url"],
@@ -53,12 +48,11 @@ async def run_scan(scan_id: int):
             "protection": None,
             "error": resp["error"],
         }
-        if not resp["alive"]:
-            store.save_result(result)
-            store.bump_done(scan_id)
-            return
 
-        alive_count += 1
+    async def finish_alive(target, resp, row_id=None):
+        """Post-alive pipeline: capture + signals + fingerprints + protection.
+        row_id given -> update an existing (previously dead) row in place."""
+        result = base_result(target, resp)
         signals = None
         shot_name = None
 
@@ -139,11 +133,53 @@ async def run_scan(scan_id: int):
                 bfps = await bypass.refingerprint(client, bresp, bsignals)
                 if bfps:
                     result["fingerprints"] = bfps
-        store.save_result(result)
-        store.bump_done(scan_id)
+        if row_id:
+            store.update_result(row_id, result)
+        else:
+            store.save_result(result)
+            store.bump_done(scan_id)
+
+    async def process(target):
+        nonlocal alive_count
+        async with probe_sem:
+            resp = await probe.fetch(client, target["url"])
+
+        if not resp["alive"]:
+            store.save_result(base_result(target, resp))
+            store.bump_done(scan_id)
+            return
+
+        alive_count += 1
+        await finish_alive(target, resp)
 
     try:
         await asyncio.gather(*(process(t) for t in targets))
+
+        # confirmation pass: a wave of DNS/connect flakes shouldn't condemn
+        # live assets — re-probe every dead row once at lower concurrency and
+        # revive survivors in place (result stays the latest row per target)
+        dead = store.dead_results(scan_id)
+        if dead:
+            tmap = {t["id"]: t for t in targets}
+            conf_client = probe.make_client()
+            conf_sem = asyncio.Semaphore(20)
+
+            async def confirm(row):
+                nonlocal alive_count
+                t = tmap.get(row["target_id"])
+                if not t:
+                    return
+                async with conf_sem:
+                    resp = await probe.fetch(conf_client, row["url"])
+                if resp["alive"]:
+                    alive_count += 1
+                    await finish_alive(t, resp, row_id=row["id"])
+
+            try:
+                await asyncio.gather(*(confirm(r) for r in dead))
+            finally:
+                await conf_client.aclose()
+
         store.finish_scan(scan_id, alive_count)
     except Exception:
         store.fail_scan(scan_id)
