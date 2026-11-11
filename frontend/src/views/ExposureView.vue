@@ -45,7 +45,7 @@
         </a-button>
       </template>
       <a-table :data-source="runs" :columns="runCols" row-key="id" size="small"
-               :pagination="{ pageSize: 8, showSizeChanger: true, showQuickJumper: true,
+               :pagination="{ defaultPageSize: 8, showSizeChanger: true, showQuickJumper: true,
                              showTotal: (t) => `共 ${t} 条` }" :loading="loading"
                :custom-row="rowClick" :row-class-name="rowClass">
         <template #bodyCell="{ column, record }">
@@ -120,15 +120,15 @@
           <a-tabs size="small">
             <a-tab-pane key="new" :tab="`新增 ${diff.data.new_count}`">
               <a-table :data-source="diff.data.new" :columns="diffCols"
-                       size="small" :pagination="{ pageSize: 10 }" row-key="url" />
+                       size="small" :pagination="{ defaultPageSize: 10 }" row-key="url" />
             </a-tab-pane>
             <a-tab-pane key="gone" :tab="`消失 ${diff.data.gone_count}`">
               <a-table :data-source="diff.data.gone" :columns="diffCols"
-                       size="small" :pagination="{ pageSize: 10 }" row-key="url" />
+                       size="small" :pagination="{ defaultPageSize: 10 }" row-key="url" />
             </a-tab-pane>
             <a-tab-pane key="changed" :tab="`变化 ${diff.data.changed_count}`">
               <a-table :data-source="diff.data.changed" :columns="diffChangedCols"
-                       size="small" :pagination="{ pageSize: 10 }" row-key="url" />
+                       size="small" :pagination="{ defaultPageSize: 10 }" row-key="url" />
             </a-tab-pane>
           </a-tabs>
         </template>

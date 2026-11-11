@@ -13,7 +13,7 @@
       :columns="columns"
       :loading="loading"
       row-key="id"
-      :pagination="{ pageSize: 20, showSizeChanger: true, showQuickJumper: true,
+      :pagination="{ defaultPageSize: 20, showSizeChanger: true, showQuickJumper: true,
                      showTotal: (t) => `共 ${t} 条` }"
     >
       <template #bodyCell="{ column, record }">

@@ -77,6 +77,8 @@
               <a-radio-button value="dead">失活</a-radio-button>
               <a-radio-button value="unscanned">未扫描</a-radio-button>
             </a-radio-group>
+            <a-input v-model:value="codeFilter" placeholder="状态码：200 / 200-399 / 4xx"
+                     size="small" style="width: 190px" allow-clear />
           </a-space>
           <a-table
             :data-source="filteredTargets"
@@ -84,7 +86,7 @@
             :row-selection="targetRowSel"
             row-key="id"
             size="middle"
-            :pagination="{ pageSize: 20, showSizeChanger: true, showQuickJumper: true,
+            :pagination="{ defaultPageSize: 20, showSizeChanger: true, showQuickJumper: true,
                            showTotal: (t) => `共 ${t} 条` }"
           >
             <template #bodyCell="{ column, record }">
@@ -127,7 +129,7 @@
             :columns="scanCols"
             row-key="id"
             size="middle"
-            :pagination="{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }"
+            :pagination="{ defaultPageSize: 10, showTotal: (t) => `共 ${t} 条` }"
             :custom-row="scanRowClick"
             :row-class-name="scanRowClass"
           >
@@ -165,6 +167,8 @@
                 <a-tag color="default">存活 {{ selectedScan.alive }}/{{ selectedScan.total }}</a-tag>
               </span>
               <a-checkbox v-model:checked="onlyAlive" style="margin: 0 10px">只看存活</a-checkbox>
+              <a-input v-model:value="resCodeFilter" placeholder="状态码：200 / 200-399 / 4xx"
+                       size="small" style="width: 180px; margin-right: 10px" allow-clear />
               <a-input-search v-model:value="scanKw" placeholder="过滤 URL / 标题 / 指纹"
                               style="width: 240px" size="small" allow-clear />
             </div>
@@ -173,7 +177,7 @@
               :columns="resultCols"
               row-key="id"
               size="small"
-              :pagination="{ pageSize: 10, showSizeChanger: true, showQuickJumper: true,
+              :pagination="{ defaultPageSize: 10, showSizeChanger: true, showQuickJumper: true,
                             showTotal: (t) => `共 ${t} 条` }"
               :loading="scanResults[selectedScan.id] === undefined"
             >
@@ -210,7 +214,7 @@
             :columns="expCols"
             row-key="id"
             size="middle"
-            :pagination="{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }"
+            :pagination="{ defaultPageSize: 10, showTotal: (t) => `共 ${t} 条` }"
             v-model:expandedRowKeys="expExpanded"
           >
             <template #bodyCell="{ column, record }">
@@ -394,12 +398,29 @@ function parseFps(r) {
 
 const targetSel = ref([])
 const targetFilter = ref('all')
+const codeFilter = ref('')
+
+// '200' | '200-399' | '4xx' -> [min,max] | null
+function parseCodeRange(v) {
+  v = (v || '').trim().toLowerCase()
+  if (!v) return null
+  let m = v.match(/^(\d)xx$/)
+  if (m) return [m[1] * 100, m[1] * 100 + 99]
+  m = v.match(/^(\d{3})\s*-\s*(\d{3})$/)
+  if (m) return [+m[1], +m[2]]
+  if (/^\d{3}$/.test(v)) return [+v, +v]
+  return null
+}
+const inCodeRange = (code, range) =>
+  code != null && range && code >= range[0] && code <= range[1]
 
 const filteredTargets = computed(() => {
-  const rows = targetRows.value
-  if (targetFilter.value === 'alive') return rows.filter((r) => r.latest?.alive)
-  if (targetFilter.value === 'dead') return rows.filter((r) => r.latest && !r.latest.alive)
-  if (targetFilter.value === 'unscanned') return rows.filter((r) => !r.latest)
+  let rows = targetRows.value
+  if (targetFilter.value === 'alive') rows = rows.filter((r) => r.latest?.alive)
+  else if (targetFilter.value === 'dead') rows = rows.filter((r) => r.latest && !r.latest.alive)
+  else if (targetFilter.value === 'unscanned') rows = rows.filter((r) => !r.latest)
+  const range = parseCodeRange(codeFilter.value)
+  if (range) rows = rows.filter((r) => inCodeRange(r.latest?.status_code, range))
   return rows
 })
 
@@ -514,6 +535,7 @@ const resultCols = [
 const selectedScan = ref(null)
 const scanKw = ref('')
 const onlyAlive = ref(false)
+const resCodeFilter = ref('')
 
 function viewScan(record) {
   if (record.status !== 'done') return
@@ -530,8 +552,10 @@ const scanRowClass = (record) =>
 const filteredScanResults = computed(() => {
   const rows = scanResults[selectedScan.value?.id] || []
   const kw = scanKw.value.trim().toLowerCase()
+  const range = parseCodeRange(resCodeFilter.value)
   return rows.filter((r) => {
     if (onlyAlive.value && !r.alive) return false
+    if (range && !inCodeRange(r.status_code, range)) return false
     if (!kw) return true
     return [r.final_url, r.url, r.title, r.fingerprints, r.protection]
       .filter(Boolean).join(' ').toLowerCase().includes(kw)

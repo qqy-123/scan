@@ -82,7 +82,7 @@
                 访问该站点时浏览器触发的全部请求包。勾选某行可将其路径加入 url 指纹特征。
               </div>
               <a-table :data-source="preview.packets" :columns="pktCols" size="small"
-                       :pagination="{ pageSize: 10 }" row-key="url"
+                       :pagination="{ defaultPageSize: 10 }" row-key="url"
                        :row-selection="{ selectedRowKeys: sel.pktKeys, onChange: onPktSelect }">
                 <template #bodyCell="{ column, record }">
                   <template v-if="column.key === 'type'">
@@ -105,7 +105,7 @@
     <!-- 指纹库 -->
     <a-card :bordered="false" :title="`指纹库（${rules.filter(r => !r.disabled).length} 生效 / ${rules.length} 总计）`">
       <a-table :data-source="rules" :columns="ruleCols" row-key="name" size="small"
-               :pagination="{ pageSize: 20, showSizeChanger: true, showQuickJumper: true,
+               :pagination="{ defaultPageSize: 20, showSizeChanger: true, showQuickJumper: true,
                              showTotal: (t) => `共 ${t} 条` }">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'signals'">

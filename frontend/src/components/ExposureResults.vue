@@ -11,8 +11,10 @@
                      :checked="tagSel.includes(o.value)"
                      class="filter-chip"
                      @change="toggle(tagSel, o.value)">{{ o.label }}</a-checkable-tag>
+    <a-input v-model:value="codeFilter" placeholder="码：200 / 200-399 / 4xx" allow-clear
+             size="small" style="width: 160px; margin-left: auto" />
     <a-input v-model:value="kw" placeholder="搜索 URL / 标题 / 指纹 / 标签" allow-clear
-             size="small" style="width: 220px; margin-left: auto" />
+             size="small" style="width: 220px; margin-left: 8px" />
     <span class="toolbar-count">
       {{ flat.length }} 条结果<template v-if="dupTotal">（合并 {{ dupTotal }} 条相同）</template>
     </span>
@@ -129,8 +131,21 @@ const results = ref([])
 const loading = ref(false)
 const expandedKeys = ref([])
 const kw = ref('')
+const codeFilter = ref('')
 const sevSel = ref([])     // multi-select: [] = all levels
 const tagSel = ref([])     // multi-select tag filter
+
+// '200' | '200-399' | '4xx' -> [min,max] | null
+function parseCodeRange(v) {
+  v = (v || '').trim().toLowerCase()
+  if (!v) return null
+  let m = v.match(/^(\d)xx$/)
+  if (m) return [m[1] * 100, m[1] * 100 + 99]
+  m = v.match(/^(\d{3})\s*-\s*(\d{3})$/)
+  if (m) return [+m[1], +m[2]]
+  if (/^\d{3}$/.test(v)) return [+v, +v]
+  return null
+}
 
 const SEV_OPTS = [
   { value: 0, label: '高危' }, { value: 1, label: '中危' },
@@ -215,7 +230,7 @@ function onTableChange(p) {
   page.value = p.current
   pageSize.value = p.pageSize
 }
-watch([kw, sevSel, tagSel], () => { page.value = 1 })
+watch([kw, codeFilter, sevSel, tagSel], () => { page.value = 1 })
 
 const cols = [
   { title: '#', key: 'num', width: 76 },
@@ -287,9 +302,13 @@ const INTEL_HINT_RANK = { 'sub:alive': 0, 'sub:dns': 1, 'sub:ct': 2, 'sub:echo':
 
 const flat = computed(() => {
   const search = (kw.value || props.filter || '').trim().toLowerCase()
+  const codeRange = parseCodeRange(codeFilter.value)
   const match = (r) => {
     if (sevSel.value.length && !sevSel.value.includes(sevOf(r))) return false
     if (tagSel.value.length && !tagsOf(r).some((t) => tagSel.value.includes(t)))
+      return false
+    if (codeRange && (r.status_code == null
+        || r.status_code < codeRange[0] || r.status_code > codeRange[1]))
       return false
     if (!search) return true
     const hay = [
