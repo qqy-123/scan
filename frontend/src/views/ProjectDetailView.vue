@@ -101,8 +101,8 @@
             :row-selection="targetRowSel"
             row-key="id"
             size="middle"
-            :pagination="{ defaultPageSize: 20, showSizeChanger: true, showQuickJumper: true,
-                           showTotal: (t) => `共 ${t} 条` }"
+            :pagination="targetPagination"
+            @change="(p) => onTargetPage(p.current, p.pageSize)"
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'status'">
@@ -404,8 +404,36 @@ function parseFps(r) {
 }
 
 const targetSel = ref([])
-const targetFilter = ref('all')
-const codeFilter = ref('')
+const targetFilter = ref(
+  ['all', 'alive', 'dead', 'unscanned'].includes(route.query.tf) ? route.query.tf : 'all')
+const codeFilter = ref(route.query.tcode || '')
+const tpage = ref(Math.max(1, Number(route.query.tpage) || 1))
+const tsize = ref(Number(route.query.tsize) || 20)
+
+const targetPagination = computed(() => ({
+  current: tpage.value,
+  pageSize: tsize.value,
+  showSizeChanger: true,
+  showQuickJumper: true,
+  showTotal: (t) => `共 ${t} 条`,
+}))
+
+function onTargetPage(p, s) {
+  if (s !== tsize.value) { tsize.value = s; p = 1 }
+  tpage.value = p
+}
+
+// 目标表状态进 URL：从结果详情返回时页码/筛选原样恢复
+watch([targetFilter, codeFilter], () => { tpage.value = 1 })
+watch([tpage, tsize, targetFilter, codeFilter], () => {
+  const q = { ...route.query }
+  const set = (k, v, keep) => { if (keep) q[k] = v; else delete q[k] }
+  set('tpage', tpage.value, tpage.value > 1)
+  set('tsize', tsize.value, tsize.value !== 20)
+  set('tf', targetFilter.value, targetFilter.value !== 'all')
+  set('tcode', codeFilter.value.trim(), !!codeFilter.value.trim())
+  router.replace({ query: q })
+})
 
 // '200' | '200-399' | '4xx' -> [min,max] | null
 function parseCodeRange(v) {

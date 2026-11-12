@@ -48,9 +48,9 @@
         :columns="shownResultCols"
         row-key="id"
         size="small"
-        :pagination="{ defaultPageSize: 20, showSizeChanger: true, showQuickJumper: true,
-                      showTotal: (t) => `共 ${t} 条` }"
+        :pagination="resPagination"
         :loading="scan === null"
+        @change="(p) => onPage(p.current, p.pageSize)"
       >
         <template #bodyCell="{ column, record: r }">
           <template v-if="column.key === 'alive'">
@@ -96,9 +96,37 @@ const pid = Number(route.params.pid)
 const sid = Number(route.params.sid)
 
 const scan = ref(null)
-const scanKw = ref('')
-const onlyAlive = ref(false)
-const resCodeFilter = ref('')
+// 列表状态（页码/筛选）进 URL query：从详情页返回时原样恢复
+const page = ref(Math.max(1, Number(route.query.page) || 1))
+const size = ref(Number(route.query.size) || 20)
+const onlyAlive = ref(route.query.alive === '1')
+const scanKw = ref(route.query.kw || '')
+const resCodeFilter = ref(route.query.code || '')
+
+const resPagination = computed(() => ({
+  current: page.value,
+  pageSize: size.value,
+  showSizeChanger: true,
+  showQuickJumper: true,
+  showTotal: (t) => `共 ${t} 条`,
+}))
+
+function onPage(p, s) {
+  if (s !== size.value) { size.value = s; p = 1 }
+  page.value = p
+}
+
+watch([onlyAlive, scanKw, resCodeFilter], () => { page.value = 1 })
+watch([page, size, onlyAlive, scanKw, resCodeFilter], () => {
+  const q = { ...route.query }
+  const set = (k, v, keep) => { if (keep) q[k] = v; else delete q[k] }
+  set('page', page.value, page.value > 1)
+  set('size', size.value, size.value !== 20)
+  set('alive', '1', onlyAlive.value)
+  set('kw', scanKw.value.trim(), !!scanKw.value.trim())
+  set('code', resCodeFilter.value.trim(), !!resCodeFilter.value.trim())
+  router.replace({ query: q })
+})
 
 const goBack = useBack(`/projects/${pid}?tab=scans`)
 

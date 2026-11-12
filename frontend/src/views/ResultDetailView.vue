@@ -11,6 +11,11 @@
         </a-breadcrumb-item>
         <a-breadcrumb-item>结果详情</a-breadcrumb-item>
       </a-breadcrumb>
+      <a-space v-if="idx >= 0" style="margin-left: auto" :size="6">
+        <a-button size="small" :disabled="!prevId" @click="goto(prevId)">上一条</a-button>
+        <span style="color: #8c8c8c; font-size: 12px">{{ idx + 1 }}/{{ siblings.length }}</span>
+        <a-button size="small" :disabled="!nextId" @click="goto(nextId)">下一条</a-button>
+      </a-space>
     </div>
 
     <a-alert v-if="result.protection" type="warning" show-icon style="margin-bottom: 16px"
@@ -69,7 +74,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeftOutlined } from '@ant-design/icons-vue'
 import api from '../api'
@@ -77,6 +82,18 @@ import api from '../api'
 const props = defineProps({ id: String })
 const result = ref(null)
 const router = useRouter()
+
+// 同轮次内上一条/下一条（按结果 id 顺序，与列表默认排序一致）
+const siblings = ref([])
+const rid = computed(() => Number(props.id))
+const idx = computed(() => siblings.value.indexOf(rid.value))
+const prevId = computed(() => (idx.value > 0 ? siblings.value[idx.value - 1] : null))
+const nextId = computed(() =>
+  idx.value >= 0 && idx.value < siblings.value.length - 1
+    ? siblings.value[idx.value + 1] : null)
+
+// replace 而不是 push：浏览 N 条后按返回仍直接回列表
+function goto(id) { if (id) router.replace(`/results/${id}`) }
 
 function goBack() {
   // SPA 内有上一步则原路返回（保留列表页筛选/滚动位置）；
@@ -110,7 +127,13 @@ function fpLevel(f) {
   return (f.score || 0) >= 100 ? 'high' : 'low'
 }
 
-onMounted(async () => {
-  result.value = (await api.getResult(Number(props.id))).data
-})
+async function load() {
+  result.value = (await api.getResult(rid.value)).data
+  if (result.value?.scan_id && !siblings.value.length) {
+    const scan = (await api.getScan(result.value.scan_id)).data
+    siblings.value = (scan.results || []).map((r) => r.id).sort((a, b) => a - b)
+  }
+}
+onMounted(load)
+watch(rid, load)  // 上一条/下一条复用组件，仅参数变化时重载
 </script>
