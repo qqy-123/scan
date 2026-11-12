@@ -75,7 +75,7 @@
               </div>
               <div class="feed-time">{{ ago(s.started_at) }}</div>
               <a-button size="small"
-                        @click="router.push(`/projects/${s.project_id}?tab=scans&scan=${s.id}`)">查看</a-button>
+                        @click="router.push(`/projects/${s.project_id}/scans/${s.id}`)">查看</a-button>
             </div>
           </div>
           <a-empty v-else description="暂无扫描" :image="simpleImg" />

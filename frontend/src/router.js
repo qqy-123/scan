@@ -18,6 +18,11 @@ const router = createRouter({
       component: ProjectsView,
     },
     {
+      path: '/projects/:pid/scans/:sid',
+      name: 'scan-results',
+      component: () => import('./views/ScanResultsView.vue'),
+    },
+    {
       path: '/projects/:id',
       name: 'project',
       component: ProjectDetailView,

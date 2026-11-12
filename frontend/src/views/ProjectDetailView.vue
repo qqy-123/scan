@@ -169,66 +169,6 @@
             </template>
           </a-table>
           <a-empty v-if="!project?.scans?.length" description="还没有扫描记录" />
-
-          <template v-if="selectedScan">
-            <div class="result-head">
-              <span class="result-title">
-                扫描结果 · 轮次 #{{ selectedScan.id }}
-                <a-tag :color="selectedScan.kind === 'rescan' ? 'purple' : 'blue'"
-                       style="margin-left: 8px">
-                  {{ selectedScan.kind === 'rescan' ? '二次扫描' : '全量扫描' }}
-                </a-tag>
-                <a-tag color="default">存活 {{ selectedScan.alive }}/{{ selectedScan.total }}</a-tag>
-              </span>
-              <a-checkbox v-model:checked="onlyAlive" style="margin: 0 10px">只看存活</a-checkbox>
-              <a-input v-model:value="resCodeFilter" placeholder="状态码：200 / 200-399 / 4xx"
-                       size="small" style="width: 180px; margin-right: 10px" allow-clear />
-              <a-input-search v-model:value="scanKw" placeholder="过滤 URL / 标题 / 指纹"
-                              style="width: 240px" size="small" allow-clear />
-              <a-popover trigger="click" placement="bottomRight">
-                <a-button size="small" style="margin-left: 10px">列设置</a-button>
-                <template #content>
-                  <a-checkbox-group v-model:value="visibleCols" style="display: grid; gap: 6px">
-                    <a-checkbox v-for="c in resultCols.filter(x => !FIXED_COLS.includes(x.key))"
-                                :key="c.key" :value="c.key">{{ c.title }}</a-checkbox>
-                  </a-checkbox-group>
-                </template>
-              </a-popover>
-            </div>
-            <a-table
-              :data-source="filteredScanResults"
-              :columns="shownResultCols"
-              row-key="id"
-              size="small"
-              :pagination="{ defaultPageSize: 10, showSizeChanger: true, showQuickJumper: true,
-                            showTotal: (t) => `共 ${t} 条` }"
-              :loading="scanResults[selectedScan.id] === undefined"
-            >
-              <template #bodyCell="{ column, record: r }">
-                <template v-if="column.key === 'alive'">
-                  <a-badge :status="r.alive ? 'success' : 'error'"
-                           :text="r.alive ? '存活' : '失活'" />
-                  <a-tag v-if="r.protection" color="volcano" style="margin-left: 4px">防护</a-tag>
-                </template>
-                <template v-else-if="column.key === 'fps'">
-                  <FpTags :raw="r.fingerprints" />
-                </template>
-                <template v-else-if="column.key === 'shot'">
-                  <router-link v-if="r.screenshot" :to="`/results/${r.id}`">
-                    <img class="shot-thumb" :src="`/screenshots/${r.screenshot}`" />
-                  </router-link>
-                  <span v-else>-</span>
-                </template>
-                <template v-else-if="column.key === 'detail'">
-                  <a-button size="small" @click="router.push(`/results/${r.id}`)">详情</a-button>
-                </template>
-                <template v-else-if="column.key === 'final_url'">
-                  <a :href="r.final_url" target="_blank" rel="noopener" class="mono"
-                     style="word-break: break-all">{{ r.final_url }}</a>
-                </template>
-              </template>
-            </a-table>
-          </template>
         </a-tab-pane>
 
         <a-tab-pane key="exposure" :tab="`暴露面 (${expRuns.length})`">
@@ -378,7 +318,6 @@ const route = useRoute()
 
 const project = ref(null)
 const running = ref(null)
-const scanResults = reactive({})
 const tab = ref('targets')
 const showImport = ref(false)
 const showScan = ref(false)
@@ -560,80 +499,28 @@ async function delExposure(id) {
   loadExposure()
 }
 
-const resultCols = [
-  { title: '状态', key: 'alive', width: 100 },
-  { title: 'URL', key: 'final_url', ellipsis: true },
-  { title: 'HTTP', key: 'status_code', dataIndex: 'status_code', width: 70 },
-  { title: '标题', key: 'title', dataIndex: 'title', ellipsis: true },
-  { title: '指纹', key: 'fps' },
-  { title: '截图', key: 'shot', width: 130 },
-  { title: '操作', key: 'detail', width: 70 },
-]
+// 轮次点选 -> 跳转独立结果页
+function viewScan(record) {
+  if (record.status !== 'done') return
+  router.push(`/projects/${pid}/scans/${record.id}`)
+}
 
-// 结果表列显示控制：勾选项持久化，"操作"列固定不可关
-const COL_STORE_KEY = 'scan_result_cols'
-const FIXED_COLS = ['detail']
-const visibleCols = ref(
-  JSON.parse(localStorage.getItem(COL_STORE_KEY) || 'null') ||
-  resultCols.map((c) => c.key)
-)
-watch(visibleCols, (v) => localStorage.setItem(COL_STORE_KEY, JSON.stringify(v)),
-      { deep: true })
-const shownResultCols = computed(() =>
-  resultCols.filter((c) => FIXED_COLS.includes(c.key) || visibleCols.value.includes(c.key))
-)
-
-// 轮次点选 -> 下方直接展示该轮扫描结果
-const selectedScan = ref(null)
-const scanKw = ref('')
-const onlyAlive = ref(false)
-const resCodeFilter = ref('')
+const scanRowClick = (record) => ({ onClick: () => viewScan(record) })
+const scanRowClass = (record) =>
+  record.status === 'done' ? 'row-clickable' : 'row-disabled'
 
 function goBack() {
   if (window.history.state?.back) return router.back()
   router.push('/projects')
 }
 
-// 把当前 tab / 选中轮次同步进 URL，详情页返回时可精确恢复此页状态
-watch([tab, () => selectedScan.value?.id], ([t, sid]) => {
+// tab 状态同步进 URL，刷新/分享可直达对应 tab
+watch(tab, (t) => {
   const q = { ...route.query }
-  if (t === 'scans') {
-    q.tab = 'scans'
-    if (sid) q.scan = sid
-    else delete q.scan
-  } else if (t === 'targets') {
-    delete q.tab
-    delete q.scan
-  } else {
-    q.tab = t
-    delete q.scan
-  }
+  if (t === 'targets') delete q.tab
+  else q.tab = t
+  delete q.scan
   router.replace({ query: q })
-})
-
-function viewScan(record) {
-  if (record.status !== 'done') return
-  selectedScan.value = record
-  scanKw.value = ''
-  if (!scanResults[record.id]) loadScanResults(record.id)
-}
-
-const scanRowClick = (record) => ({ onClick: () => viewScan(record) })
-const scanRowClass = (record) =>
-  (selectedScan.value?.id === record.id ? 'row-selected ' : '') +
-  (record.status === 'done' ? 'row-clickable' : 'row-disabled')
-
-const filteredScanResults = computed(() => {
-  const rows = scanResults[selectedScan.value?.id] || []
-  const kw = scanKw.value.trim().toLowerCase()
-  const range = parseCodeRange(resCodeFilter.value)
-  return rows.filter((r) => {
-    if (onlyAlive.value && !r.alive) return false
-    if (range && !inCodeRange(r.status_code, range)) return false
-    if (!kw) return true
-    return [r.final_url, r.url, r.title, r.fingerprints, r.protection]
-      .filter(Boolean).join(' ').toLowerCase().includes(kw)
-  })
 })
 
 async function load() {
@@ -652,26 +539,14 @@ async function load() {
   running.value = data.running
   const ids = new Set((data.targets || []).map((t) => t.id))
   targetSel.value = targetSel.value.filter((id) => ids.has(id))
-  // ?tab=scans&scan=N 直达指定轮次；否则默认选中最新一轮已完成的扫描
+  // ?tab= 直达指定 tab；旧的 ?scan=N 深链转跳到独立结果页
   if (['targets', 'scans', 'exposure'].includes(route.query.tab)) tab.value = route.query.tab
   const wantScan = Number(route.query.scan) || null
-  if (!selectedScan.value) {
-    const pick = (wantScan && data.scans.find((s) => s.id === wantScan))
-      || data.scans.find((s) => s.status === 'done')
-    if (pick) {
-      selectedScan.value = pick
-      if (pick.status === 'done') loadScanResults(pick.id)
-    }
-  } else {
-    const cur = data.scans.find((s) => s.id === selectedScan.value.id)
-    if (cur) selectedScan.value = cur
+  if (wantScan && data.scans.find((s) => s.id === wantScan && s.status === 'done')) {
+    router.replace(`/projects/${pid}/scans/${wantScan}`)
+    return
   }
   if (running.value && !timer) startPolling()
-}
-
-async function loadScanResults(sid) {
-  const { data } = await api.getScan(sid)
-  scanResults[sid] = data.results
 }
 
 function startPolling() {
@@ -680,11 +555,6 @@ function startPolling() {
     if (!running.value) {
       clearInterval(timer)
       timer = null
-      const last = project.value?.scans?.find((s) => s.status === 'done')
-      if (last) {
-        selectedScan.value = last
-        await loadScanResults(last.id)
-      }
       message.success('扫描完成')
     }
   }, 2500)
