@@ -819,7 +819,10 @@ def dead_results(scan_id: int) -> list:
 
 def get_result(rid: int) -> dict | None:
     conn = _conn()
-    row = conn.execute("SELECT * FROM results WHERE id=?", (rid,)).fetchone()
+    row = conn.execute(
+        """SELECT r.*, s.project_id
+           FROM results r JOIN scans s ON s.id = r.scan_id
+           WHERE r.id=?""", (rid,)).fetchone()
     conn.close()
     return dict(row) if row else None
 

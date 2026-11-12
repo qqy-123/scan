@@ -1,9 +1,14 @@
 <template>
   <div class="page">
-    <a-breadcrumb style="margin-bottom: 16px">
-      <a-breadcrumb-item><router-link to="/projects">项目</router-link></a-breadcrumb-item>
-      <a-breadcrumb-item>{{ project?.name }}</a-breadcrumb-item>
-    </a-breadcrumb>
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px">
+      <a-button size="small" @click="goBack">
+        <template #icon><ArrowLeftOutlined /></template>返回
+      </a-button>
+      <a-breadcrumb style="margin: 0">
+        <a-breadcrumb-item><router-link to="/projects">项目</router-link></a-breadcrumb-item>
+        <a-breadcrumb-item>{{ project?.name }}</a-breadcrumb-item>
+      </a-breadcrumb>
+    </div>
 
     <a-card :bordered="false" style="margin-bottom: 16px">
       <a-row :gutter="24" align="middle">
@@ -339,10 +344,10 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Modal, message } from 'ant-design-vue'
-import { EllipsisOutlined, ImportOutlined, PlayCircleOutlined, RadarChartOutlined, ReloadOutlined } from '@ant-design/icons-vue'
+import { ArrowLeftOutlined, EllipsisOutlined, ImportOutlined, PlayCircleOutlined, RadarChartOutlined, ReloadOutlined } from '@ant-design/icons-vue'
 import api from '../api'
 import ExposureResults from '../components/ExposureResults.vue'
 import ExposureScanModal from '../components/ExposureScanModal.vue'
@@ -540,6 +545,28 @@ const scanKw = ref('')
 const onlyAlive = ref(false)
 const resCodeFilter = ref('')
 
+function goBack() {
+  if (window.history.state?.back) return router.back()
+  router.push('/projects')
+}
+
+// 把当前 tab / 选中轮次同步进 URL，详情页返回时可精确恢复此页状态
+watch([tab, () => selectedScan.value?.id], ([t, sid]) => {
+  const q = { ...route.query }
+  if (t === 'scans') {
+    q.tab = 'scans'
+    if (sid) q.scan = sid
+    else delete q.scan
+  } else if (t === 'targets') {
+    delete q.tab
+    delete q.scan
+  } else {
+    q.tab = t
+    delete q.scan
+  }
+  router.replace({ query: q })
+})
+
 function viewScan(record) {
   if (record.status !== 'done') return
   selectedScan.value = record
@@ -582,7 +609,7 @@ async function load() {
   const ids = new Set((data.targets || []).map((t) => t.id))
   targetSel.value = targetSel.value.filter((id) => ids.has(id))
   // ?tab=scans&scan=N 直达指定轮次；否则默认选中最新一轮已完成的扫描
-  if (route.query.tab === 'scans') tab.value = 'scans'
+  if (['targets', 'scans', 'exposure'].includes(route.query.tab)) tab.value = route.query.tab
   const wantScan = Number(route.query.scan) || null
   if (!selectedScan.value) {
     const pick = (wantScan && data.scans.find((s) => s.id === wantScan))

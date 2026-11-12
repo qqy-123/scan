@@ -2,11 +2,20 @@
   <div class="nf">
     <a-result status="404" title="404" sub-title="访问的页面不存在">
       <template #extra>
-        <router-link to="/">返回首页</router-link>
+        <a-button type="primary" @click="goBack">
+          <template #icon><ArrowLeftOutlined /></template>返回上一级
+        </a-button>
       </template>
     </a-result>
   </div>
 </template>
+
+<script setup>
+import { ArrowLeftOutlined } from '@ant-design/icons-vue'
+import { useBack } from '../back'
+
+const goBack = useBack('/')
+</script>
 
 <style scoped>
 .nf {

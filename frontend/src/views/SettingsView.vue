@@ -1,9 +1,14 @@
 <template>
   <div class="page">
     <div class="page-header">
-      <div>
-        <div class="page-title">系统配置</div>
-        <div class="page-sub">扫描默认值 · 探测参数 · 系统信息</div>
+      <div style="display: flex; align-items: flex-start; gap: 12px">
+        <a-button size="small" style="margin-top: 4px" @click="goBack">
+          <template #icon><ArrowLeftOutlined /></template>返回
+        </a-button>
+        <div>
+          <div class="page-title">系统配置</div>
+          <div class="page-sub">扫描默认值 · 探测参数 · 系统信息</div>
+        </div>
       </div>
       <a-space>
         <a-button @click="reset">恢复默认</a-button>
@@ -129,8 +134,11 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { message } from 'ant-design-vue'
+import { ArrowLeftOutlined } from '@ant-design/icons-vue'
 import api from '../api'
+import { useBack } from '../back'
 
+const goBack = useBack('/')
 const DEFAULTS = {
   concurrency: 50,
   browser_concurrency: 4,

@@ -1,9 +1,14 @@
 <template>
   <div class="page">
     <div class="page-header">
-      <div>
-        <div class="page-title">总览</div>
-        <div class="page-sub">系统全局状态 · 实时刷新</div>
+      <div style="display: flex; align-items: flex-start; gap: 12px">
+        <a-button size="small" style="margin-top: 4px" @click="goBack">
+          <template #icon><ArrowLeftOutlined /></template>返回
+        </a-button>
+        <div>
+          <div class="page-title">总览</div>
+          <div class="page-sub">系统全局状态 · 实时刷新</div>
+        </div>
       </div>
       <a-button type="primary" @click="$router.push('/projects')">
         <template #icon><PlusOutlined /></template>
@@ -112,6 +117,7 @@ import { useRouter } from 'vue-router'
 import { Empty } from 'ant-design-vue'
 import {
   AimOutlined,
+  ArrowLeftOutlined,
   CloudServerOutlined,
   DatabaseOutlined,
   GlobalOutlined,
@@ -124,12 +130,14 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/zh-cn'
 import api from '../api'
 import { useChart } from '../chart'
+import { useBack } from '../back'
 
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
 
 const simpleImg = Empty.PRESENTED_IMAGE_SIMPLE
 const router = useRouter()
+const goBack = useBack('/')
 const data = ref(null)
 const projects = ref([])
 

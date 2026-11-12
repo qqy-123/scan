@@ -1,9 +1,14 @@
 <template>
   <div class="page">
     <div class="page-header">
-      <div>
-        <div class="page-title">项目</div>
-        <div class="page-sub">资产管理 · 共 {{ projects.length }} 个项目</div>
+      <div style="display: flex; align-items: flex-start; gap: 12px">
+        <a-button size="small" style="margin-top: 4px" @click="goBack">
+          <template #icon><ArrowLeftOutlined /></template>返回
+        </a-button>
+        <div>
+          <div class="page-title">项目</div>
+          <div class="page-sub">资产管理 · 共 {{ projects.length }} 个项目</div>
+        </div>
       </div>
       <a-button type="primary" @click="openCreate">新建项目</a-button>
     </div>
@@ -72,9 +77,12 @@
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
+import { ArrowLeftOutlined } from '@ant-design/icons-vue'
 import api from '../api'
+import { useBack } from '../back'
 
 const router = useRouter()
+const goBack = useBack('/')
 
 const projects = ref([])
 const loading = ref(false)

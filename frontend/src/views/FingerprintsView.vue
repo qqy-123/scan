@@ -1,9 +1,14 @@
 <template>
   <div class="page">
     <div class="page-header">
-      <div>
-        <div class="page-title">指纹库</div>
-        <div class="page-sub">源码/系统指纹规则 · 学习 · 编辑 · 启停</div>
+      <div style="display: flex; align-items: flex-start; gap: 12px">
+        <a-button size="small" style="margin-top: 4px" @click="goBack">
+          <template #icon><ArrowLeftOutlined /></template>返回
+        </a-button>
+        <div>
+          <div class="page-title">指纹库</div>
+          <div class="page-sub">源码/系统指纹规则 · 学习 · 编辑 · 启停</div>
+        </div>
       </div>
     </div>
 
@@ -190,8 +195,11 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { message } from 'ant-design-vue'
+import { ArrowLeftOutlined } from '@ant-design/icons-vue'
 import api from '../api'
+import { useBack } from '../back'
 
+const goBack = useBack('/')
 const rules = ref([])
 const learnUrl = ref('')
 const extracting = ref(false)

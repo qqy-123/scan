@@ -1,9 +1,14 @@
 <template>
   <div class="page">
     <div class="page-header">
-      <div>
-        <div class="page-title">暴露面测绘</div>
-        <div class="page-sub">JS 接口提取 · 目录爆破 · 敏感信息/攻击点/源码泄露检测 · 攻击面深扫</div>
+      <div style="display: flex; align-items: flex-start; gap: 12px">
+        <a-button size="small" style="margin-top: 4px" @click="goBack">
+          <template #icon><ArrowLeftOutlined /></template>返回
+        </a-button>
+        <div>
+          <div class="page-title">暴露面测绘</div>
+          <div class="page-sub">JS 接口提取 · 目录爆破 · 敏感信息/攻击点/源码泄露检测 · 攻击面深扫</div>
+        </div>
       </div>
     </div>
 
@@ -146,8 +151,13 @@
         </span>
       </template>
       <template #extra>
-        <a-input-search v-model:value="kw" placeholder="过滤 URL / 标题 / 指纹"
-                        style="width: 260px" size="small" allow-clear />
+        <a-space>
+          <a-input-search v-model:value="kw" placeholder="过滤 URL / 标题 / 指纹"
+                          style="width: 260px" size="small" allow-clear />
+          <a-button size="small" @click="backToList">
+            <template #icon><ArrowLeftOutlined /></template>返回列表
+          </a-button>
+        </a-space>
       </template>
       <ExposureResults :run-id="selected.id" :filter="kw" />
     </a-card>
@@ -156,11 +166,13 @@
 
 <script setup>
 import { nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import { AimOutlined, DatabaseOutlined, InfoCircleOutlined, RadarChartOutlined } from '@ant-design/icons-vue'
+import { AimOutlined, ArrowLeftOutlined, DatabaseOutlined, InfoCircleOutlined, RadarChartOutlined } from '@ant-design/icons-vue'
 import api from '../api'
 import ExposureResults from '../components/ExposureResults.vue'
 import ExposureScanModal from '../components/ExposureScanModal.vue'
+import { useBack } from '../back'
 
+const goBack = useBack('/')
 const runs = ref([])
 const stats = ref({})
 const loading = ref(false)
@@ -235,6 +247,11 @@ async function download(rid, fmt) {
   a.download = `exposure_${rid}.${fmt}`
   a.click()
   URL.revokeObjectURL(url)
+}
+
+function backToList() {
+  selected.value = null
+  kw.value = ''
 }
 
 function viewRun(record) {

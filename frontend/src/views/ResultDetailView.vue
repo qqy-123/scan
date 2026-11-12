@@ -1,9 +1,17 @@
 <template>
   <div class="page" v-if="result">
-    <a-breadcrumb style="margin-bottom: 16px">
-      <a-breadcrumb-item><router-link to="/projects">项目</router-link></a-breadcrumb-item>
-      <a-breadcrumb-item>结果详情</a-breadcrumb-item>
-    </a-breadcrumb>
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px">
+      <a-button size="small" @click="goBack">
+        <template #icon><ArrowLeftOutlined /></template>返回
+      </a-button>
+      <a-breadcrumb style="margin: 0">
+        <a-breadcrumb-item><router-link to="/projects">项目</router-link></a-breadcrumb-item>
+        <a-breadcrumb-item v-if="result?.project_id">
+          <router-link :to="`/projects/${result.project_id}?tab=scans&scan=${result.scan_id}`">扫描记录</router-link>
+        </a-breadcrumb-item>
+        <a-breadcrumb-item>结果详情</a-breadcrumb-item>
+      </a-breadcrumb>
+    </div>
 
     <a-alert v-if="result.protection" type="warning" show-icon style="margin-bottom: 16px"
              :message="`检测到前台保护：${result.protection}，识别结果可能来自防护页面`" />
@@ -62,10 +70,25 @@
 
 <script setup>
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { ArrowLeftOutlined } from '@ant-design/icons-vue'
 import api from '../api'
 
 const props = defineProps({ id: String })
 const result = ref(null)
+const router = useRouter()
+
+function goBack() {
+  // SPA 内有上一步则原路返回（保留列表页选中轮次/筛选/滚动位置）；
+  // 直接打开的深链则回退到该结果所属项目的扫描记录页
+  if (window.history.state?.back) return router.back()
+  if (result.value?.project_id) {
+    return router.push(
+      `/projects/${result.value.project_id}?tab=scans&scan=${result.value.scan_id}`
+    )
+  }
+  router.push('/projects')
+}
 
 const fpCols = [
   { title: '指纹', dataIndex: 'name', width: 160 },
