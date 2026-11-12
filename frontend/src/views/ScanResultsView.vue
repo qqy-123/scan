@@ -39,7 +39,7 @@
         </a-popover>
       </div>
       <div v-if="scan" class="result-meta">
-        开始 {{ scan.started_at }}<template v-if="scan.finished_at"> · 结束 {{ scan.finished_at }}</template>
+        开始 {{ fmtTime(scan.started_at) }}<template v-if="scan.finished_at"> · 结束 {{ fmtTime(scan.finished_at) }}</template>
         <template v-if="scan.options?.screenshot === false"> · 未截图</template>
         <template v-if="scan.options?.fingerprint === false"> · 未指纹识别</template>
       </div>
@@ -88,6 +88,7 @@ import { ArrowLeftOutlined } from '@ant-design/icons-vue'
 import api from '../api'
 import FpTags from '../components/FpTags.vue'
 import { useBack } from '../back'
+import { fmtTime } from '../fmt'
 
 const route = useRoute()
 const router = useRouter()

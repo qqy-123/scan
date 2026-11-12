@@ -58,9 +58,17 @@
             {{ record.project_name }}
           </template>
           <template v-else-if="column.key === 'kinds'">
-            <a-tag v-for="k in parseKinds(record)" :key="k" :color="kindColor(k)">
+            <a-tag v-for="k in parseKinds(record).slice(0, 3)" :key="k" :color="kindColor(k)">
               {{ kindLabel(k) }}
             </a-tag>
+            <a-popover v-if="parseKinds(record).length > 3" trigger="hover">
+              <a-tag style="cursor: default">+{{ parseKinds(record).length - 3 }}</a-tag>
+              <template #content>
+                <a-tag v-for="k in parseKinds(record)" :key="k" :color="kindColor(k)">
+                  {{ kindLabel(k) }}
+                </a-tag>
+              </template>
+            </a-popover>
           </template>
           <template v-else-if="column.key === 'status'">
             <a-badge :status="{ running: 'processing', done: 'success' }[record.status] || 'error'"
@@ -117,7 +125,7 @@
         <a-empty v-if="!diff.data.prev" description="该项目第一轮已完成的测绘，无可对比对象" />
         <template v-else>
           <div style="margin-bottom: 12px">
-            vs 测绘 #{{ diff.data.prev }}（{{ diff.data.prev_time || '-' }}）
+            vs 测绘 #{{ diff.data.prev }}（{{ fmtTime(diff.data.prev_time) }}）
             <a-tag color="green">+{{ diff.data.new_count }} 新增</a-tag>
             <a-tag>-{{ diff.data.gone_count }} 消失</a-tag>
             <a-tag color="orange">~{{ diff.data.changed_count }} 变化</a-tag>
@@ -171,6 +179,7 @@ import api from '../api'
 import ExposureResults from '../components/ExposureResults.vue'
 import ExposureScanModal from '../components/ExposureScanModal.vue'
 import { useBack } from '../back'
+import { fmtTime } from '../fmt'
 
 const goBack = useBack('/')
 const runs = ref([])
@@ -188,8 +197,10 @@ const runCols = [
   { title: '状态', key: 'status', width: 130 },
   { title: '发现', key: 'found', width: 80 },
   { title: '深扫', key: 'deep', width: 140 },
-  { title: '开始时间', dataIndex: 'started_at', width: 170 },
-  { title: '结束时间', dataIndex: 'finished_at', width: 170, customRender: ({ text }) => text || '-' },
+  { title: '开始时间', key: 'started_at', width: 150,
+    customRender: ({ record }) => fmtTime(record.started_at) },
+  { title: '结束时间', key: 'finished_at', width: 150,
+    customRender: ({ record }) => fmtTime(record.finished_at) },
   { title: '操作', key: 'op', width: 240 },
 ]
 

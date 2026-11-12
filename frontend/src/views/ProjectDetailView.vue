@@ -182,9 +182,17 @@
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'kinds'">
-                <a-tag v-for="k in parseKinds(record)" :key="k" :color="expKindColor(k)">
+                <a-tag v-for="k in parseKinds(record).slice(0, 3)" :key="k" :color="expKindColor(k)">
                   {{ expKindLabel(k) }}
                 </a-tag>
+                <a-popover v-if="parseKinds(record).length > 3" trigger="hover">
+                  <a-tag style="cursor: default">+{{ parseKinds(record).length - 3 }}</a-tag>
+                  <template #content>
+                    <a-tag v-for="k in parseKinds(record)" :key="k" :color="expKindColor(k)">
+                      {{ expKindLabel(k) }}
+                    </a-tag>
+                  </template>
+                </a-popover>
               </template>
               <template v-else-if="column.key === 'status'">
                 <a-badge :status="{ running: 'processing', done: 'success' }[record.status] || 'error'"
@@ -310,6 +318,7 @@ import api from '../api'
 import ExposureResults from '../components/ExposureResults.vue'
 import ExposureScanModal from '../components/ExposureScanModal.vue'
 import FpTags from '../components/FpTags.vue'
+import { fmtTime } from '../fmt'
 
 const props = defineProps({ id: String })
 const pid = Number(props.id)
@@ -431,8 +440,10 @@ const scanCols = [
   { title: '类型', key: 'kind', width: 110 },
   { title: '状态', key: 'status', width: 130 },
   { title: '存活/总数', customRender: ({ record: r }) => `${r.alive}/${r.total}`, width: 110 },
-  { title: '开始时间', dataIndex: 'started_at', width: 200 },
-  { title: '结束时间', dataIndex: 'finished_at', width: 200, customRender: ({ text }) => text || '-' },
+  { title: '开始时间', key: 'started_at', width: 160,
+    customRender: ({ record }) => fmtTime(record.started_at) },
+  { title: '结束时间', key: 'finished_at', width: 160,
+    customRender: ({ record }) => fmtTime(record.finished_at) },
   { title: '操作', key: 'op', width: 90 },
 ]
 
@@ -442,8 +453,10 @@ const expCols = [
   { title: '状态', key: 'status', width: 130 },
   { title: '发现', key: 'found', width: 80 },
   { title: '深扫', key: 'deep', width: 140 },
-  { title: '开始时间', dataIndex: 'started_at', width: 170 },
-  { title: '结束时间', dataIndex: 'finished_at', width: 170, customRender: ({ text }) => text || '-' },
+  { title: '开始时间', key: 'started_at', width: 160,
+    customRender: ({ record }) => fmtTime(record.started_at) },
+  { title: '结束时间', key: 'finished_at', width: 160,
+    customRender: ({ record }) => fmtTime(record.finished_at) },
   { title: '操作', key: 'op', width: 120 },
 ]
 

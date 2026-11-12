@@ -31,7 +31,7 @@
           <a-badge status="error" :text="String(record.dead_count)" />
         </template>
         <template v-else-if="column.key === 'created_at'">
-          <span class="mono">{{ record.created_at }}</span>
+          <span class="mono">{{ fmtTime(record.created_at) }}</span>
         </template>
         <template v-else-if="column.key === 'op'">
           <a-space :size="6">
@@ -80,6 +80,7 @@ import { message } from 'ant-design-vue'
 import { ArrowLeftOutlined } from '@ant-design/icons-vue'
 import api from '../api'
 import { useBack } from '../back'
+import { fmtTime } from '../fmt'
 
 const router = useRouter()
 const goBack = useBack('/')
