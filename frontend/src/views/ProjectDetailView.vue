@@ -84,10 +84,19 @@
             </a-radio-group>
             <a-input v-model:value="codeFilter" placeholder="状态码：200 / 200-399 / 4xx"
                      size="small" style="width: 190px" allow-clear />
+            <a-popover trigger="click" placement="bottomRight">
+              <a-button size="small">列设置</a-button>
+              <template #content>
+                <a-checkbox-group v-model:value="visibleTargetCols" style="display: grid; gap: 6px">
+                  <a-checkbox v-for="c in targetCols.filter(x => !FIXED_TARGET_COLS.includes(x.key))"
+                              :key="c.key" :value="c.key">{{ c.title }}</a-checkbox>
+                </a-checkbox-group>
+              </template>
+            </a-popover>
           </a-space>
           <a-table
             :data-source="filteredTargets"
-            :columns="targetCols"
+            :columns="shownTargetCols"
             :row-selection="targetRowSel"
             row-key="id"
             size="middle"
@@ -176,10 +185,19 @@
                        size="small" style="width: 180px; margin-right: 10px" allow-clear />
               <a-input-search v-model:value="scanKw" placeholder="过滤 URL / 标题 / 指纹"
                               style="width: 240px" size="small" allow-clear />
+              <a-popover trigger="click" placement="bottomRight">
+                <a-button size="small" style="margin-left: 10px">列设置</a-button>
+                <template #content>
+                  <a-checkbox-group v-model:value="visibleCols" style="display: grid; gap: 6px">
+                    <a-checkbox v-for="c in resultCols.filter(x => !FIXED_COLS.includes(x.key))"
+                                :key="c.key" :value="c.key">{{ c.title }}</a-checkbox>
+                  </a-checkbox-group>
+                </template>
+              </a-popover>
             </div>
             <a-table
               :data-source="filteredScanResults"
-              :columns="resultCols"
+              :columns="shownResultCols"
               row-key="id"
               size="small"
               :pagination="{ defaultPageSize: 10, showSizeChanger: true, showQuickJumper: true,
@@ -450,11 +468,24 @@ const targetCols = [
   { title: 'URL', dataIndex: 'url', ellipsis: true },
   { title: '状态', key: 'status', width: 90 },
   { title: 'HTTP', key: 'code', width: 80 },
-  { title: '标题', dataIndex: ['latest', 'title'], ellipsis: true, customRender: ({ record }) => record.latest?.title || '-' },
+  { title: '标题', key: 'title', dataIndex: ['latest', 'title'], ellipsis: true, customRender: ({ record }) => record.latest?.title || '-' },
   { title: '指纹', key: 'fps' },
   { title: '截图', key: 'shot', width: 140 },
   { title: '操作', key: 'op', width: 150 },
 ]
+
+// 目标表列显示控制（#序号、行勾选、操作固定）
+const TARGET_COL_STORE_KEY = 'target_cols'
+const FIXED_TARGET_COLS = ['idx', 'op']
+const visibleTargetCols = ref(
+  JSON.parse(localStorage.getItem(TARGET_COL_STORE_KEY) || 'null') ||
+  targetCols.map((c) => c.key)
+)
+watch(visibleTargetCols, (v) => localStorage.setItem(TARGET_COL_STORE_KEY, JSON.stringify(v)),
+      { deep: true })
+const shownTargetCols = computed(() =>
+  targetCols.filter((c) => FIXED_TARGET_COLS.includes(c.key) || visibleTargetCols.value.includes(c.key))
+)
 
 const scanCols = [
   { title: '#', dataIndex: 'id', width: 70 },
@@ -532,12 +563,25 @@ async function delExposure(id) {
 const resultCols = [
   { title: '状态', key: 'alive', width: 100 },
   { title: 'URL', key: 'final_url', ellipsis: true },
-  { title: 'HTTP', dataIndex: 'status_code', width: 70 },
-  { title: '标题', dataIndex: 'title', ellipsis: true },
+  { title: 'HTTP', key: 'status_code', dataIndex: 'status_code', width: 70 },
+  { title: '标题', key: 'title', dataIndex: 'title', ellipsis: true },
   { title: '指纹', key: 'fps' },
   { title: '截图', key: 'shot', width: 130 },
   { title: '操作', key: 'detail', width: 70 },
 ]
+
+// 结果表列显示控制：勾选项持久化，"操作"列固定不可关
+const COL_STORE_KEY = 'scan_result_cols'
+const FIXED_COLS = ['detail']
+const visibleCols = ref(
+  JSON.parse(localStorage.getItem(COL_STORE_KEY) || 'null') ||
+  resultCols.map((c) => c.key)
+)
+watch(visibleCols, (v) => localStorage.setItem(COL_STORE_KEY, JSON.stringify(v)),
+      { deep: true })
+const shownResultCols = computed(() =>
+  resultCols.filter((c) => FIXED_COLS.includes(c.key) || visibleCols.value.includes(c.key))
+)
 
 // 轮次点选 -> 下方直接展示该轮扫描结果
 const selectedScan = ref(null)
