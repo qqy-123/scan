@@ -226,6 +226,7 @@ def init():
         ("exposure_runs", "deep_status TEXT DEFAULT 'none'"),
         ("exposure_runs", "deep_total INTEGER DEFAULT 0"),
         ("exposure_runs", "deep_done INTEGER DEFAULT 0"),
+        ("targets", "import_id INTEGER"),
     ):
         try:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {col}")
@@ -324,29 +325,56 @@ def delete_project(pid: int):
 
 # ---------- targets ----------
 
-def add_targets(project_id: int, urls: list[str]) -> dict:
+def add_targets(project_id: int, urls: list[str],
+                source: str = "text", filename=None) -> dict:
+    """Insert targets tagged with the import batch that brought them in.
+
+    Duplicates keep their original import_id; a duplicate with no recorded
+    source (pre-feature rows) gets backfilled from this import."""
     conn = _conn()
+    cur = conn.execute(
+        "INSERT INTO target_imports(project_id, source, filename, parsed)"
+        " VALUES(?,?,?,?)" + _INS_SUFFIX,
+        (project_id, source, filename, len(urls)),
+    )
+    import_id = _insert_id(cur)
     added, dup = 0, 0
     if PG:
         # ON CONFLICT keeps a duplicate from aborting the whole transaction
         # (a bare IntegrityError would poison every INSERT after it).
         for u in urls:
             cur = conn.execute(
-                "INSERT INTO targets(project_id, url) VALUES(?,?)"
+                "INSERT INTO targets(project_id, url, import_id) VALUES(?,?,?)"
                 " ON CONFLICT DO NOTHING",
-                (project_id, u),
+                (project_id, u, import_id),
             )
             added += cur.rowcount
             dup += 1 - cur.rowcount
+            if not cur.rowcount:
+                conn.execute(
+                    "UPDATE targets SET import_id=? WHERE project_id=? AND url=?"
+                    " AND import_id IS NULL",
+                    (import_id, project_id, u),
+                )
     else:
         for u in urls:
             try:
                 conn.execute(
-                    "INSERT INTO targets(project_id, url) VALUES(?,?)", (project_id, u)
+                    "INSERT INTO targets(project_id, url, import_id) VALUES(?,?,?)",
+                    (project_id, u, import_id),
                 )
                 added += 1
             except IntegrityError:
                 dup += 1
+                conn.execute(
+                    "UPDATE targets SET import_id=? WHERE project_id=? AND url=?"
+                    " AND import_id IS NULL",
+                    (import_id, project_id, u),
+                )
+    conn.execute(
+        "UPDATE target_imports SET added=?, duplicates=? WHERE id=?",
+        (added, dup, import_id),
+    )
     conn.commit()
     conn.close()
     return {"added": added, "duplicates": dup}
@@ -367,7 +395,11 @@ def delete_targets(ids: list[int]) -> int:
 def list_targets(project_id: int) -> list:
     conn = _conn()
     rows = conn.execute(
-        "SELECT * FROM targets WHERE project_id=? ORDER BY id", (project_id,)
+        "SELECT t.*, i.source AS import_source, i.filename AS import_filename,"
+        " i.created_at AS imported_at"
+        " FROM targets t LEFT JOIN target_imports i ON i.id = t.import_id"
+        " WHERE t.project_id=? ORDER BY t.id",
+        (project_id,),
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
@@ -396,18 +428,6 @@ def update_target(target_id: int, url: str) -> dict:
 def delete_target(target_id: int):
     conn = _conn()
     conn.execute("DELETE FROM targets WHERE id=?", (target_id,))
-    conn.commit()
-    conn.close()
-
-
-def log_import(project_id: int, source: str, filename, parsed: int,
-               added: int, duplicates: int):
-    conn = _conn()
-    conn.execute(
-        "INSERT INTO target_imports(project_id, source, filename, parsed,"
-        " added, duplicates) VALUES(?,?,?,?,?,?)",
-        (project_id, source, filename, parsed, added, duplicates),
-    )
     conn.commit()
     conn.close()
 

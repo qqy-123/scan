@@ -126,9 +126,7 @@ def add_targets_text(pid: int, body: TargetsIn):
     if not store.get_project(pid):
         raise HTTPException(404)
     urls = ingest.from_text(body.urls)
-    res = store.add_targets(pid, urls)
-    store.log_import(pid, "text", None, len(urls),
-                     res["added"], res["duplicates"])
+    res = store.add_targets(pid, urls, "text")
     res["parsed"] = len(urls)
     return res
 
@@ -142,9 +140,7 @@ async def add_targets_file(pid: int, file: UploadFile):
         urls = ingest.from_file(file.filename or "", data)
     except Exception as e:
         raise HTTPException(400, f"文件解析失败：{e}")
-    res = store.add_targets(pid, urls)
-    store.log_import(pid, "file", file.filename, len(urls),
-                     res["added"], res["duplicates"])
+    res = store.add_targets(pid, urls, "file", file.filename)
     res["parsed"] = len(urls)
     return res
 

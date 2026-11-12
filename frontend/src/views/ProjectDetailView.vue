@@ -124,6 +124,17 @@
                          :src="`/screenshots/${record.latest.screenshot}`" />
                 <span v-else>-</span>
               </template>
+              <template v-else-if="column.key === 'src'">
+                <template v-if="record.import_filename || record.import_source">
+                  <div class="mono" style="font-size: 12px">
+                    {{ record.import_filename || '粘贴输入' }}
+                  </div>
+                  <div style="font-size: 11px; color: #8c8c8c">
+                    {{ fmtTime(record.imported_at) }}
+                  </div>
+                </template>
+                <span v-else style="color: #bfbfbf">历史导入</span>
+              </template>
               <template v-else-if="column.key === 'op'">
                 <a-space :size="6">
                   <a-button v-if="record.latest" size="small"
@@ -441,6 +452,7 @@ const targetCols = [
   { title: '标题', key: 'title', dataIndex: ['latest', 'title'], ellipsis: true, customRender: ({ record }) => record.latest?.title || '-' },
   { title: '指纹', key: 'fps' },
   { title: '截图', key: 'shot', width: 140 },
+  { title: '来源', key: 'src', width: 170 },
   { title: '操作', key: 'op', width: 150 },
 ]
 
