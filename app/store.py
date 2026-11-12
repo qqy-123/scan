@@ -748,6 +748,25 @@ def finish_scan(scan_id: int, alive: int):
     conn.close()
 
 
+def fail_orphaned_runs():
+    """A restart kills in-flight work mid-pipeline; anything still marked
+    'running' at boot is orphaned — fail it so the UI unlocks."""
+    conn = _conn()
+    conn.execute(
+        "UPDATE scans SET status='failed', finished_at=CURRENT_TIMESTAMP"
+        " WHERE status='running'"
+    )
+    conn.execute(
+        "UPDATE exposure_runs SET status='failed', finished_at=CURRENT_TIMESTAMP"
+        " WHERE status='running'"
+    )
+    conn.execute(
+        "UPDATE exposure_runs SET deep_status='failed' WHERE deep_status='running'"
+    )
+    conn.commit()
+    conn.close()
+
+
 def fail_scan(scan_id: int):
     conn = _conn()
     conn.execute(

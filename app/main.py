@@ -56,6 +56,7 @@ def login(body: LoginIn):
 @app.on_event("startup")
 def _startup():
     store.init()
+    store.fail_orphaned_runs()
     traffic.SHOT_DIR.mkdir(exist_ok=True)
 
 
