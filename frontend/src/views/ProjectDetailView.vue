@@ -93,6 +93,7 @@
                 </a-checkbox-group>
               </template>
             </a-popover>
+            <a-button size="small" @click="openImports">导入记录</a-button>
           </a-space>
           <a-table
             :data-source="filteredTargets"
@@ -259,6 +260,25 @@
       </a-tabs>
     </a-modal>
 
+    <!-- 导入记录 -->
+    <a-modal v-model:open="showImports" title="导入记录" :footer="null" width="640px">
+      <a-table :data-source="imports" :columns="impCols" row-key="id" size="small"
+               :pagination="{ defaultPageSize: 10, showTotal: (t) => `共 ${t} 条` }">
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'source'">
+            <a-tag :color="record.source === 'file' ? 'blue' : 'default'">
+              {{ record.source === 'file' ? '文件' : '文本' }}
+            </a-tag>
+          </template>
+          <template v-else-if="column.key === 'filename'">
+            <span class="mono">{{ record.filename || '粘贴输入' }}</span>
+          </template>
+          <template v-else-if="column.key === 'created_at'">{{ fmtTime(record.created_at) }}</template>
+        </template>
+      </a-table>
+      <a-empty v-if="!imports.length" description="暂无导入记录（仅记录本次升级后的导入）" />
+    </a-modal>
+
     <!-- 编辑项目 -->
     <a-modal v-model:open="showEditProject" title="编辑项目" ok-text="保存" cancel-text="取消"
              width="480px" @ok="saveProject">
@@ -329,6 +349,8 @@ const project = ref(null)
 const running = ref(null)
 const tab = ref('targets')
 const showImport = ref(false)
+const showImports = ref(false)
+const imports = ref([])
 const showScan = ref(false)
 const importText = ref('')
 const importFiles = ref([])
@@ -446,6 +468,20 @@ const scanCols = [
     customRender: ({ record }) => fmtTime(record.finished_at) },
   { title: '操作', key: 'op', width: 90 },
 ]
+
+const impCols = [
+  { title: '时间', key: 'created_at', width: 150 },
+  { title: '方式', key: 'source', width: 70 },
+  { title: '文件名', key: 'filename', ellipsis: true },
+  { title: '解析', dataIndex: 'parsed', width: 70 },
+  { title: '新增', dataIndex: 'added', width: 70 },
+  { title: '重复', dataIndex: 'duplicates', width: 70 },
+]
+
+async function openImports() {
+  showImports.value = true
+  imports.value = (await api.listImports(pid)).data.imports
+}
 
 const expCols = [
   { title: '#', dataIndex: 'id', width: 60 },

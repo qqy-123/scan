@@ -34,6 +34,7 @@ export default {
     fd.append('file', file)
     return api.post(`/api/projects/${pid}/targets/upload`, fd)
   },
+  listImports: (pid) => api.get(`/api/projects/${pid}/imports`),
   deleteTarget: (tid) => api.delete(`/api/targets/${tid}`),
   batchDeleteTargets: (ids) => api.post('/api/targets/batch-delete', { ids }),
   updateTarget: (tid, url) => api.put(`/api/targets/${tid}`, { url }),

@@ -70,6 +70,18 @@ CREATE TABLE IF NOT EXISTS targets(
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(project_id, url)
 );
+CREATE TABLE IF NOT EXISTS target_imports(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    source TEXT NOT NULL,
+    filename TEXT,
+    parsed INTEGER DEFAULT 0,
+    added INTEGER DEFAULT 0,
+    duplicates INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_imports_project ON target_imports(project_id);
+
 CREATE TABLE IF NOT EXISTS scans(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL,
@@ -304,6 +316,7 @@ def delete_project(pid: int):
     )
     conn.execute("DELETE FROM scans WHERE project_id=?", (pid,))
     conn.execute("DELETE FROM targets WHERE project_id=?", (pid,))
+    conn.execute("DELETE FROM target_imports WHERE project_id=?", (pid,))
     conn.execute("DELETE FROM projects WHERE id=?", (pid,))
     conn.commit()
     conn.close()
@@ -385,6 +398,28 @@ def delete_target(target_id: int):
     conn.execute("DELETE FROM targets WHERE id=?", (target_id,))
     conn.commit()
     conn.close()
+
+
+def log_import(project_id: int, source: str, filename, parsed: int,
+               added: int, duplicates: int):
+    conn = _conn()
+    conn.execute(
+        "INSERT INTO target_imports(project_id, source, filename, parsed,"
+        " added, duplicates) VALUES(?,?,?,?,?,?)",
+        (project_id, source, filename, parsed, added, duplicates),
+    )
+    conn.commit()
+    conn.close()
+
+
+def list_imports(project_id: int) -> list:
+    conn = _conn()
+    rows = conn.execute(
+        "SELECT * FROM target_imports WHERE project_id=? ORDER BY id DESC",
+        (project_id,),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 
 # ---------- settings ----------
