@@ -69,6 +69,12 @@ CATEGORIES = [
 _NAME_CLEAN = re.compile(
     r"\s*[-–—]?\s*(Detection|Detect|detect|Fingerprint|指纹|识别)\s*$")
 
+# page-feature detectors, not products — pure noise in a fingerprint column
+SKIP_NAMES = {
+    "form", "add dom eventlistener", "sitemap", "robots.txt file",
+    "robots.txt endpoint prober",
+}
+
 # parts that map to a specific response header
 PART_HEADERS = {
     "server": "Server", "content_type": "Content-Type",
@@ -91,6 +97,25 @@ def _name(info: dict, tid: str) -> str:
     return n.strip(" -–—") or tid
 
 
+def _clean_regex(p: str) -> str:
+    """Normalize upstream regexes for our engine:
+    - (x|X) charwise case alternations -> single char (engine compiles
+      re.I; the alternation form is the classic ReDoS shape)
+    - edge .*/.*? wrappers are pure noise under unanchored search
+    """
+    prev = None
+    while prev != p:
+        prev = p
+        p = re.sub(
+            r"\((\w)\|(\w)\)",
+            lambda m: m.group(1)
+            if m.group(1).lower() == m.group(2).lower() else m.group(0),
+            p)
+    p = re.sub(r"^(\.\*\??)+", "", p)
+    p = re.sub(r"(\.\*\??)+$", "", p)
+    return p
+
+
 def _pats(matcher: dict) -> list:
     """matcher -> body regexes list (word -> escaped, regex -> verbatim)."""
     out = []
@@ -101,7 +126,9 @@ def _pats(matcher: dict) -> list:
     elif matcher.get("type") == "regex":
         for w in matcher.get("regex") or []:
             if "{{" not in str(w):
-                out.append(str(w))
+                cleaned = _clean_regex(str(w))
+                if cleaned.strip("^$.*?"):
+                    out.append(cleaned)
     return out
 
 
@@ -210,7 +237,10 @@ def convert_file(path: Path) -> list:
             _convert_matcher(m, cond)
         if not any(cond.get(k) for k in ("all", "any", "groups", "headers")):
             return []  # status-only
-        return [_mk(_name(info, tid), probe={p: cond for p in paths})]
+        name = _name(info, tid)
+        if name.lower() in SKIP_NAMES:
+            return []
+        return [_mk(name, probe={p: cond for p in paths})]
 
     # OR semantics. Named matchers (FingerprintHub mega-template: each
     # `name:` is a distinct product) split into per-product rules; the
@@ -231,29 +261,37 @@ def convert_file(path: Path) -> list:
         if m.get("condition") == "and" and len(pats) > 1:
             # "all words must appear" is one OR-alternative — a distinct
             # rule carrying an all-clause, not part of any/anon pools
-            rules_and = _mk(name or _name(info, tid),
-                            probe={p: {"all": pats} for p in paths})
-            rules.append(rules_and)
+            rn = name or _name(info, tid)
+            if rn.lower() not in SKIP_NAMES:
+                rules_and = _mk(rn, probe={p: {"all": pats} for p in paths})
+                rules.append(rules_and)
         elif name:
             by_matcher_name.setdefault(name, []).extend(pats)
         else:
             anon.extend(pats)
 
     root_only = paths == ["/"]
+    # passive text signatures are weak evidence — a vendor page merely
+    # *mentioning* a product (integrations/partners) must not produce a
+    # confirmed hit; demote html-emitted patterns to confidence 55 so a
+    # single text match lands in "possible" (低可信) tier
+    demote = lambda ps: [p + "\\;confidence:55" for p in ps]
     for name, pats in by_matcher_name.items():
         pats = sorted(set(pats))
+        if name.lower() in SKIP_NAMES:
+            continue
         if root_only:
             keep = [p for p in pats if _ok_passive(p)]
             if keep:
-                rules.append(_mk(name, html=keep))
+                rules.append(_mk(name, html=demote(keep)))
         else:
             rules.append(_mk(name, probe={p: pats for p in paths}))
     if anon:
         name = _name(info, tid)
         if root_only:
             keep = [p for p in sorted(set(anon)) if _ok_passive(p)]
-            if keep:
-                rules.append(_mk(name, html=keep))
+            if keep and name.lower() not in SKIP_NAMES:
+                rules.append(_mk(name, html=demote(keep)))
         else:
             rules.append(
                 _mk(name, probe={p: sorted(set(anon)) for p in paths}))

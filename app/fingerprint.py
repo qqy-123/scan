@@ -12,6 +12,16 @@ import json
 import re
 from pathlib import Path
 
+# `regex` module (drop-in superset) gives per-search timeouts — upstream
+# rules ship occasional catastrophic patterns (".*?(f|F)(i|I)..." charwise
+# case alternations) that hang a plain re.search on a miss for minutes.
+try:
+    import regex as _rx
+    _RX_TIMEOUT = 0.25  # seconds per pattern search
+except ImportError:   # fallback: stdlib re, no timeout protection
+    _rx = re
+    _RX_TIMEOUT = None
+
 RULES_DIR = Path(__file__).resolve().parent.parent / "rules"
 CONFIRMED = 100
 POSSIBLE = 40
@@ -54,7 +64,12 @@ class Pattern:
         # inside "1TdOA2LV") and false-positive constantly
         if re.fullmatch(r"[a-zA-Z]{2,6}", pat):
             pat = r"\b" + pat + r"\b"
-        self.regex = re.compile(pat, re.I | re.S)
+        try:
+            self.regex = _rx.compile(pat, _rx.I | _rx.S)
+        except Exception:
+            # malformed upstream pattern — degrade to literal substring
+            # match rather than killing rules load
+            self.regex = _rx.compile(_rx.escape(pat), _rx.I)
         self.confidence = 100
         self.version = None
         for t in parts[1:]:
@@ -64,7 +79,14 @@ class Pattern:
                 self.version = t[8:]
 
     def search(self, text: str):
-        m = self.regex.search(text)
+        try:
+            m = (self.regex.search(text, timeout=_RX_TIMEOUT)
+                 if _RX_TIMEOUT is not None
+                 else self.regex.search(text))
+        except TimeoutError:
+            # pathological upstream pattern — treat as non-match instead
+            # of hanging the whole scan (re can't be interrupted in C)
+            return None
         if not m:
             return None
         ver = None

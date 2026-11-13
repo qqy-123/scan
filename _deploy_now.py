@@ -7,7 +7,8 @@ from deploy_ssh import conn, run
 FILES = [
     "app/store.py", "app/main.py", "app/exposure.py",
     "app/fingerprint.py", "app/pipeline.py", "app/probe.py",
-    "rules/nuclei_tech.json",
+    "rules/nuclei_tech.json", "rules/product.json",
+    "requirements.txt",
 ]
 import os.path
 DIST = "web/out" if os.path.isdir("web/out") else "frontend/dist"
