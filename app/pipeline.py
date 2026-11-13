@@ -1,6 +1,7 @@
 import asyncio
 import json
 import uuid
+from urllib.parse import urlsplit
 
 from . import bypass
 from . import fingerprint as fp
@@ -59,6 +60,7 @@ async def run_scan(scan_id: int):
         dom_s = fp.dom_selectors() if want_fp else {}
         signals = None
         shot_name = None
+        cap = None
 
         # browser pass: traffic + rendered signals + screenshot.
         # capture is retried once — navigation races are the common
@@ -100,27 +102,44 @@ async def run_scan(scan_id: int):
             if opts.get("active_probe", cfg["active_probe"]) and \
                     matched["candidates"]:
                 base = resp["final_url"]
-                baseline = await probe.probe_baseline(
-                    client, base, probe_sem)
-                for rule in matched["candidates"]:
-                    for path in rule["probe"]:
-                        probe_url = base.rstrip("/") + "/" + path.lstrip("/")
-                        try:
-                            r = await client.get(probe_url)
-                            if r.status_code >= 400 or \
-                                    probe.probe_is_fallback(path, r) or \
-                                    (baseline is not None and
-                                     probe.probe_matches_baseline(
-                                         r.text[:300_000],
-                                         "/" + path.lstrip("/"),
-                                         baseline)):
-                                continue  # 404/soft-404/catch-all echoes would false-positive
-                            h = fp.evaluate_probe(rule, r.text[:300_000])
-                        except Exception:
-                            h = None
-                        if h:
-                            hits.append(h)
-                            break
+                home, deep = fp.probe_plan(
+                    matched["candidates"],
+                    cfg.get("fp_probe_budget", 80))
+                home_resp = {
+                    "status": resp["status_code"],
+                    "headers": resp["headers"],
+                    "body": (cap or {}).get("html") or resp["html"],
+                }
+                for rule, pth in home:
+                    h = fp.evaluate_probe(rule, pth, home_resp)
+                    if h:
+                        hits.append(h)
+                baseline = (await probe.probe_baseline(
+                    client, base, probe_sem)) if deep else None
+                for path, rules in deep:
+                    if any(r.get("probe_root") for r in rules):
+                        u = urlsplit(base)
+                        root = f"{u.scheme}://{u.netloc}"
+                    else:
+                        root = base.rstrip("/")
+                    probe_url = root + "/" + path.lstrip("/")
+                    try:
+                        r = await client.get(probe_url)
+                        if r.status_code >= 400 or \
+                                probe.probe_is_fallback(path, r) or \
+                                (baseline is not None and
+                                 probe.probe_matches_baseline(
+                                     r.text[:300_000], path, baseline)):
+                            continue  # 404/soft-404/catch-all echoes would false-positive
+                        presp = {"status": r.status_code,
+                                 "headers": dict(r.headers),
+                                 "body": r.text[:300_000]}
+                        for rule in rules:
+                            h = fp.evaluate_probe(rule, path, presp)
+                            if h:
+                                hits.append(h)
+                    except Exception:
+                        continue
 
             fps = fp.postprocess(hits)
             result["fingerprints"] = fps

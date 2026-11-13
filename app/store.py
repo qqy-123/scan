@@ -165,6 +165,7 @@ DEFAULT_SETTINGS = {
     "concurrency": 50,          # 目标并发（探测）
     "browser_concurrency": 4,   # 浏览器并发（抓包/截图）
     "active_probe": True,       # 扫描默认开启主动探测
+    "fp_probe_budget": 80,      # 主动探测路径配额/目标（0=只评估首页响应）
     "screenshot": True,         # 扫描默认开启截图
     "fingerprint": True,        # 扫描默认开启指纹识别
     "connect_timeout": 8,       # httpx 连接超时（秒）

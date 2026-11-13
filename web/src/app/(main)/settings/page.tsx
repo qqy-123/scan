@@ -6,6 +6,7 @@ import { Switch, Tag, msg } from "@/components/ui";
 const DEFAULTS = {
   concurrency: 50, browser_concurrency: 4,
   active_probe: true, screenshot: true, fingerprint: true,
+  fp_probe_budget: 80,
   connect_timeout: 8, read_timeout: 15, proxy: "",
   fofa_email: "", fofa_key: "", hunter_key: "", quake_key: "",
 };
@@ -97,6 +98,7 @@ export default function SettingsPage() {
               <Field label="浏览器并发（抓包/截图，耗内存）">{num("browser_concurrency", 1, 16)}</Field>
               <Field label="连接超时（秒）">{num("connect_timeout", 1, 60)}</Field>
               <Field label="读取超时（秒）">{num("read_timeout", 1, 120)}</Field>
+              <Field label="主动探测路径配额/目标（0=仅首页评估）">{num("fp_probe_budget", 0, 500)}</Field>
             </div>
             {([
               ["active_probe", "主动探测默认开启（请求特征路径二次确认）"],

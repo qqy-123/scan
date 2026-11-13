@@ -46,6 +46,9 @@ class Pattern:
         parts = raw.split("\\;")
         self.raw = raw
         pat = parts[0] or ".*"
+        # drop standalone inline-flag groups (nuclei/go-style "(?i)" mid-
+        # pattern is illegal in python re; engine compiles re.I anyway)
+        pat = re.sub(r"\(\?[aiLmsux-]+\)", "", pat)
         # bare short alpha tokens auto-wrap in word boundaries — otherwise
         # they substring-match inside identifiers/base64 blobs ("TdOA"
         # inside "1TdOA2LV") and false-positive constantly
@@ -83,7 +86,33 @@ def _pmap(d) -> dict:
     return {k: _plist(v) for k, v in (d or {}).items()}
 
 
-_TOKEN_RUN = re.compile(r"[a-zA-Z0-9_./-]{4,}")
+def _probe_val(v) -> dict:
+    """Probe condition group. Legacy list value = OR'd body patterns.
+    Dict value: all/any (body regexes), headers {name|[_raw]: [regexes]},
+    status [codes] — every present clause must pass."""
+    if isinstance(v, dict):
+        return {
+            "all": _plist(v.get("all")),
+            "any": _plist(v.get("any")),
+            "groups": [_plist(g) for g in (v.get("groups") or [])],
+            "headers": _pmap(v.get("headers")),
+            "status": [int(s) for s in (v.get("status") or [])],
+        }
+    return {"all": [], "any": _plist(v), "groups": [],
+            "headers": {}, "status": []}
+
+
+def _probe_pats(v) -> list:
+    """Every compiled pattern inside a probe condition group."""
+    return v["all"] + v["any"] + \
+        [p for g in v["groups"] for p in g] + \
+        [p for pats in v["headers"].values() for p in pats]
+
+
+# \w (unicode) so CJK markers tokenize — converted fingerprint DBs carry
+# thousands of Chinese signature strings; ASCII-only tokens would leave
+# those rules unfiltered and evaluate them on every page
+_TOKEN_RUN = re.compile(r"[\w./+-]{4,}")
 
 
 def _pattern_tokens(raw: str) -> set:
@@ -105,11 +134,15 @@ def _rule_tokens(raw: dict) -> set | None:
         toks.update(t)
 
     try:
-        for f in ("headers", "cookies", "meta", "js", "probe"):
+        for f in ("headers", "cookies", "meta", "js"):
             for k, pats in (raw.get(f) or {}).items():
                 feed(k)
                 for p in (pats if isinstance(pats, list) else [pats]):
                     feed(p)
+        for k, v in (raw.get("probe") or {}).items():
+            feed(k)
+            for p in _probe_pats(v):
+                feed(p)
         for f in ("html", "scriptSrc", "scripts", "url", "xhr", "css",
                   "robots"):
             v = raw.get(f) or []
@@ -138,8 +171,11 @@ class _TokenlessPattern(Exception):
 
 def compile_rule(raw: dict) -> dict:
     rule = dict(raw)
-    for f in ("headers", "cookies", "meta", "js", "probe"):
+    for f in ("headers", "cookies", "meta", "js"):
         rule[f] = _pmap(rule.get(f))
+    rule["probe"] = {
+        k: _probe_val(v) for k, v in (rule.get("probe") or {}).items()
+    }
     for f in ("html", "scriptSrc", "scripts", "url", "xhr", "css", "robots"):
         rule[f] = _plist(rule.get(f))
     rule["favicon"] = [str(x) for x in rule.get("favicon") or []]
@@ -150,7 +186,7 @@ def compile_rule(raw: dict) -> dict:
     rule["requiresCategory"] = rule.get("requiresCategory") or []
     rule["_keys"] = {
         f: [(_key_re(k), pats) for k, pats in rule[f].items()]
-        for f in ("headers", "cookies", "meta", "js", "probe")
+        for f in ("headers", "cookies", "meta", "js")
     }
     rule["_tokens"] = _rule_tokens(rule)
     return rule
@@ -161,7 +197,11 @@ def _key_re(k: str) -> re.Pattern:
     FULL matches — upstream .test() semantics substring-hit ("ceid" matches
     "deviceId", "session" matches "mysession_id") and false-positive
     constantly on generic names."""
-    return re.compile(f"^(?:{k})$", re.I)
+    k = re.sub(r"\(\?[aiLmsux-]+\)", "", k)  # inline flags break the wrap
+    try:
+        return re.compile(f"^(?:{k})$", re.I)
+    except re.error:
+        return re.compile(f"^(?:{re.escape(k)})$", re.I)
 
 
 _cache = None
@@ -171,11 +211,26 @@ def _merge_rules(base: dict, new: dict):
     """Union-merge `new` into `base` — same-name rules across built-in
     files contribute their evidence together (wappalyzer breadth +
     curated probes/specifics), never silently replace each other."""
-    for f in ("headers", "cookies", "meta", "js", "probe"):
+    for f in ("headers", "cookies", "meta", "js"):
         for k, pats in new[f].items():
             cur = base[f].setdefault(k, [])
             have = {p.raw for p in cur}
             cur += [p for p in pats if p.raw not in have]
+    for k, v in new["probe"].items():
+        cur = base["probe"].setdefault(
+            k, {"all": [], "any": [], "groups": [],
+                "headers": {}, "status": []})
+        have = {p.raw for p in _probe_pats(cur)}
+        cur["all"] += [p for p in v["all"] if p.raw not in have]
+        cur["any"] += [p for p in v["any"] if p.raw not in have]
+        cur["groups"] += [[p for p in g if p.raw not in have]
+                          for g in v["groups"]]
+        cur["groups"] = [g for g in cur["groups"] if g]
+        for hk, hpats in v["headers"].items():
+            hcur = cur["headers"].setdefault(hk, [])
+            hhave = {p.raw for p in hcur}
+            hcur += [p for p in hpats if p.raw not in hhave]
+        cur["status"] = sorted(set(cur["status"]) | set(v["status"]))
     for f in ("html", "scriptSrc", "scripts", "url", "xhr", "css", "robots"):
         have = {p.raw for p in base[f]}
         base[f] += [p for p in new[f] if p.raw not in have]
@@ -185,9 +240,10 @@ def _merge_rules(base: dict, new: dict):
               "requiresCategory"):
         base[f] = sorted(set(base[f]) | set(new[f]))
     base["cpe"] = base.get("cpe") or new.get("cpe")
+    base["probe_root"] = base.get("probe_root") or new.get("probe_root")
     base["_keys"] = {
         f: [(_key_re(k), pats) for k, pats in base[f].items()]
-        for f in ("headers", "cookies", "meta", "js", "probe")
+        for f in ("headers", "cookies", "meta", "js")
     }
     base["_tokens"] = _rule_tokens(base)
 
@@ -234,9 +290,31 @@ def raw_of(rule: dict) -> dict:
     raw = {"name": rule["name"], "category": rule.get("category", "other")}
     if rule.get("website"):
         raw["website"] = rule["website"]
-    for f in ("headers", "cookies", "meta", "js", "probe"):
+    for f in ("headers", "cookies", "meta", "js"):
         if rule.get(f):
             raw[f] = {k: [p.raw for p in pats] for k, pats in rule[f].items()}
+    if rule.get("probe"):
+        pv = {}
+        for k, v in rule["probe"].items():
+            if not v["all"] and not v["groups"] and \
+                    not v["headers"] and not v["status"]:
+                pv[k] = [p.raw for p in v["any"]]
+                continue
+            d = {}
+            if v["all"]:
+                d["all"] = [p.raw for p in v["all"]]
+            if v["any"]:
+                d["any"] = [p.raw for p in v["any"]]
+            if v["groups"]:
+                d["groups"] = [[p.raw for p in g] for g in v["groups"]]
+            if v["headers"]:
+                d["headers"] = {
+                    hk: [p.raw for p in pats]
+                    for hk, pats in v["headers"].items()}
+            if v["status"]:
+                d["status"] = v["status"]
+            pv[k] = d
+        raw["probe"] = pv
     for f in ("html", "scriptSrc", "scripts", "url", "xhr"):
         if rule.get(f):
             raw[f] = [p.raw for p in rule[f]]
@@ -534,24 +612,86 @@ def match(signals: dict, rules: list | None = None) -> dict:
     return {"hits": hits, "candidates": candidates}
 
 
-def evaluate_probe(rule: dict, body: str) -> dict | None:
-    """Active-probe evaluation: patterns matched against probed path body."""
-    for path, patterns in rule["probe"].items():
-        for p in patterns:
-            hit = p.search(body or "")
-            if hit:
-                return {
-                    "name": rule["name"],
-                    "category": rule.get("category", "other"),
-                    "website": rule.get("website"),
-                    "version": hit["version"],
-                    "score": 100,
-                    "confidence": "confirmed",
-                    "evidence": [
-                        {"field": "probe", "key": path, "pattern": p.raw}
-                    ],
-                }
-    return None
+def evaluate_probe(rule: dict, path: str, resp) -> dict | None:
+    """Active-probe evaluation of ONE path's condition group.
+    resp: {"status": int, "headers": dict, "body": str} — a bare str is
+    treated as body-only (legacy callers)."""
+    cond = rule["probe"].get(path) or rule["probe"].get(path.lstrip("/"))
+    if cond is None:
+        return None
+    if isinstance(resp, str):
+        resp = {"body": resp}
+    body = resp.get("body") or ""
+    status = resp.get("status")
+    headers = resp.get("headers") or {}
+    if cond["status"] and status not in cond["status"]:
+        return None
+    matched = []
+    ok = True
+    for p in cond["all"]:
+        hit = p.search(body)
+        if not hit:
+            ok = False
+            break
+        matched.append(hit)
+    if ok and cond["any"]:
+        hit = next((p.search(body) for p in cond["any"]
+                    if p.search(body)), None)
+        if not hit:
+            ok = False
+        else:
+            matched.append(hit)
+    if ok:
+        for g in cond["groups"]:
+            hit = next((p.search(body) for p in g if p.search(body)),
+                       None)
+            if not hit:
+                ok = False
+                break
+            matched.append(hit)
+    if ok and cond["headers"]:
+        for name, pats in cond["headers"].items():
+            hay = ("\n".join(f"{k}: {v}" for k, v in headers.items())
+                   if name == "_raw" else headers.get(name) or "")
+            hit = next((p.search(hay) for p in pats if p.search(hay)), None)
+            if not hit:
+                ok = False
+                break
+            matched.append(hit)
+    if not ok or not matched:
+        return None
+    return {
+        "name": rule["name"],
+        "category": rule.get("category", "other"),
+        "website": rule.get("website"),
+        "version": next((h["version"] for h in matched if h["version"]),
+                        None),
+        "score": 100,
+        "confidence": "confirmed",
+        "evidence": [{"field": "probe", "key": path,
+                      "pattern": h["pattern"]} for h in matched],
+    }
+
+
+def probe_plan(candidates: list, budget: int = 80):
+    """Split probe candidates into (home_pairs, deep_pairs):
+      home_pairs — [(rule, path)] evaluated against the already-fetched
+                   homepage response, zero extra requests
+      deep_pairs — [(path, [rules])] unique fetchable paths, ordered by
+                   how many rules want them, capped at `budget`
+    """
+    home, deep = [], {}
+    for r in candidates:
+        for path in r["probe"]:
+            p = "/" + path.lstrip("/")
+            if p == "/":
+                home.append((r, p))
+            else:
+                deep.setdefault(p, []).append(r)
+    ordered = sorted(deep.items(), key=lambda kv: -len(kv[1]))
+    if budget >= 0:
+        ordered = ordered[:budget]
+    return home, ordered
 
 
 def hit_level(h: dict) -> str:

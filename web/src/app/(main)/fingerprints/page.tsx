@@ -56,13 +56,17 @@ function rawToEdit(raw: any): EditState {
   e.website = raw.website || "";
   for (const f of LIST_FIELDS) e.lists[f.key] = (raw[f.key] || []).map(String);
   for (const f of MAP_FIELDS)
-    e.maps[f.key] = Object.entries(raw[f.key] || {}).map(([k, v]) => ({
-      k, p: (Array.isArray(v) ? v : [v]).map(String),
-    }));
+    e.maps[f.key] = Object.entries(raw[f.key] || {})
+      // probe 条件组（{all/any/headers/status}）表单表达不了 — 跳过，
+      // 保存时由 editToRule 原样带回；JSON 模式可编辑
+      .filter(([, v]) => f.key !== "probe" || !v || Array.isArray(v))
+      .map(([k, v]) => ({
+        k, p: (Array.isArray(v) ? v : [v]).map(String),
+      }));
   e.domText = raw.dom ? JSON.stringify(raw.dom, null, 2) : "";
   return e;
 }
-function editToRule(e: EditState) {
+function editToRule(e: EditState, orig?: any) {
   const rule: any = { name: e.name.trim(), category: e.category.trim() || "自定义" };
   if (e.website.trim()) rule.website = e.website.trim();
   for (const f of LIST_FIELDS) {
@@ -75,6 +79,10 @@ function editToRule(e: EditState) {
       if (row.k.trim()) m[row.k.trim()] = row.p.length ? row.p : [".*"];
     if (Object.keys(m).length) rule[f.key] = m;
   }
+  // carry over probe condition groups the form can't express
+  for (const [k, v] of Object.entries((orig && orig.probe) || {}))
+    if (v && typeof v === "object" && !Array.isArray(v))
+      (rule.probe ||= {})[k] = v;
   if (e.domText.trim()) rule.dom = JSON.parse(e.domText);
   return rule;
 }
@@ -167,6 +175,7 @@ export default function FingerprintsPage() {
   const [editJson, setEditJson] = useState("");
   const [editError, setEditError] = useState("");
   const [edit, setEdit] = useState<EditState>(blankEdit());
+  const [editRaw, setEditRaw] = useState<any>(null);
 
   const openEdit = async (r: any) => {
     setEditError("");
@@ -175,6 +184,7 @@ export default function FingerprintsPage() {
     setEditName(r.name);
     setEditDisabled(!!data.disabled);
     const raw = data.rule || { name: r.name, category: "自定义", html: [] };
+    setEditRaw(raw);
     setEdit(rawToEdit(raw));
     setEditJson(JSON.stringify(raw, null, 2));
     setShowEdit(true);
@@ -183,7 +193,7 @@ export default function FingerprintsPage() {
   const onEditTab = (key: string) => {
     setEditError("");
     if (key === "json") {
-      try { setEditJson(JSON.stringify(editToRule(edit), null, 2)); setEditTab(key); }
+      try { setEditJson(JSON.stringify(editToRule(edit, editRaw), null, 2)); setEditTab(key); }
       catch (e: any) { setEditError(`dom JSON 错误：${e.message}`); }
     } else {
       try { setEdit(rawToEdit(JSON.parse(editJson))); setEditTab(key); }
@@ -195,7 +205,7 @@ export default function FingerprintsPage() {
     setEditError("");
     let rule;
     try {
-      rule = editTab === "json" ? JSON.parse(editJson) : editToRule(edit);
+      rule = editTab === "json" ? JSON.parse(editJson) : editToRule(edit, editRaw);
     } catch (e: any) {
       setEditError(`格式错误：${e.message}`);
       return;

@@ -1760,19 +1760,39 @@ async def run_deep_scan(run_id: int, limit: int = 120,
             hits = list(matched["hits"])
             if cfg["active_probe"]:
                 base = resp0["final_url"]
-                for rule in matched["candidates"]:
-                    for path in rule["probe"]:
-                        try:
-                            r = await client.get(
-                                base.rstrip("/") + "/" + path.lstrip("/"))
-                            if r.status_code >= 400 or probe.probe_is_fallback(path, r):
-                                continue
-                            h = fp.evaluate_probe(rule, r.text[:300_000])
-                        except Exception:
-                            h = None
-                        if h:
-                            hits.append(h)
-                            break
+                home, deep = fp.probe_plan(
+                    matched["candidates"],
+                    min(30, cfg.get("fp_probe_budget", 80)))
+                home_resp = {
+                    "status": resp0["status_code"],
+                    "headers": resp0["headers"],
+                    "body": shared["html"] or resp0["html"],
+                }
+                for rule, pth in home:
+                    h = fp.evaluate_probe(rule, pth, home_resp)
+                    if h:
+                        hits.append(h)
+                for path, rules in deep:
+                    try:
+                        if any(rr.get("probe_root") for rr in rules):
+                            u = urlsplit(base)
+                            root = f"{u.scheme}://{u.netloc}"
+                        else:
+                            root = base.rstrip("/")
+                        r = await client.get(
+                            root + "/" + path.lstrip("/"))
+                        if r.status_code >= 400 or \
+                                probe.probe_is_fallback(path, r):
+                            continue
+                        presp = {"status": r.status_code,
+                                 "headers": dict(r.headers),
+                                 "body": r.text[:300_000]}
+                        for rule in rules:
+                            h = fp.evaluate_probe(rule, path, presp)
+                            if h:
+                                hits.append(h)
+                    except Exception:
+                        continue
         fps = fp.postprocess(hits) if want_fp else []
         fps_json = json.dumps(fps, ensure_ascii=False)
         prot = [h["name"] for h in fps if h["category"] == "防护页"]
