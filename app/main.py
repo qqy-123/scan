@@ -15,7 +15,9 @@ from . import fingerprint as fp
 from . import exposure, ingest, learn, pipeline, store, traffic
 
 BASE = Path(__file__).resolve().parent.parent
-DIST = BASE / "frontend" / "dist"
+DIST = BASE / "web" / "out"
+if not DIST.is_dir():
+    DIST = BASE / "frontend" / "dist"  # legacy Vue build (rollback path)
 
 app = FastAPI(title="scan")
 
@@ -699,10 +701,12 @@ if DIST.exists():
     @app.api_route("/{path:path}", methods=["GET", "HEAD"])
     def spa(path: str):
         f = (DIST / path).resolve()
-        if path and f.is_file() and DIST.resolve() in f.parents:
-            return FileResponse(f)
-        # index.html must never be cached — it pins the asset filenames
-        return FileResponse(
-            DIST / "index.html",
-            headers={"Cache-Control": "no-cache"},
-        )
+        if f != DIST.resolve() and DIST.resolve() not in f.parents:
+            f = DIST  # traversal guard
+        if f.is_dir():
+            f = f / "index.html"  # trailing-slash export layout
+        if not f.is_file():
+            f = DIST / "index.html"
+        # .html must never be cached — it pins the asset filenames
+        headers = {"Cache-Control": "no-cache"} if f.suffix == ".html" else None
+        return FileResponse(f, headers=headers)

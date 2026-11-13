@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #0b0e14;
+  --bg-soft: #10141d;
+  --panel: #131824;
+  --panel-2: #171d2b;
+  --border: #232a3a;
+  --border-soft: #1d2433;
+  --fg: #e6e9f0;
+  --fg-2: #9aa4b8;
+  --fg-3: #5f6b82;
+  --accent: #3b82f6;
+  --accent-soft: rgba(59, 130, 246, 0.14);
+  --green: #22c55e;
+  --red: #ef4444;
+  --orange: #f59e0b;
+  --purple: #a78bfa;
+  --cyan: #22d3ee;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 14px;
+}
+
+* { border-color: var(--border); }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #2a3347; border-radius: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+/* generic badge colors */
+.badge-green { color: #4ade80; background: rgba(34,197,94,.12); }
+.badge-red { color: #f87171; background: rgba(239,68,68,.12); }
+.badge-orange { color: #fbbf24; background: rgba(245,158,11,.12); }
+.badge-blue { color: #60a5fa; background: rgba(59,130,246,.14); }
+.badge-purple { color: #a78bfa; background: rgba(167,139,250,.12); }
+.badge-cyan { color: #22d3ee; background: rgba(34,211,238,.12); }
+.badge-gray { color: #9aa4b8; background: rgba(154,164,184,.12); }
+.badge-magenta { color: #f472b6; background: rgba(244,114,182,.12); }
+
+table.dt { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.dt th {
+  text-align: left; padding: 8px 12px; color: var(--fg-3);
+  font-weight: 500; font-size: 12px; border-bottom: 1px solid var(--border);
+  white-space: nowrap; background: var(--bg-soft);
+  position: sticky; top: 0; z-index: 5;
+}
+table.dt td {
+  padding: 8px 12px; border-bottom: 1px solid var(--border-soft);
+  vertical-align: middle;
+}
+table.dt tbody tr:hover { background: rgba(59,130,246,.05); }
+table.dt tbody tr.expanded > td { background: var(--bg-soft); }
+
+input.ipt, select.ipt, textarea.ipt {
+  background: var(--bg-soft); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--fg); padding: 6px 10px; font-size: 13px;
+  outline: none;
+}
+input.ipt:focus, select.ipt:focus, textarea.ipt:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft);
+}
+input.ipt::placeholder { color: var(--fg-3); }
+
+.card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.card-pad { padding: 16px; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--border); background: var(--panel-2);
+  color: var(--fg); border-radius: 6px; padding: 6px 12px;
+  font-size: 13px; cursor: pointer; white-space: nowrap;
+  transition: background .15s, border-color .15s;
+}
+.btn:hover { background: #1d2536; border-color: #2e3a52; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-pri { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-pri:hover { background: #2f6fd6; border-color: #2f6fd6; }
+.btn-danger { color: #f87171; }
+.btn-danger:hover { border-color: rgba(239,68,68,.5); background: rgba(239,68,68,.08); }
+.btn-sm { padding: 3px 9px; font-size: 12px; border-radius: 5px; }
+.btn-ghost { background: transparent; border-color: transparent; }
+.btn-ghost:hover { background: var(--panel-2); }
+
+.tag {
+  display: inline-block; padding: 1px 8px; border-radius: 4px;
+  font-size: 12px; line-height: 18px; white-space: nowrap;
+}
+
+.sub-line { font-size: 11px; color: var(--fg-3); }
+.muted { color: var(--fg-3); }
+.dim { color: var(--fg-2); }
+
+.pop {
+  position: absolute; z-index: 50; background: var(--panel-2);
+  border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.5); padding: 10px;
+  min-width: 160px;
+}
+
+@keyframes pulse-soft { 0%,100% { opacity: 1 } 50% { opacity: .4 } }
+.pulsing { animation: pulse-soft 1.4s ease-in-out infinite; }
+
+mark.fp-hit { background: rgba(59,130,246,.25); outline: 1px solid var(--accent); border-radius: 2px; }
