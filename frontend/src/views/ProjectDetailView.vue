@@ -108,6 +108,10 @@
             :pagination="targetPagination"
             @change="(p) => onTargetPage(p.current, p.pageSize)"
           >
+            <template #expandedRowRender="{ record }">
+              <TargetExposure :target="record" :running="expRunning"
+                              @scan="(t) => { expTargetIds = [t.id]; showExposure = true }" />
+            </template>
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'status'">
                 <a-badge v-if="record.latest" :status="record.latest.alive ? 'success' : 'error'"
@@ -355,6 +359,7 @@ import api from '../api'
 import ExposureResults from '../components/ExposureResults.vue'
 import ExposureScanModal from '../components/ExposureScanModal.vue'
 import FpTags from '../components/FpTags.vue'
+import TargetExposure from '../components/TargetExposure.vue'
 import { fmtTime } from '../fmt'
 import { loadColPrefs, saveColPrefs } from '../colprefs'
 

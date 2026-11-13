@@ -56,6 +56,7 @@ export default {
   updateSettings: (data) => api.put('/api/settings', data),
   systemInfo: () => api.get('/api/system'),
   createExposure: (pid, opts) => api.post(`/api/projects/${pid}/exposure`, opts),
+  targetExposure: (tid) => api.get(`/api/targets/${tid}/exposure`),
   listExposure: (pid) => api.get(`/api/projects/${pid}/exposure`),
   listExposureAll: () => api.get('/api/exposure'),
   exposureStats: () => api.get('/api/exposure/stats'),

@@ -18,8 +18,17 @@
     <span class="toolbar-count">
       {{ flat.length }} 条结果<template v-if="dupTotal">（合并 {{ dupTotal }} 条相同）</template>
     </span>
+    <a-popover trigger="click" placement="bottomRight">
+      <a-button size="small">列设置</a-button>
+      <template #content>
+        <a-checkbox-group v-model:value="visibleCols" style="display:grid;gap:6px">
+          <a-checkbox v-for="c in cols.filter(x => !FIXED_COLS.includes(x.key))"
+                      :key="c.key" :value="c.key">{{ c.title }}</a-checkbox>
+        </a-checkbox-group>
+      </template>
+    </a-popover>
   </div>
-  <a-table :data-source="flat" :columns="cols" row-key="key" size="small"
+  <a-table :data-source="flat" :columns="shownCols" row-key="key" size="small"
            :pagination="pager" :loading="loading" @change="onTableChange"
            :expanded-row-keys="expandedKeys" @update:expandedRowKeys="expandedKeys = $event"
            :scroll="{ y: 560 }">
@@ -125,6 +134,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import api from '../api'
 import FpTags from './FpTags.vue'
+import { loadColPrefs, saveColPrefs } from '../colprefs'
 
 const props = defineProps({ runId: Number, filter: { type: String, default: '' } })
 const results = ref([])
@@ -245,6 +255,16 @@ const cols = [
   { title: '详情', key: 'pkt', width: 56 },
   { title: '来源', key: 'source', width: 140, ellipsis: true },
 ]
+
+// 列显示控制（#序号、URL、详情固定），与其余结果表同一套 colprefs
+const FIXED_COLS = ['num', 'url', 'pkt']
+const COL_STORE_KEY = 'exposure_result_cols'
+const visibleCols = ref(
+  loadColPrefs(COL_STORE_KEY, cols.map((c) => c.key), 1))
+watch(visibleCols,
+  (v) => saveColPrefs(COL_STORE_KEY, v, cols.map((c) => c.key), 1))
+const shownCols = computed(() =>
+  cols.filter((c) => FIXED_COLS.includes(c.key) || visibleCols.value.includes(c.key)))
 
 const kindColor = (k) =>
   ({ js: 'cyan', dir: 'blue', leak: 'magenta', vuln: 'red', point: 'volcano',

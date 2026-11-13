@@ -644,6 +644,41 @@ def list_exposure_results(run_id: int) -> list:
     return [dict(r) for r in rows]
 
 
+def list_target_exposure(target_id: int) -> dict:
+    """All exposure findings attributed to one target (across runs) +
+    the runs that explicitly targeted it."""
+    conn = _conn()
+    rows = conn.execute(
+        """SELECT r.id, r.run_id, r.kind, r.url, r.source, r.status_code,
+                  r.title, r.length, r.hint, r.alive, r.surface,
+                  r.final_url, r.server, r.fingerprints, r.screenshot,
+                  r.protection, r.shot_sig, r.created_at,
+                  (r.response IS NOT NULL AND r.response != '') AS has_response,
+                  e.started_at AS run_started, e.finished_at AS run_finished
+           FROM exposure_results r
+           JOIN exposure_runs e ON e.id = r.run_id
+           WHERE r.target_id=? ORDER BY r.id DESC""",
+        (target_id,),
+    ).fetchall()
+    runs = conn.execute(
+        """SELECT id, status, options, started_at, finished_at
+           FROM exposure_runs
+           WHERE project_id=(SELECT project_id FROM targets WHERE id=?)
+           ORDER BY id DESC""",
+        (target_id,),
+    ).fetchall()
+    conn.close()
+    targeted = []
+    for r in runs:
+        opts = json.loads(r["options"] or "{}")
+        if target_id in (opts.get("target_ids") or []):
+            targeted.append({
+                "id": r["id"], "status": r["status"],
+                "started_at": r["started_at"], "finished_at": r["finished_at"],
+            })
+    return {"results": [dict(r) for r in rows], "runs": targeted}
+
+
 def exposure_row_response(row_id: int) -> dict | None:
     conn = _conn()
     r = conn.execute(

@@ -328,6 +328,11 @@ def list_exposure(pid: int):
     return store.list_exposure_runs(pid)
 
 
+@app.get("/api/targets/{tid}/exposure")
+def target_exposure(tid: int):
+    return store.list_target_exposure(tid)
+
+
 @app.get("/api/exposure/{rid}")
 def get_exposure(rid: int):
     run = store.get_exposure_run(rid)
