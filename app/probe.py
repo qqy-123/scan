@@ -89,6 +89,62 @@ def probe_is_fallback(path: str, resp: httpx.Response) -> bool:
     )
 
 
+_NORM_WS = re.compile(r"\s+")
+_NORM_URL = re.compile(r"https?://[^\s\"'<>\\]+", re.I)
+_NORM_TOKEN = re.compile(r"[a-zA-Z0-9]{16,}")
+_NORM_DIGITS = re.compile(r"\d+")
+
+
+def _norm_probe_body(body: str, path: str) -> str:
+    """Normalize a probe response for catch-all comparison: strip the
+    requested path (echoed paths are the #1 probe false-positive), full
+    URLs, whitespace, machine tokens (session ids, timestamps, hashes)
+    and digits — leaving the stable semantic skeleton of the page."""
+    text = body.replace(path, " ")
+    text = _NORM_URL.sub(" ", text)
+    text = _NORM_TOKEN.sub(" ", text)
+    text = _NORM_DIGITS.sub(" ", text)
+    return _NORM_WS.sub(" ", text)
+
+
+async def probe_baseline(client: httpx.AsyncClient, base_url: str,
+                         semaphore=None) -> str | None:
+    """Catch-all calibration (ffuf/opendoor soft-404 technique): fetch a
+    random nonexistent path once per host. If it returns <400, the host
+    wildcard-serves content — return the normalized body so probe hits
+    can be compared against it (same skeleton = fallback, not a hit)."""
+    import secrets
+
+    path = f"/{secrets.token_hex(8)}"
+    url = base_url.rstrip("/") + path
+    try:
+        if semaphore:
+            async with semaphore:
+                r = await client.get(url)
+        else:
+            r = await client.get(url)
+    except httpx.HTTPError:
+        return None
+    if r.status_code >= 400:
+        return None
+    return _norm_probe_body(r.text[:300_000], path)
+
+
+def probe_matches_baseline(body: str, path: str, baseline: str) -> bool:
+    """Probe response is the same catch-all page as the baseline when the
+    normalized skeletons are identical or near-identical (>=0.97 covers
+    shells embedding tokens the normalizer can't strip)."""
+    import difflib
+
+    norm = _norm_probe_body(body, path)
+    if norm == baseline:
+        return True
+    if not norm or not baseline:
+        return False
+    return difflib.SequenceMatcher(
+        None, norm, baseline).quick_ratio() >= 0.97
+
+
 async def fetch_favicon_hash(client: httpx.AsyncClient, final_url: str) -> int | None:
     import base64
 

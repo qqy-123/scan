@@ -12,10 +12,16 @@ Field mapping:
   text                        -> appended to html (visible-text patterns)
   dom (list or dict)          -> dict {selector: cond}; css selectors merged in
   probe                       -> same {path: [patterns]}
-  implies/excludes            -> kept verbatim (postprocess parses them)
+  implies/excludes/requires   -> kept verbatim (postprocess parses them)
+  requiresCategory            -> category ids -> names via categories.json
   cats[0]                     -> category name via categories.json
   cpe/website                 -> kept
-  dropped: icon/description/saas/oss/pricing/dns/certIssuer/requires*/
+  dropped: icon/description/saas/oss/pricing/dns/certIssuer
+
+PATTERN_PATCHES: hand-curated fixes for upstream patterns that false-
+positive in the wild. Each entry: (tech name, field, map key or None,
+pattern substring, action, value). Applied during conversion so they
+survive regeneration; keep the list short and evidence-driven.
 """
 
 import json
@@ -27,6 +33,56 @@ def _lst(v):
     if v is None:
         return []
     return v if isinstance(v, list) else [v]
+
+
+# (name, field, key|None, pattern-substring, "drop"|"confidence", value)
+PATTERN_PATCHES = [
+    # generic cookie/header names that substring-hit on unrelated sites
+    # (anchored fullmatch in the engine covers most; keep belt+braces for
+    # names that are plain words in every app)
+    ("Phoenix Cart", "cookies", "ceid", "", "confidence", 30),
+    # any page loading a .php URL (third-party widgets included) is not a
+    # PHP stack — needs PHPSESSID/X-Powered-By/.php-in-body corroboration
+    ("PHP", "url", None, "\\.php(?:$|\\?)", "confidence", 50),
+]
+
+
+def _patch_patterns(name, field, values):
+    """Rewrite/drop patterns in a list field per PATTERN_PATCHES."""
+    out = []
+    for p in values:
+        raw = p if isinstance(p, str) else str(p)
+        for (n, f, key, sub, act, val) in PATTERN_PATCHES:
+            if n != name or f != field or key is not None:
+                continue
+            if sub and sub not in raw:
+                continue
+            if act == "drop":
+                raw = None
+            elif act == "confidence":
+                raw = raw.split("\\;")[0] + f"\\;confidence:{val}"
+            break
+        if raw is not None:
+            out.append(raw)
+    return out
+
+
+def _patch_map(name, field, d):
+    out = {}
+    for k, v in d.items():
+        keep = True
+        for (n, f, key, sub, act, val) in PATTERN_PATCHES:
+            if n != name or f != field or key != k:
+                continue
+            if act == "drop":
+                keep = False
+            elif act == "confidence":
+                v = [x.split("\\;")[0] + f"\\;confidence:{val}"
+                     for x in _lst(v)]
+            break
+        if keep:
+            out[k] = v
+    return out
 
 
 def main(src_dir: str):
@@ -49,12 +105,14 @@ def main(src_dir: str):
 
             for field in ("headers", "cookies", "meta", "js", "probe"):
                 if t.get(field):
-                    r[field] = {k: _lst(v) for k, v in t[field].items()}
+                    r[field] = _patch_map(
+                        name, field,
+                        {k: _lst(v) for k, v in t[field].items()})
 
             for field in ("html", "scriptSrc", "scripts", "url", "xhr",
                           "robots"):
                 if t.get(field):
-                    r[field] = _lst(t[field])
+                    r[field] = _patch_patterns(name, field, _lst(t[field]))
 
             if t.get("text"):
                 r.setdefault("html", []).extend(_lst(t["text"]))
@@ -73,9 +131,14 @@ def main(src_dir: str):
             if dom:
                 r["dom"] = dom
 
-            for field in ("implies", "excludes"):
+            for field in ("implies", "excludes", "requires"):
                 if t.get(field):
                     r[field] = _lst(t[field])
+            if t.get("requiresCategory"):
+                r["requiresCategory"] = [
+                    cats.get(c if isinstance(c, int) else -1, str(c))
+                    for c in _lst(t["requiresCategory"])
+                ]
 
             # skip empty rules (only carried requires/dns we can't use)
             if any(r.get(f) for f in ("headers", "cookies", "meta", "js",

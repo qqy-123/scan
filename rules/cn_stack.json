@@ -1,0 +1,255 @@
+[
+  {
+    "name": "uni-app",
+    "category": "Web framework",
+    "website": "https://uniapp.dcloud.net.cn",
+    "html": [
+      "__uniConfig|__uniAppHost|uni-app"
+    ],
+    "scriptSrc": [
+      "uni-app(?:\\.min)?\\.js",
+      "/uni-app/"
+    ],
+    "js": {
+      "__uniConfig": "",
+      "uni.getSystemInfoSync": "\\;confidence:60"
+    }
+  },
+  {
+    "name": "uView UI",
+    "category": "UI framework",
+    "website": "https://uviewui.com",
+    "html": [
+      "<u-(?:navbar|button|icon|tabbar|popup|cell-group|form|input|search|swiper|tag)\\b"
+    ],
+    "scriptSrc": [
+      "uview",
+      "uview-ui"
+    ]
+  },
+  {
+    "name": "Vant",
+    "category": "UI framework",
+    "website": "https://vant-ui.github.io",
+    "html": [
+      "class=\"[^\"]*\\bvan-(?:cell|button|nav-bar|popup|field|tabbar|toast|dialog|loading|swipe)\\b"
+    ],
+    "scriptSrc": [
+      "vant(?:\\.min)?\\.(?:js|css)",
+      "/vant/"
+    ]
+  },
+  {
+    "name": "Mint UI",
+    "category": "UI framework",
+    "html": [
+      "class=\"[^\"]*\\bmint-(?:cell|swipe|tabbar|popup|button|navbar|field|toast)\\b"
+    ],
+    "scriptSrc": [
+      "mint-ui"
+    ]
+  },
+  {
+    "name": "NutUI",
+    "category": "UI framework",
+    "html": [
+      "class=\"[^\"]*\\bnut-(?:cell|button|navbar|popup|form|tabbar)\\b"
+    ],
+    "scriptSrc": [
+      "nutui"
+    ]
+  },
+  {
+    "name": "vConsole",
+    "category": "Development",
+    "website": "https://github.com/Tencent/vConsole",
+    "scriptSrc": [
+      "vconsole"
+    ],
+    "js": {
+      "VConsole": ""
+    },
+    "dom": {
+      "#__vconsole": {}
+    }
+  },
+  {
+    "name": "lib-flexible",
+    "category": "JavaScript libraries",
+    "scriptSrc": [
+      "(?:amfe-|lib-)?flexible(?:\\.min)?\\.js"
+    ],
+    "html": [
+      "data-dpr=",
+      "<meta name=\"flexible\""
+    ]
+  },
+  {
+    "name": "Layui",
+    "category": "UI framework",
+    "website": "https://layui.dev",
+    "scriptSrc": [
+      "layui[^\"']*\\.(?:js|css)"
+    ],
+    "html": [
+      "\\blayui-(?:layer|form|table|element|nav|btn|admin)\\b"
+    ],
+    "js": {
+      "layui": "",
+      "layui.define": ""
+    }
+  },
+  {
+    "name": "FastAdmin",
+    "category": "CMS",
+    "website": "https://www.fastadmin.net",
+    "scriptSrc": [
+      "fastadmin"
+    ],
+    "html": [
+      "module-fastadmin",
+      "FastAdmin"
+    ],
+    "js": {
+      "Config.moduleurl": "",
+      "Fast.api": ""
+    }
+  },
+  {
+    "name": "ThinkPHP",
+    "category": "Web framework",
+    "website": "https://www.thinkphp.cn",
+    "url": [
+      "index\\.php\\?s=",
+      "index\\.php/index/"
+    ],
+    "html": [
+      "__PUBLIC__",
+      "__ROOT__"
+    ],
+    "scriptSrc": [
+      "think(?:\\.min)?\\.js"
+    ]
+  },
+  {
+    "name": "宝塔面板",
+    "category": "Ops panel",
+    "html": [
+      "宝塔(?:Linux|Windows)?面板",
+      "BTPANEL|bt-panel"
+    ],
+    "scriptSrc": [
+      "bt\\.cn/"
+    ]
+  },
+  {
+    "name": "phpMyAdmin",
+    "category": "Database tool",
+    "url": [
+      "/phpmyadmin(?:/|\\?|$)",
+      "/pmd/(?:index\\.php)?$"
+    ],
+    "cookies": {
+      "phpMyAdmin": "",
+      "pma_username": "",
+      "pmaAuth-": "\\;confidence:60"
+    }
+  },
+  {
+    "name": "微信 JS-SDK",
+    "category": "Widgets",
+    "scriptSrc": [
+      "jweixin-[\\d.]+\\.js",
+      "res\\.wx\\.qq\\.com"
+    ],
+    "html": [
+      "wx\\.config\\s*\\(",
+      "WeixinJSBridge"
+    ],
+    "js": {
+      "WeixinJSBridge": "",
+      "wx.config": ""
+    }
+  },
+  {
+    "name": "友盟+",
+    "category": "Analytics",
+    "website": "https://www.umeng.com",
+    "scriptSrc": [
+      "umeng",
+      "cnzz\\.com",
+      "umtrack",
+      "umengcloud"
+    ],
+    "cookies": {
+      "UM_distinctid": "",
+      "cnzz_eid": "\\;confidence:60"
+    },
+    "js": {
+      "_czc": "",
+      "uma": ""
+    }
+  },
+  {
+    "name": "火山引擎 CDN",
+    "category": "CDN/WAF",
+    "headers": {
+      "server": "volc-dcdn|volcengine|byteplus|toutiao",
+      "x-bdcdn-cache-status": ""
+    }
+  },
+  {
+    "name": "蓝奏云",
+    "category": "Miscellaneous",
+    "meta": {
+      "copyright": "Woozooo"
+    },
+    "html": [
+      "蓝奏"
+    ]
+  },
+  {
+    "name": "Clipboard.js",
+    "category": "JavaScript libraries",
+    "scriptSrc": [
+      "clipboard(?:\\.min)?\\.js"
+    ],
+    "js": {
+      "ClipboardJS": ""
+    }
+  },
+  {
+    "name": "JS 跳转",
+    "category": "页面特征",
+    "html": [
+      "window\\.location\\.href\\s*=",
+      "location\\.replace\\s*\\(",
+      "top\\.location\\.href\\s*="
+    ]
+  },
+  {
+    "name": "混淆页面",
+    "category": "页面特征",
+    "html": [
+      "document\\.write\\(\\s*(?:unescape|decodeURIComponent|atob|String\\.fromCharCode)"
+    ]
+  },
+  {
+    "name": "流量分发",
+    "category": "页面特征",
+    "html": [
+      "targetSites"
+    ]
+  },
+  {
+    "name": "Tencent Waterproof Wall",
+    "category": "Security",
+    "scriptSrc": [
+      "TCaptcha\\.js",
+      "turing/captcha"
+    ],
+    "js": {
+      "TencentCaptcha": ""
+    }
+  }
+]

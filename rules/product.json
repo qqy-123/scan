@@ -32,8 +32,8 @@
       "x-hudson": ".*\\;confidence:60"
     },
     "html": [
-      "Jenkins",
-      "jenkins"
+      "Jenkins\\;confidence:40",
+      "jenkins\\;confidence:40"
     ],
     "favicon": [
       "81586312"
@@ -42,8 +42,7 @@
       "Java"
     ],
     "url": [
-      "/adjuncts/",
-      "/static/[0-9a-f]{8}"
+      "/adjuncts/"
     ]
   },
   {

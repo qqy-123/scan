@@ -67,7 +67,10 @@
    "24nb": [
     "\\;confidence:50"
    ]
-  }
+  },
+  "requires": [
+   "Cart Functionality"
+  ]
  },
  {
   "name": "2B Advice",
@@ -433,6 +436,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/a3-lazy-load/.+\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -636,7 +642,10 @@
   ],
   "dom": {
    "a[style*='.accentuate.io/'], a[data-bg*='.accentuate.io/'], div[style*='.accentuate.io/'], img[src*='.accentuate.io/'], img[data-src*='.accentuate.io/']": {}
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "Acceptd",
@@ -833,6 +842,10 @@
   "website": "https://www.joomace.net/joomla-extensions/aceshop-joomla-shopping-cart",
   "scriptSrc": [
    "/aceshopjquery/aceshopjquery/"
+  ],
+  "requires": [
+   "Joomla",
+   "jQuery"
   ]
  },
  {
@@ -1554,6 +1567,9 @@
   ],
   "implies": [
    "AddToAny"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -1581,6 +1597,9 @@
   ],
   "scripts": [
    "www\\.adevole\\.com"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -1877,6 +1896,9 @@
   "website": "https://www.adnabu.com",
   "scripts": [
    "/adnabu-shopify"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -2481,6 +2503,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/advanced-custom-fields(?:-pro)?/.+\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -2686,6 +2711,9 @@
   "website": "https://affilo.io",
   "scriptSrc": [
    "//affilo\\.io/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -2786,7 +2814,10 @@
   ],
   "dom": {
    "#afterpay, .afterpay, .AfterpayMessage, [aria-label='Afterpay'], link[href*='/wp-content/plugins/afterpay-gateway-for-woocommerce/']": {}
-  }
+  },
+  "requiresCategory": [
+   "Ecommerce"
+  ]
  },
  {
   "name": "AfterShip",
@@ -2815,6 +2846,9 @@
   "website": "https://afthemes.com/products/covernews",
   "scriptSrc": [
    "/wp-content/themes/covernews(?:-pro)?/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -2831,7 +2865,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/age-gate/'], .age-gate, .age-gate-form, button[name='age_gate[confirm]']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Agendize",
@@ -3053,6 +3090,9 @@
   },
   "scriptSrc": [
    "cdn\\.aimerce\\.ai/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -3229,6 +3269,9 @@
   },
   "scriptSrc": [
    "\\.aitrillion\\.com/"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -3247,7 +3290,10 @@
    "ait": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Aiva",
@@ -3417,6 +3463,9 @@
   },
   "scriptSrc": [
    "\\.akilliticaret\\.com/"
+  ],
+  "requires": [
+   "Microsoft ASP.NET"
   ]
  },
  {
@@ -3444,7 +3493,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/akismet/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Akka HTTP",
@@ -3479,6 +3531,9 @@
   "website": "https://akocommerce.com",
   "scriptSrc": [
    "app\\.akocommerce\\.com"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -3793,7 +3848,10 @@
   ],
   "dom": {
    "script.aioseo-schema": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Allbookable",
@@ -4023,6 +4081,9 @@
   "cpe": "cpe:2.3:a:alternc:alternc:*:*:*:*:*:*:*:*",
   "scriptSrc": [
    "js/alternc\\.js"
+  ],
+  "requires": [
+   "Debian"
   ]
  },
  {
@@ -4046,7 +4107,10 @@
    "Altis": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Alumni Channel",
@@ -4109,7 +4173,10 @@
    "Content-Security-Policy-Report-Only": [
     "amasty\\.com"
    ]
-  }
+  },
+  "requires": [
+   "Magento"
+  ]
  },
  {
   "name": "Amaya",
@@ -4560,6 +4627,9 @@
   },
   "implies": [
    "AMP"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -4712,6 +4782,9 @@
   "website": "https://andersnoren.se/teman/baskerville-wordpress-theme",
   "scriptSrc": [
    "/wp-content/themes/baskerville(?:-2)?/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -4720,6 +4793,9 @@
   "website": "https://andersnoren.se/teman/fukasawa-wordpress-theme",
   "scriptSrc": [
    "/wp-content/themes/fukasawa/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -4728,6 +4804,9 @@
   "website": "https://andersnoren.se/teman/hemingway-wordpress-theme",
   "scriptSrc": [
    "/wp-content/themes/hemingway/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -4736,6 +4815,9 @@
   "website": "https://andersnoren.se/teman/hitchcock-wordpress-theme",
   "scriptSrc": [
    "/wp-content/themes/hitchcock/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -4744,6 +4826,9 @@
   "website": "https://andersnoren.se/teman/lovecraft-wordpress-theme",
   "scriptSrc": [
    "/wp-content/themes/lovecraft/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -4929,7 +5014,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/animate-it/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Animate.css",
@@ -4957,6 +5045,10 @@
   ],
   "scripts": [
    "/animation-addons\\.com"
+  ],
+  "requires": [
+   "WordPress",
+   "Elementor"
   ]
  },
  {
@@ -5391,6 +5483,9 @@
   "website": "https://www.apc-pli.com",
   "html": [
    "\\APC\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -5570,6 +5665,9 @@
   "website": "https://apollo13themes.com/rife",
   "scriptSrc": [
    "/wp-content/themes/rife(?:-free)?/(?:.+script\\.min\\.js(?:\\?ver=([\\d\\.]+)))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -5675,6 +5773,9 @@
   "website": "https://appjustable.com",
   "scriptSrc": [
    "//appjustable\\.com/"
+  ],
+  "requires": [
+   "Weebly"
   ]
  },
  {
@@ -5859,6 +5960,9 @@
   ],
   "scripts": [
    "app\\.appointo\\.me"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -5901,7 +6005,10 @@
    "appstleInit": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "Apptus",
@@ -6091,7 +6198,10 @@
    "arbor": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "jQuery"
+  ]
  },
  {
   "name": "Arc",
@@ -6414,6 +6524,9 @@
   },
   "scripts": [
    "shop-app\\.artplacer\\.com"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -6589,6 +6702,9 @@
   "website": "https://www.asendia.com",
   "html": [
    "\\Asendia\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -6613,7 +6729,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/asgaros-forum/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Ashop",
@@ -6737,6 +6856,9 @@
   "website": "https://aspio.io",
   "scriptSrc": [
    "/aspio-io-customer/public/js/aspio-io-customer-public\\.js"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -6773,7 +6895,10 @@
    "style[id*='astra-theme'], body[class*='astra-'], script[id*='astra-']": {
     "text": ""
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Astra Widgets",
@@ -6785,7 +6910,11 @@
      "href": "/wp-content/plugins/astra-widgets/.+\\.css(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
     }
    }
-  }
+  },
+  "requires": [
+   "WordPress",
+   "Astra"
+  ]
  },
  {
   "name": "AstraFit",
@@ -6899,7 +7028,10 @@
   ],
   "dom": {
    "link#airi-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "aThemes Astrid",
@@ -6910,7 +7042,10 @@
   ],
   "dom": {
    "link#astrid-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "aThemes Hiero",
@@ -6918,6 +7053,9 @@
   "website": "https://athemes.com/theme/hiero",
   "scriptSrc": [
    "/wp-content/themes/hiero/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -6929,7 +7067,10 @@
   ],
   "dom": {
    "link#moesia-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "aThemes Sydney",
@@ -6940,7 +7081,10 @@
   ],
   "dom": {
    "link#sydney-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Athena Search",
@@ -7225,7 +7369,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/themes/auberge/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "audienzz",
@@ -7314,7 +7461,10 @@
   ],
   "dom": {
    "div#aumentDiscountCode, link[href*='aumentstaticfiles.s3.amazonaws.com/']": {}
-  }
+  },
+  "requiresCategory": [
+   "Ecommerce"
+  ]
  },
  {
   "name": "Aura",
@@ -7373,6 +7523,9 @@
   "html": [
    "\\bAusPost\\b",
    "\\bAustralia Post\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -7456,6 +7609,9 @@
   "website": "https://autocommerce.io",
   "scriptSrc": [
    "\\.autocommerce\\.io/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -7550,7 +7706,10 @@
   },
   "dom": {
    "link#automatewoo-birthdays-css": {}
-  }
+  },
+  "requires": [
+   "WooCommerce"
+  ]
  },
  {
   "name": "Automatic Members",
@@ -7566,7 +7725,10 @@
   "website": "https://automaticcss.com",
   "dom": {
    "link[href*='/wp-content/uploads/automatic-css/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "AutomaticSales",
@@ -7627,7 +7789,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/autoptimize/'], link[href*='/wp-content/cache/autoptimize/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "autoship",
@@ -7677,6 +7842,9 @@
   },
   "scriptSrc": [
    "freeshippingbar\\.apps\\.avada\\.io/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -7690,6 +7858,9 @@
   },
   "scriptSrc": [
    "boostsales\\.apps\\.avada\\.io/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -7698,6 +7869,9 @@
   "website": "https://apps.shopify.com/avada-seo-suite",
   "scriptSrc": [
    "seo\\.apps\\.avada\\.io/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -7706,6 +7880,9 @@
   "website": "https://apps.shopify.com/avada-size-chart",
   "scriptSrc": [
    "sizechart\\.apps\\.avada\\.io/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -8009,6 +8186,10 @@
   "website": "https://www.azko.fr",
   "scriptSrc": [
    "//js\\.fw\\.azko\\.fr/"
+  ],
+  "requires": [
+   "Bootstrap",
+   "Slick"
   ]
  },
  {
@@ -8193,6 +8374,9 @@
   "website": "https://www.b2ceurope.eu/",
   "html": [
    "\\bB2C Europe\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -8255,6 +8439,9 @@
   "website": "https://backinstock.org",
   "scriptSrc": [
    "app\\.backinstock\\.org/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -8809,7 +8996,10 @@
    "gdbbPressAttachmentsInit": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "bdok",
@@ -8963,7 +9153,10 @@
   "website": "https://www.wpbeaverbuilder.com/",
   "dom": {
    "link[href*='/wp-content/uploads/bb-plugin/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "BedBooking",
@@ -9079,7 +9272,10 @@
   "website": "https://themes.templatescoder.com/belliza/shopify/demo/",
   "dom": {
    "script[data-theme-name*='Belliza']": {}
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "BEM",
@@ -9161,7 +9357,10 @@
    "berqwp_readyState": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "BespokeChat",
@@ -9177,6 +9376,9 @@
   "website": "https://www.bestie.ai",
   "scripts": [
    "app\\.bestie\\.ai"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -9193,6 +9395,9 @@
   "website": "https://www.betheme.com",
   "scriptSrc": [
    "/betheme/js/scripts(?:\\.min)?\\.js\\?ver=([\\d.]+)\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -9211,7 +9416,10 @@
   "website": "https://wordpress.org/plugins/better-click-to-tweet/",
   "dom": {
    "link[href*='/wp-content/plugins/better-click-to-tweet/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Better Price",
@@ -9243,7 +9451,10 @@
   "website": "https://webberzone.com/plugins/better-search/",
   "dom": {
    "link[href*='/wp-content/plugins/better-search/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Better Stack",
@@ -9307,6 +9518,9 @@
   ],
   "implies": [
    "BetterDocs"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -9507,6 +9721,9 @@
   ],
   "excludes": [
    "BigCommerce"
+  ],
+  "requires": [
+   "BigCommerce"
   ]
  },
  {
@@ -9650,6 +9867,9 @@
   "website": "https://www.billbee.io",
   "html": [
    "\\bBillbee\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -9768,6 +9988,9 @@
   ],
   "scripts": [
    "app\\.bitespeed\\.co/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -9903,6 +10126,9 @@
   },
   "scriptSrc": [
    "\\.blackcart\\.co/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -10151,7 +10377,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/themes/blocksy/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Blocksy Companion",
@@ -10169,6 +10398,9 @@
   },
   "implies": [
    "Blocksy"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -10284,6 +10516,9 @@
   },
   "scriptSrc": [
    "/wp-content/themes/blossom-travel(?:-pro)?/.+custom\\.min\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -10509,7 +10744,10 @@
   "website": "https://www.boatsgroup.com/websites",
   "dom": {
    "a[href*='.boatsgroup.com/'][target='_blank']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Boba.js",
@@ -10583,6 +10821,9 @@
   "website": "https://bogos.io",
   "scripts": [
    "collect\\.bogos\\.io"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -10747,6 +10988,9 @@
   },
   "scriptSrc": [
    "option\\.boldapps\\.net"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -10755,6 +10999,9 @@
   "website": "https://wordpress.org/plugins/bold-page-builder",
   "scriptSrc": [
    "/wp-content/plugins/bold-page-builder/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -10838,7 +11085,10 @@
   ],
   "dom": {
    "link[rel='stylesheet'][href*='boldgrid'], link[rel='stylesheet'][href*='post-and-page-builder'], link[href*='.boldgrid.com']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Bolt CMS",
@@ -10910,6 +11160,9 @@
   },
   "scriptSrc": [
    "app\\.bonloyalty\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -11144,7 +11397,10 @@
   "website": "https://www.bookingpressplugin.com",
   "dom": {
    "[class='bpa-frontend-main-container']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Bookitit",
@@ -11182,6 +11438,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/bookly-responsive-appointment-booking-tool/.+\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -11365,7 +11624,10 @@
    "boostPFSAppConfig.api.filterUrl": [
     "services\\.mybcapps\\.com/"
    ]
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "Boost.ai",
@@ -11395,6 +11657,9 @@
   "website": "https://apps.shopify.com/page-speed-optimizer",
   "scriptSrc": [
    "/assets/booster-page-speed-optimizer\\.js"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -11567,7 +11832,10 @@
   },
   "dom": {
    "#BorlabsCookieBox": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Bot9",
@@ -11801,7 +12069,10 @@
    "caazamApp": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "Boutir",
@@ -11878,6 +12149,9 @@
   "website": "https://www.boxtal.com",
   "html": [
    "\\bBoxtal\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -11886,6 +12160,9 @@
   "website": "https://www.bpost.be",
   "html": [
    "\\bBpost\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -12063,6 +12340,9 @@
   "website": "https://github.com/mtekk/Breadcrumb-NavXT",
   "html": [
    "<!-- Breadcrumb NavXT ([\\d\\.]+)\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -12089,7 +12369,10 @@
    "breeze.getScopeId": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Magento"
+  ]
  },
  {
   "name": "Breezy HR",
@@ -12128,6 +12411,9 @@
   "website": "https://bricksbuilder.io",
   "scriptSrc": [
    "/wp-content/themes/bricks/assets/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -12272,6 +12558,9 @@
   ],
   "implies": [
    "Salesforce"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -12367,7 +12656,10 @@
    "link[href*='/wp-content/plugins/brizy/']": {
     "exists": ""
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Broadstreet",
@@ -12466,6 +12758,9 @@
   "website": "https://www.brt.it",
   "html": [
    "\\bBRT\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -12617,6 +12912,9 @@
   "website": "https://app.budbee.com/",
   "html": [
    "\\bBudbee\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -12626,6 +12924,9 @@
   "cpe": "cpe:2.3:a:buddypress:buddypress:0.1:*:*:*:*:wordpress:*:*",
   "scriptSrc": [
    "/wp-content/plugins/buddypress/.+\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -13109,6 +13410,9 @@
   "website": "https://c3js.org/",
   "scriptSrc": [
    "c3(?:\\.min)?(?:-[a-zA-Z0-9]{8})?\\.js(?:\\?ver=((?:\\d+\\.)+\\d+))?\\;version:\\1"
+  ],
+  "requires": [
+   "D3"
   ]
  },
  {
@@ -13275,7 +13579,10 @@
      "href": "/wp-content/plugins/caldera-forms/.+\\.css(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
     }
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "CalendarHero",
@@ -13506,6 +13813,9 @@
   "website": "https://www.candidthemes.com/themes/fairy",
   "scriptSrc": [
    "/wp-content/themes/fairy(?:-premium)?/.+custom\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -13916,7 +14226,10 @@
   ],
   "dom": {
    "link[href*='.carrd.co'][rel='canonical']": {}
-  }
+  },
+  "requires": [
+   "Apache HTTP Server"
+  ]
  },
  {
   "name": "Carro",
@@ -14025,6 +14338,9 @@
   },
   "scriptSrc": [
    "cdn-app\\.cart-bot\\.net/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -14046,7 +14362,10 @@
    "cartflows_checkout_optimized_fields": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Cartful",
@@ -14062,6 +14381,9 @@
   "website": "https://carthook.com",
   "scriptSrc": [
    "api\\.c\\.carthook\\.com"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -14146,6 +14468,9 @@
   },
   "implies": [
    "WooCommerce"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -14271,6 +14596,9 @@
   },
   "scriptSrc": [
    "\\.cashewpayments\\.com/"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -14334,7 +14662,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/themes/catch-box/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Catch Themes Fotografie",
@@ -14345,7 +14676,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/themes/fotografie/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "CatchJS",
@@ -14471,6 +14805,9 @@
   "website": "https://celeritastransporte.com",
   "html": [
    "\\bCeleritas\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -14830,6 +15167,9 @@
   "website": "https://www.channelape.com",
   "xhr": [
    "\\.channelape\\.com"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -15339,6 +15679,9 @@
   },
   "xhr": [
    "api\\.checklyhq\\.com"
+  ],
+  "requires": [
+   "Nuxt.js"
   ]
  },
  {
@@ -15504,6 +15847,9 @@
   "implies": [
    "Contact Form 7",
    "MailChimp"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -15607,6 +15953,9 @@
   "website": "https://www.chronofresh.fr",
   "html": [
    "\\bChronofresh\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -15615,6 +15964,9 @@
   "website": "https://www.chronopost.fr",
   "html": [
    "\\bChronopost\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -15786,6 +16138,9 @@
   "website": "https://www.citymail.se",
   "html": [
    "\\bCitymail\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -15832,6 +16187,9 @@
   ],
   "implies": [
    "CiviCRM"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -15849,6 +16207,9 @@
   "website": "https://apps.shopify.com/cucheng",
   "scriptSrc": [
    "app\\.cjdropshipping\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -15934,6 +16295,11 @@
   "website": "https://www.claris.com/filemaker",
   "url": [
    "\\.[\\w]+/fmi/webd/"
+  ],
+  "requires": [
+   "Vaadin",
+   "Application Request Routing",
+   "Java"
   ]
  },
  {
@@ -17010,6 +17376,9 @@
   "website": "https://wordpress.org/plugins/simple-cloudflare-turnstile/",
   "scriptSrc": [
    "/wp-content/plugins/simple-cloudflare-turnstile/js/integrations/woocommerce\\.js(?:\\?ver=([\\d.]+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -17254,6 +17623,9 @@
   "website": "https://www.cmoffer.com",
   "scripts": [
    "\\.cmoffer\\.com"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -17400,6 +17772,9 @@
   "website": "https://www.cocon.app",
   "scriptSrc": [
    "app\\.cocon\\.app"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -17498,6 +17873,9 @@
   "website": "https://codetipi.com",
   "scripts": [
    "codetipi-"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -17632,7 +18010,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/colibri-page-builder']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Colis Privé",
@@ -17640,6 +18021,9 @@
   "website": "https://www.colisprive.fr",
   "html": [
    "\\bColis Priv[eé]\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -17648,6 +18032,9 @@
   "website": "https://www.colissimo.entreprise.laposte.fr",
   "html": [
    "\\bColissimo\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -17709,7 +18096,10 @@
   ],
   "dom": {
    "link#activello-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Colorlib Illdy",
@@ -17720,7 +18110,10 @@
   ],
   "dom": {
    "link#illdy-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Colorlib Shapely",
@@ -17736,7 +18129,10 @@
   ],
   "dom": {
    "link#shapely-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Colorlib Sparkling",
@@ -17747,7 +18143,10 @@
   ],
   "dom": {
    "link#sparkling-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Colorlib Travelify",
@@ -17763,7 +18162,10 @@
   ],
   "dom": {
    "link#travelify-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "ColorMag",
@@ -17781,7 +18183,10 @@
      "href": "themes/colormag\\S*\\.css(?:\\?ver=([0-9.]+))?\\;version:\\1"
     }
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "ColorMeShop",
@@ -17871,6 +18276,9 @@
   },
   "scriptSrc": [
    "/cometd/jquery\\.cometd\\.js"
+  ],
+  "requires": [
+   "jQuery"
   ]
  },
  {
@@ -18155,6 +18563,9 @@
   },
   "scriptSrc": [
    "wp-content/plugins/complianz-gdpr-premium"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -18179,6 +18590,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/woocommerce-composite-products"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -18214,6 +18628,9 @@
   },
   "scriptSrc": [
    "cdn\\.concert\\.io/"
+  ],
+  "requires": [
+   "Vox Media"
   ]
  },
  {
@@ -18264,6 +18681,9 @@
   },
   "implies": [
    "Contact Form 7"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -18305,6 +18725,9 @@
   "website": "https://conferwith.io",
   "scriptSrc": [
    "\\.conferwith\\.io/"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -18516,7 +18939,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/contact-form-7/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "ContactUs",
@@ -18736,7 +19162,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/content-views-query-and-display-post-page/'], link[href*='/wp-content/plugins/pt-content-views-pro/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "ContextBar",
@@ -18752,7 +19181,10 @@
   "website": "https://wordpress.org/plugins/contextual-related-posts/",
   "dom": {
    "link[href*='/wp-content/plugins/contextual-related-posts/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Contlo",
@@ -18851,6 +19283,9 @@
   ],
   "implies": [
    "Conversio"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -18859,6 +19294,9 @@
   "website": "https://www.conversionbear.com",
   "scripts": [
    "\\.conversionbear\\.com"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -19136,6 +19574,9 @@
   ],
   "implies": [
    "Cookie Information"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -19144,6 +19585,9 @@
   "website": "https://wordpress.org/plugins/cookie-notice",
   "scriptSrc": [
    "/wp-content/plugins/cookie-notice/.+\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -19262,7 +19706,10 @@
   "website": "https://wordpress.org/plugins/cool-tag-cloud",
   "dom": {
    "link#cool-tag-cloud-css[href*='/wp-content/plugins/cool-tag-cloud/'], .cool-tag-cloud, .widget_cool_tag_cloud, .cool-tag-cloud-open, .cool-tag-cloud-close, .cool-tag-cloud-inner": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Cool Timeline",
@@ -19270,7 +19717,10 @@
   "website": "https://wordpress.org/plugins/cool-timeline",
   "dom": {
    "link[href*='/plugins/cool-timeline/'], script[src*='/cool-timeline/'], .cooltimeline-body": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Cooladata",
@@ -19304,6 +19754,9 @@
   },
   "scriptSrc": [
    "app\\.getcoopt\\.com/"
+  ],
+  "requires": [
+   "jQuery"
   ]
  },
  {
@@ -19386,7 +19839,10 @@
   "website": "https://coreframework.com",
   "dom": {
    "link#core-framework-frontend-css, style#core-framework-inline-inline-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "core-js",
@@ -19534,6 +19990,9 @@
   "website": "https://www.correos.es",
   "html": [
    "\\bCorreos\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -19555,6 +20014,9 @@
   "website": "https://corso.com",
   "scripts": [
    "cdn\\.corso\\.com"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -19643,7 +20105,10 @@
   "website": "https://wordpress.org/plugins/countdown-timer-ultimate",
   "dom": {
    "link[href*='/wp-content/plugins/countdown-timer-ultimate/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Countly",
@@ -19669,6 +20134,9 @@
   "website": "https://www.coureon.com",
   "html": [
    "\\bCoureon\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -19950,7 +20418,10 @@
   ],
   "dom": {
    "link#crayon-css, link#crayon": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Crazy Egg",
@@ -19988,6 +20459,9 @@
    "PHP",
    "MySQL",
    "Laravel"
+  ],
+  "requires": [
+   "Cart Functionality"
   ]
  },
  {
@@ -20022,6 +20496,9 @@
   "website": "https://www.creativemail.com",
   "scriptSrc": [
    "/wp-content/plugins/creative-mail-by-constant-contact/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -20141,6 +20618,10 @@
    "amCharts",
    "Sentry",
    "Vtiger"
+  ],
+  "requires": [
+   "Apache HTTP Server",
+   "PHP"
   ]
  },
  {
@@ -20172,7 +20653,10 @@
    "jetElements": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Elementor"
+  ]
  },
  {
   "name": "Croct",
@@ -20207,7 +20691,10 @@
    "Croogo.basePath": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "PHP"
+  ]
  },
  {
   "name": "Cross Pixel",
@@ -20307,7 +20794,10 @@
   ],
   "dom": {
    "link#bravada-style-css, img[src*='/wp-content/themes/bravada/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Cryout Creations Fluida",
@@ -20318,7 +20808,10 @@
   ],
   "dom": {
    "link#fluida-themefonts-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Cryout Creations Mantra",
@@ -20340,7 +20833,10 @@
   ],
   "dom": {
    "link#mantra-style-css, img[src*='/wp-content/themes/mantra/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Cryout Creations Parabola",
@@ -20359,7 +20855,10 @@
   ],
   "dom": {
    "link#parabola-style-css, img[src*='/wp-content/themes/parabola/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "crypto-js",
@@ -20440,6 +20939,9 @@
   "website": "https://www.cssigniter.com/themes/olsen-light",
   "scriptSrc": [
    "/wp-content/themes/olsen-light/.+scripts(?:\\.min)?\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -20504,6 +21006,9 @@
   "html": [
    "\\bTourline Express\\b",
    "\\bCTT\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -20553,6 +21058,9 @@
   ],
   "html": [
    "\\bCubyn\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -20637,6 +21145,9 @@
   "website": "https://github.com/brainstormforce/custom-fonts",
   "scriptSrc": [
    "/wp-content/plugins/custom-fonts/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -20648,7 +21159,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/custom-twitter-feeds/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "CustomDonations",
@@ -20765,6 +21279,9 @@
   },
   "implies": [
    "Gutenberg"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -20822,7 +21339,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/themes/responsive/'], link[href*='/wp-content/themes/responsivepro/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Cybersource",
@@ -20913,6 +21433,9 @@
   "website": "https://www.dachser.com",
   "html": [
    "\\bDachser\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -21048,7 +21571,10 @@
    "generator": [
     "^SmartWeb$"
    ]
-  }
+  },
+  "requires": [
+   "AngularJS"
+  ]
  },
  {
   "name": "DanDomain Webshop",
@@ -21739,7 +22265,10 @@
   "website": "https://www.delightchat.io",
   "dom": {
    "div#delightchat-widget, div#delightchat-welcome-widget": {}
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "Delighted",
@@ -21757,6 +22286,9 @@
   "website": "https://mydelivengo.laposte.fr/",
   "html": [
    "\\bDelivengo\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -21789,6 +22321,9 @@
   "website": "https://delm.io",
   "scriptSrc": [
    "cdn\\.delm\\.io/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -22073,7 +22608,10 @@
    "Detectizr": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Modernizr"
+  ]
  },
  {
   "name": "DEUNA",
@@ -22094,6 +22632,9 @@
   "website": "https://www.deutschepost.de",
   "html": [
    "\\bDeutsche Post\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -22196,7 +22737,10 @@
    "dexterProduct": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "DHL",
@@ -22212,7 +22756,10 @@
      "alt": "\\bDHL\\b"
     }
    }
-  }
+  },
+  "requiresCategory": [
+   "Ecommerce"
+  ]
  },
  {
   "name": "DHTMLX",
@@ -22508,6 +23055,9 @@
   "website": "http://dimplejs.org/",
   "scriptSrc": [
    "dimple(?:\\/lib\\/[\\w\\.]+)?(?:\\/theme\\/js\\/[\\w\\.-]+)?\\.js(?:\\?ver=((?:\\d+\\.)+\\d+))?\\;version:\\1"
+  ],
+  "requires": [
+   "D3"
   ]
  },
  {
@@ -22547,7 +23097,10 @@
    "directoristCustomRangeSlider": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Directus",
@@ -22673,6 +23226,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/distributor"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -22748,7 +23304,10 @@
    "style#divi-style-parent-inline-inline-css": {
     "text": "Version\\:\\s([\\d\\.]+)\\;version:\\1"
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Divide",
@@ -23135,6 +23694,10 @@
   "website": "https://www.dominate.co/woocommerce",
   "scriptSrc": [
    "/wp-content/plugins/iwd-checkout-connector/"
+  ],
+  "requires": [
+   "WordPress",
+   "WooCommerce"
   ]
  },
  {
@@ -23235,6 +23798,10 @@
   ],
   "implies": [
    "Doppler"
+  ],
+  "requires": [
+   "WordPress",
+   "WooCommerce"
   ]
  },
  {
@@ -23246,6 +23813,9 @@
   ],
   "implies": [
    "Doppler"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -23488,7 +24058,10 @@
   },
   "dom": {
    "link[href*='/wp-content/plugins/download-monitor/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "doxo",
@@ -23526,6 +24099,9 @@
   "website": "https://www.dpd.com",
   "html": [
    "\\bDPD\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -23566,6 +24142,9 @@
   "website": "https://draftpress.com/products/header-footer-code-manager-pro/",
   "html": [
    "<!--[^>]*HFCM\\sby\\s99\\sRobots"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -23598,6 +24177,9 @@
   },
   "scriptSrc": [
    "draprpubsubtest\\.firebaseapp\\.com/"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -23737,7 +24319,10 @@
   },
   "dom": {
    "link[href*='/drinks_base.css']": {}
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "Drip",
@@ -23761,7 +24346,10 @@
    "wp_droip": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Drop A Hint",
@@ -23774,7 +24362,10 @@
    "dropAHintTypeProduct": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "DropInBlog",
@@ -23945,7 +24536,10 @@
    "style": {
     "text": "/sites/(?!(?:default|all)/).*/(?:files|themes|modules)/"
    }
-  }
+  },
+  "requires": [
+   "Drupal"
+  ]
  },
  {
   "name": "DSpace",
@@ -24087,6 +24681,9 @@
   "website": "https://www.dxdelivery.com",
   "html": [
    "\\bDX\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -24100,6 +24697,9 @@
   },
   "scriptSrc": [
    "\\.dx1app\\.com/"
+  ],
+  "requires": [
+   "DNN"
   ]
  },
  {
@@ -24119,6 +24719,9 @@
   "website": "https://wordpress.org/plugins/dynamicconditions",
   "scriptSrc": [
    "dynamic-conditions-public\\.js(?:\\?v(?:er)?=((?:\\d+\\.)+\\d+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -24399,7 +25002,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/easy-accordion-free/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Easy Hide PayPal",
@@ -24426,6 +25032,9 @@
    "PostgreSQL",
    "Go",
    "Node.js"
+  ],
+  "requires": [
+   "Next.js"
   ]
  },
  {
@@ -24486,7 +25095,10 @@
    "generator": [
     "^Easy Digital Downloads v(.*)$\\;version:\\1"
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "EasyEngine",
@@ -24512,7 +25124,10 @@
    "EasyGiftScriptLoaded": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "EasyLiao",
@@ -24544,6 +25159,9 @@
   "website": "https://www.easylog.com.br",
   "html": [
    "\\bEasylog\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -24901,7 +25519,10 @@
   "website": "https://www.ecomx.ai",
   "dom": {
    "link[href*='app.ecomx.ai/']": {}
-  }
+  },
+  "requiresCategory": [
+   "Ecommerce"
+  ]
  },
  {
   "name": "Ecomz",
@@ -24939,6 +25560,9 @@
   "html": [
    "\\bMHP\\b",
    "\\bEcovium\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -25058,6 +25682,9 @@
   "website": "https://24ways.org/2005/edit-in-place-with-ajax",
   "scriptSrc": [
    "/jquery\\.editinplace\\.js"
+  ],
+  "requires": [
+   "jQuery"
   ]
  },
  {
@@ -25155,7 +25782,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/edwiser-bridge']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "ef.js",
@@ -25331,6 +25961,9 @@
   },
   "implies": [
    "Elasticsearch"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -25368,6 +26001,10 @@
   "implies": [
    "PHP",
    "Elasticsearch"
+  ],
+  "requires": [
+   "OroCommerce",
+   "Magento"
   ]
  },
  {
@@ -25434,7 +26071,10 @@
      "class": "el-(?:table-column|table-filter|popper|pagination|pager|select-group|form|form-item|color-predefine|color-hue-slider|color-svpanel|color-alpha-slider|color-dropdown|color-picker|badge|tree|tree-node|select|message|dialog|checkbox|checkbox-button|checkbox-group|container|steps|carousel|menu|menu-item|submenu|menu-item-group|button|button-group|card|table|select-dropdown|row|tabs|notification|radio|progress|progress-bar|tag|popover|tooltip|cascader|cascader-menus|cascader-menu|time-spinner|spinner|spinner-inner|transfer|transfer-panel|rate|slider|dropdown|dropdown-menu|textarea|input|input-group|popup-parent|radio-group|main|breadcrumb|time-range-picker|date-range-picker|year-table|date-editor|range-editor|time-spinner|date-picker|time-panel|date-table|month-table|picker-panel|collapse|collapse-item|alert|select-dropdown|select-dropdown__empty|select-dropdown__wrap|select-dropdown__list|scrollbar|switch|carousel|upload|upload-dragger|upload-list|upload-cover|aside|input-number|header|message-box|footer|radio-button|step|autocomplete|autocomplete-suggestion|loading-parent|loading-mask|loading-spinner)"
     }
    }
-  }
+  },
+  "requires": [
+   "Vue.js"
+  ]
  },
  {
   "name": "Elementor",
@@ -25475,7 +26115,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/elementor/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Elementor Addon Elements",
@@ -25486,7 +26129,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/addon-elements-for-elementor-page-builder/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Elementor Cloud",
@@ -25511,6 +26157,10 @@
   },
   "implies": [
    "Elementor"
+  ],
+  "requires": [
+   "WordPress",
+   "Elementor"
   ]
  },
  {
@@ -25524,7 +26174,10 @@
    "elementskit": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Elementor"
+  ]
  },
  {
   "name": "Elenore",
@@ -25643,6 +26296,9 @@
   },
   "implies": [
    "MySQL"
+  ],
+  "requires": [
+   "PHP"
   ]
  },
  {
@@ -25815,7 +26471,10 @@
   ],
   "dom": {
    "link#eeb-css-frontend-css, link[href*='/wp-content/plugins/email-encoder-bundle/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Emaileri",
@@ -25920,7 +26579,10 @@
   ],
   "dom": {
    "#awsm-ead-public-css, link[href*='/wp-content/plugins/embed-any-document/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Embed Optimizer",
@@ -25930,7 +26592,10 @@
    "generator": [
     "^embed-optimizer ([\\d.]+)?\\;version:\\1"
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Embed PDF Viewer",
@@ -25938,7 +26603,10 @@
   "website": "https://wordpress.org/plugins/embed-pdf-viewer",
   "dom": {
    "#embed-pdf-viewer-css, link[href*='/wp-content/plugins/embed-pdf-viewer/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Embedly",
@@ -25962,6 +26630,9 @@
   "website": "https://www.embedplus.com",
   "scriptSrc": [
    "/wp-content/plugins/youtube-embed-plus(?:-pro)?/.+\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -25973,7 +26644,10 @@
   ],
   "dom": {
    "#embedpress-css, #embedpress-elementor-css-css, #embedpress_blocks-cgb-style-css-css, link[href*='/wp-content/plugins/embedpress/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "EmbedSocial",
@@ -26230,7 +26904,10 @@
    "x-endurance-cache-level": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "enduro.js",
@@ -26294,7 +26971,10 @@
    "X-Server-Powered-By": [
     "^Engintron$"
    ]
-  }
+  },
+  "requires": [
+   "Nginx"
+  ]
  },
  {
   "name": "Enhanced Responsive Images",
@@ -26304,7 +26984,10 @@
    "generator": [
     "^auto-sizes ([\\d.]+)?\\;version:\\1"
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Enigma",
@@ -26312,6 +26995,9 @@
   "website": "https://wordpress.org/themes/enigma",
   "scriptSrc": [
    "/wp-content/themes/enigma/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -26336,7 +27022,11 @@
   "website": "https://www.enjore.com",
   "dom": {
    "link[href*='cdn.enjore.com/']": {}
-  }
+  },
+  "requires": [
+   "PHP",
+   "AddToAny"
+  ]
  },
  {
   "name": "Enkod",
@@ -26456,6 +27146,9 @@
   "website": "https://www.envialia.com",
   "html": [
    "\\bEnvialia\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -26472,6 +27165,9 @@
   "website": "https://envothemes.com/free-envo-ecommerce/",
   "scriptSrc": [
    "/wp-content/themes/envo-ecommerce/.+customscript\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -26480,6 +27176,9 @@
   "website": "https://envothemes.com/free-envo-shop",
   "scriptSrc": [
    "/wp-content/themes/envo-shop/.+customscript\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -26488,6 +27187,9 @@
   "website": "https://envothemes.com/free-envo-storefront",
   "scriptSrc": [
    "/wp-content/themes/envo-storefront/.+customscript\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -26903,7 +27605,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/uploads/essential-addons-elementor/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Essential Blocks",
@@ -26919,7 +27624,10 @@
    "link[href*='/wp-content/uploads/eb-style/']": {
     "exists": ""
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Essential JS 2",
@@ -27036,7 +27744,10 @@
   "website": "https://etchwp.com",
   "dom": {
    "link[href*='/wp-content/plugins/etch/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Etermio",
@@ -27195,7 +27906,10 @@
   "website": "https://www.myeventon.com",
   "dom": {
    "link#eventon_dynamic_styles-css, link[href*='/css/eventon_styles\\.css']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Everflow",
@@ -27415,6 +28129,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/ewww-image-optimizer/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -27454,6 +28171,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/google-analytics-dashboard-for-wp/.+\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -27695,7 +28415,10 @@
   "website": "https://extendify.com",
   "dom": {
    "link[href*='/plugins/extendify/'], #extendify-utility-styles-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "ExtendThemes Calliope",
@@ -27706,7 +28429,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/themes/calliope/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "ExtendThemes EmpowerWP",
@@ -27720,6 +28446,9 @@
   },
   "excludes": [
    "ExtendThemes Mesmerize"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -27734,6 +28463,9 @@
   },
   "excludes": [
    "ExtendThemes Mesmerize"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -27756,7 +28488,10 @@
   ],
   "dom": {
    "link#materialis-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "ExtendThemes Mesmerize",
@@ -27781,7 +28516,10 @@
   ],
   "dom": {
    "link#mesmerize-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "ExtJS",
@@ -28186,6 +28924,9 @@
   },
   "scriptSrc": [
    "/wp-content/themes/nisarg(?:pro)?/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -28202,7 +28943,10 @@
    "onepress_js_settings": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "FameThemes Screenr",
@@ -28215,7 +28959,10 @@
    "Screenr_Plus": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Famewall",
@@ -28539,6 +29286,9 @@
   "website": "https://fastpixel.io",
   "scriptSrc": [
    "api\\.fastpixel\\.io/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -28653,7 +29403,10 @@
   ],
   "dom": {
    "link[href*='/lb-faveo/']": {}
-  }
+  },
+  "requires": [
+   "jQuery"
+  ]
  },
  {
   "name": "Fbits",
@@ -28725,6 +29478,9 @@
   "website": "https://www.fedex.com",
   "html": [
    "\\bFedEx\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -28956,7 +29712,10 @@
    "dgwt_wcas.ajax_search_endpoint": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WooCommerce"
+  ]
  },
  {
   "name": "Fider",
@@ -29013,6 +29772,9 @@
   "website": "https://digital-downloads.com",
   "scripts": [
    "app\\.digital-downloads\\.com"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -29124,6 +29886,9 @@
   },
   "scriptSrc": [
    "\\.findberry\\.com/"
+  ],
+  "requires": [
+   "jQuery"
   ]
  },
  {
@@ -29221,6 +29986,9 @@
   },
   "scriptSrc": [
    "cdn\\.finsweet\\.com"
+  ],
+  "requires": [
+   "Webflow"
   ]
  },
  {
@@ -29247,6 +30015,9 @@
   "website": "https://apps.shopify.com/ali-reviews",
   "scriptSrc": [
    "//alireviews\\.fireapps\\.io/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -30075,6 +30846,9 @@
   "scriptSrc": [
    "(?:((?:\\d+\\.)+\\d+)\\/(?:jquery\\.)?)?flot(?:\\/curvedLines)?(?:\\/excanvas)?(?:\\/jquery)?(?:\\.categories)?(?:\\.pack)?(?:\\.pie)?(?:\\.resize)?(?:\\.selection)?(?:\\.spline)?(?:\\.symbol)?(?:\\.time)?(?:\\.tooltip)?(?:\\.min)?\\.js\\;version:\\1",
    "(?:(?:jquery\\.)?)?flot(?:\\/curvedLines)?(?:\\/excanvas)?(?:\\/jquery)?(?:\\.categories)?(?:\\.pack)?(?:\\.pie)?(?:\\.resize)?(?:\\.selection)?(?:\\.spline)?(?:\\.symbol)?(?:\\.time)?(?:\\.tooltip)?(?:\\.min)?\\.js(?:\\?v(?:er)?=((?:\\d+\\.)+\\d+))?\\;version:\\1"
+  ],
+  "requires": [
+   "jQuery"
   ]
  },
  {
@@ -30304,7 +31078,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/flying-analytics/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Flying Images",
@@ -30314,7 +31091,10 @@
    "flyingImages": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Flying Pages",
@@ -30330,7 +31110,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/flying-pages/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "FlyingPress",
@@ -30341,7 +31124,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/flying-press/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Flyspray",
@@ -30424,7 +31210,10 @@
    "fmgjQuery.Animation": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "jQuery"
+  ]
  },
  {
   "name": "FOCUS WebWall",
@@ -30549,6 +31338,9 @@
   "website": "https://apps.shopify.com/fontify-change-customize-font-for-your-store",
   "scriptSrc": [
    "fontify\\.nitroapps\\.co/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -30580,7 +31372,13 @@
    "disabledelivery": [
     "No\\;confidence:25"
    ]
-  }
+  },
+  "requires": [
+   "Microsoft ASP.NET",
+   "Bootstrap",
+   "Plesk",
+   "Google Maps"
+  ]
  },
  {
   "name": "FoodBooking",
@@ -30624,7 +31422,10 @@
      "href": "/wp-content/plugins/foogallery/.+\\.css(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
     }
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "FooTable",
@@ -30637,7 +31438,10 @@
    "footable.plugins": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "jQuery"
+  ]
  },
  {
   "name": "Foratable",
@@ -30687,6 +31491,9 @@
   "website": "https://www.foreupgolf.com",
   "scripts": [
    "foreupsoftware\\.com"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -30891,7 +31698,10 @@
   "website": "https://formidableforms.com",
   "dom": {
    "link[href*='/wp-content/plugins/formidable/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Formitable",
@@ -30985,6 +31795,9 @@
   "cpe": "cpe:2.3:a:formstone:formstone:*:*:*:*:*:*:*:*",
   "scriptSrc": [
    "jquery\\.formstone\\.min\\.js"
+  ],
+  "requires": [
+   "jQuery"
   ]
  },
  {
@@ -31243,7 +32056,10 @@
   "website": "https://getframes.io",
   "dom": {
    "link[href*='/wp-content/plugins/frames-plugin/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Framework7",
@@ -31273,6 +32089,9 @@
   "website": "https://www.france-express.com",
   "html": [
    "\\bFrance Express\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -31403,6 +32222,9 @@
   "website": "https://freemius.com",
   "scriptSrc": [
    "checkout\\.freemius\\.com/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -31477,6 +32299,9 @@
   "website": "https://www.laposte.fr/entreprise/produit-entreprise/frequenceo",
   "html": [
    "\\bFrequenceo\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -31485,6 +32310,9 @@
   "website": "https://www.codeblackbelt.com",
   "scriptSrc": [
    "\\.codeblackbelt\\.com/js/modules/frequently-bought-together/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -31861,6 +32689,9 @@
   },
   "scriptSrc": [
    "cdn\\.shopify\\.com/extensions/[^/]+/froonze-loyalty-wishlist[^/]*"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -32119,7 +32950,10 @@
      "href": "/wp-content/plugins/Funnelforms(?:-pro)?/.+\\.css(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
     }
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Funnelish",
@@ -32222,7 +33056,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/themes/futurio/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Futy",
@@ -32593,7 +33430,10 @@
   "website": "https://generateblocks.com",
   "dom": {
    "link#generateblocks-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "GeneratePress",
@@ -32624,7 +33464,10 @@
      "href": "generatepress\\S*\\.css(?:\\?ver=([0-9.]+))?\\;version:\\1"
     }
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "GeneratePress GP Premium",
@@ -32635,6 +33478,9 @@
   ],
   "implies": [
    "GeneratePress"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -32654,7 +33500,10 @@
    "link[href*='/wp-content/plugins/genesis-blocks']": {
     "exists": ""
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Genesis theme",
@@ -32670,6 +33519,9 @@
   },
   "scriptSrc": [
    "/wp-content/themes/genesis/lib/js/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -32810,6 +33662,9 @@
   "website": "https://geodis.com",
   "html": [
    "\\bGeodis\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -33243,6 +34098,9 @@
   "website": "https://gist-apps.com/giftship",
   "scriptSrc": [
    "assets/js/giftship\\.([\\d\\.]+)\\.js\\;version:\\1"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -33483,6 +34341,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/give/.+give\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -33854,6 +34715,9 @@
   "website": "https://gls-group.eu",
   "html": [
    "\\bGLS\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -34063,7 +34927,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/coblocks/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "GoDaddy Domain Parking",
@@ -34082,6 +34949,9 @@
   },
   "excludes": [
    "GoDaddy Primer"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -34098,7 +34968,10 @@
   ],
   "dom": {
    "link#go-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "GoDaddy Lyrical",
@@ -34109,6 +34982,9 @@
   },
   "excludes": [
    "GoDaddy Primer"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -34130,7 +35006,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/themes/primer/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "GoDaddy Uptown Style",
@@ -34141,6 +35020,9 @@
   },
   "excludes": [
    "GoDaddy Primer"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -34250,7 +35132,10 @@
    "gokwikSdk": [
     ""
    ]
-  }
+  },
+  "requiresCategory": [
+   "Ecommerce"
+  ]
  },
  {
   "name": "Golden Volunteer",
@@ -34806,6 +35691,9 @@
   },
   "implies": [
    "Google Tag Manager"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -35092,6 +35980,9 @@
   "website": "https://gptaipower.com",
   "scriptSrc": [
    "/wp-content/plugins/gpt3-ai-content-generator/.+\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -35249,6 +36140,9 @@
   },
   "scriptSrc": [
    "/wp-content/themes/graphene(?:-plus)?/.+graphene\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -35422,6 +36316,9 @@
   ],
   "scriptSrc": [
    "/wp-content/plugins/gravityforms/js/[^/]+\\.js\\?ver=([\\d.]+)$\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -35515,6 +36412,9 @@
   },
   "scripts": [
    "\\.greyd\\.io"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -35672,6 +36572,9 @@
   "website": "https://growave.io",
   "scriptSrc": [
    "\\.socialshopwave\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -35787,7 +36690,10 @@
   "website": "https://gtranslate.io",
   "dom": {
    "link[href*='/wp-content/plugins/gtranslate/'], img[src*='/wp-content/plugins/gtranslate/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "GTranslate app",
@@ -35798,7 +36704,10 @@
   ],
   "dom": {
    "img[src*='gtranslate.io/shopify']": {}
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "GuardFlame",
@@ -36003,7 +36912,10 @@
      "href": "/wp-content/plugins/gutenberg/.+\\.css(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
     }
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Guuru",
@@ -36475,6 +37387,9 @@
   "website": "https://hashthemes.com/wordpress-theme/total",
   "scriptSrc": [
    "/wp-content/themes/(?:t|T)otal(?:-plus)?/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -36830,6 +37745,9 @@
   },
   "implies": [
    "Elementor"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -36958,6 +37876,9 @@
   "website": "https://www.hermesworld.com",
   "html": [
    "\\bHermes\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -37044,7 +37965,10 @@
      "href": "hestia\\S*\\.css(?:\\?ver=([0-9.]+))?\\;version:\\1"
     }
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "HetrixTools",
@@ -37428,6 +38352,9 @@
   },
   "scripts": [
    "com_hikashop"
+  ],
+  "requires": [
+   "Joomla"
   ]
  },
  {
@@ -37487,7 +38414,11 @@
    "h2": {
     "text": "(HiSecOS-|HiOS-.+-)(\\d+\\.\\d+\\.\\d+)\\;version:\\2"
    }
-  }
+  },
+  "requires": [
+   "Java",
+   "Google Web Toolkit"
+  ]
  },
  {
   "name": "Histats",
@@ -37624,7 +38555,10 @@
    "HollerBox.active": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Homebot",
@@ -37658,6 +38592,9 @@
   "website": "https://www.homerr.com",
   "html": [
    "\\bHomerr\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -38030,7 +38967,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/ht-mega-for-elementor/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "html2canvas",
@@ -38251,6 +39191,9 @@
   "implies": [
    "HubSpot",
    "HubSpot Analytics"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -38495,7 +39438,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/uploads/hurrytimer/'], #hurrytimer, #hurrytimer-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Hushly",
@@ -38629,6 +39575,9 @@
   },
   "scriptSrc": [
    "cdn\\.gethypervisual\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -38812,6 +39761,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/icegram/.*main\\.min\\.js\\?ver=([\\d\\.]+)\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -38951,6 +39903,9 @@
   },
   "scriptSrc": [
    "cdnicart\\.identixweb\\.com"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -39197,7 +40152,10 @@
    "generator": [
     "^dominant-color-images ([\\d.]+)?\\;version:\\1"
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Image Prioritizer",
@@ -39207,7 +40165,10 @@
    "generator": [
     "^image-prioritizer ([\\d.]+)?\\;version:\\1"
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Image Relay",
@@ -39255,7 +40216,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/nextgen-gallery/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "imagesLoaded",
@@ -39552,6 +40516,9 @@
   "website": "https://incartupsell.com",
   "scriptSrc": [
    "\\.incartupsell\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -39811,7 +40778,11 @@
   },
   "dom": {
    "a[href*='www.influxmarketing.com'] > svg[class*='influx-footer-logo']": {}
-  }
+  },
+  "requires": [
+   "React",
+   "Gatsby"
+  ]
  },
  {
   "name": "Infogram",
@@ -40004,6 +40975,9 @@
   "website": "https://inputflow.com",
   "scriptSrc": [
    "script\\.inputflow\\.io"
+  ],
+  "requires": [
+   "Webflow"
   ]
  },
  {
@@ -40120,6 +41094,9 @@
   "website": "https://apps.shopify.com/instafeed",
   "scriptSrc": [
    "instafeed\\.nfcube\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -40139,7 +41116,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/instagram-feed'], a[data-full-res*='/wp-content/uploads/sb-instagram-feed-images/'], img[src*='/wp-content/uploads/sb-instagram-feed-images/'], img[src*='/wp-content/plugins/instagram-feed/'], img[data-src*='/wp-content/uploads/sb-instagram-feed-images/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Instamojo",
@@ -40184,7 +41164,10 @@
   },
   "dom": {
    "div[class='__instant'][data-instant-version]": {}
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "Instant.Page",
@@ -40944,7 +41927,10 @@
   "website": "https://www.icisleri.gov.tr/internet-sayfalari-yonetimi-isay",
   "dom": {
    "div.topbar-img img[src*='/Areas/WebPart/Contents/FHeader/img/ataturk.svg']": {}
-  }
+  },
+  "requires": [
+   "Microsoft ASP.NET"
+  ]
  },
  {
   "name": "iScripts",
@@ -41092,7 +42078,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/better-wp-security/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Itoris",
@@ -41148,6 +42137,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/add-search-to-menu/.+\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -41586,7 +42578,10 @@
    "Jetboost.loaded": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Webflow"
+  ]
  },
  {
   "name": "JetEngine",
@@ -41594,6 +42589,9 @@
   "website": "https://crocoblock.com/plugins/jetengine",
   "scriptSrc": [
    "/wp-content/plugins/jet-engine/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -41605,7 +42603,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/jetpack/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Jetpack Boost",
@@ -41616,7 +42617,10 @@
   ],
   "dom": {
    "style[id='jetpack-boost-critical-css']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Jetshop",
@@ -41705,7 +42709,10 @@
    "jiltStorefrontParams.platform": [
     "^shopify$"
    ]
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "Jilt plugin",
@@ -41713,6 +42720,9 @@
   "website": "https://wordpress.org/plugins/jilt-for-woocommerce",
   "scriptSrc": [
    "\\.jilt\\.com/.+/jilt\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -42112,6 +43122,9 @@
   "website": "https://jquery.malsup.com/block",
   "scriptSrc": [
    "/jquery\\.blockUI\\.js"
+  ],
+  "requires": [
+   "jQuery"
   ]
  },
  {
@@ -42205,6 +43218,9 @@
   "website": "https://plugins.jquery.com/payment",
   "scriptSrc": [
    "/jquery-payment/jquery\\.payment\\.min\\.js"
+  ],
+  "requires": [
+   "jQuery"
   ]
  },
  {
@@ -42552,6 +43568,9 @@
   },
   "scriptSrc": [
    "\\.juniphq\\.com/"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -42568,6 +43587,9 @@
   "website": "https://juphy.com",
   "scriptSrc": [
    "static\\.juphy\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -42634,6 +43656,9 @@
   ],
   "implies": [
    "Justuno"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -42728,6 +43753,9 @@
   },
   "implies": [
    "Gutenberg"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -42747,7 +43775,10 @@
   ],
   "dom": {
    "link#kadence-global-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Kadence WP Virtue",
@@ -42758,7 +43789,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/themes/virtue/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Kaira Vogue",
@@ -42769,7 +43803,10 @@
   ],
   "dom": {
    "link#vogue-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Kaisa",
@@ -43077,6 +44114,9 @@
   "website": "https://www.gokartify.com",
   "scripts": [
    "sellup\\.herokuapp\\.com\\/kartifyjs\\/kartify\\.js"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -43117,7 +44157,10 @@
    "Hover__KartrisMenu": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Microsoft ASP.NET"
+  ]
  },
  {
   "name": "Kasada",
@@ -43201,6 +44244,9 @@
   "website": "https://www.keendelivery.com",
   "html": [
    "\\bKeen Delivery\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -43237,7 +44283,10 @@
    "keepeekScrollToName": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "jQuery"
+  ]
  },
  {
   "name": "KelonCloud",
@@ -43698,7 +44747,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/kirki/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "KISSmetrics",
@@ -44721,7 +45773,10 @@
    "kubioFrontendData": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Kudobuzz",
@@ -44990,6 +46045,9 @@
   "website": "https://landingpress.net",
   "scriptSrc": [
    "/wp-content/themes/landingpress-wp/.+script\\.min\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -45006,7 +46064,10 @@
    "langify.settings.switcher.version": [
     "([\\d\\.]+)\\;version:\\1"
    ]
-  }
+  },
+  "requiresCategory": [
+   "Ecommerce"
+  ]
  },
  {
   "name": "LangShop",
@@ -45219,7 +46280,10 @@
   ],
   "dom": {
    "iframe[src='.laybuy.com/'], a[href*='.laybuy.com/what-is-laybuy']": {}
-  }
+  },
+  "requiresCategory": [
+   "Ecommerce"
+  ]
  },
  {
   "name": "Layers",
@@ -45389,6 +46453,9 @@
   "website": "https://www.leadchat.com",
   "scriptSrc": [
    "(?://|\\.)chatsystem\\.io/"
+  ],
+  "requires": [
+   "LiveChat"
   ]
  },
  {
@@ -45652,7 +46719,10 @@
    "leaky_paywall_recurring": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "LeanData",
@@ -45711,7 +46781,10 @@
      "href": "/wp-content/plugins/sfwd-lms/.+\\.css(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
     }
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "LearnUpon",
@@ -45959,7 +47032,10 @@
    "l5_inventory_url": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Level Access",
@@ -46133,6 +47209,9 @@
   "website": "https://lifterapps.com",
   "scripts": [
    "(?:\\.lifterpopup\\.com|popup\\.lifterapps\\.com)"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -46144,7 +47223,10 @@
   ],
   "dom": {
    "link#lifterlms-styles-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "LiftIgniter",
@@ -46226,7 +47308,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/themes/lightning/'], link[href*='/wp-content/themes/lightning-pro/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Lightspeed eCom",
@@ -46296,7 +47381,10 @@
    "lilyPl": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "BigCommerce"
+  ]
  },
  {
   "name": "Lime Talk",
@@ -46377,7 +47465,10 @@
   "website": "https://www.limitloginattempts.com",
   "dom": {
    "link#llar-login-page-styles-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Linda",
@@ -46802,6 +47893,9 @@
   ],
   "implies": [
    "LiteSpeed"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -46815,7 +47909,10 @@
    "x-turbo-charged-by": [
     "LiteSpeed"
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Lithium",
@@ -46880,6 +47977,9 @@
   },
   "implies": [
    "Shopify"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -46932,6 +48032,9 @@
   ],
   "implies": [
    "Bootstrap"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -47530,6 +48633,9 @@
   "website": "https://www.logoix.com",
   "html": [
    "\\bLogoiX\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -47679,7 +48785,10 @@
   },
   "dom": {
    "a[href*='.loopreturns.com/']": {}
-  }
+  },
+  "requiresCategory": [
+   "Ecommerce"
+  ]
  },
  {
   "name": "Loop Web",
@@ -47975,7 +49084,10 @@
   "website": "https://ltheme.com",
   "dom": {
    "script[id*='ltheme-custom-js']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Lua",
@@ -48075,6 +49187,9 @@
   "website": "https://getlumino.ai",
   "scripts": [
    "api\\.getlumino\\.ai"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -48207,6 +49322,9 @@
   },
   "scriptSrc": [
    "/wp-content/themes/kale(?:-pro)?/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -48259,7 +49377,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/themes/Newsmag']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "MacroActive",
@@ -48362,7 +49483,10 @@
    "MageRewards": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Magento"
+  ]
  },
  {
   "name": "Magento",
@@ -48447,7 +49571,10 @@
   ],
   "dom": {
    "link[href*='MageWorx_SearchSuiteAutocomplete']": {}
-  }
+  },
+  "requires": [
+   "Magento"
+  ]
  },
  {
   "name": "Magic UI",
@@ -48652,6 +49779,9 @@
   ],
   "implies": [
    "MailChimp"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -48672,6 +49802,9 @@
   },
   "implies": [
    "MailChimp"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -48707,6 +49840,9 @@
   ],
   "implies": [
    "MailerLite"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -48715,6 +49851,11 @@
   "website": "https://www.mailerlite.com/features/website-builder",
   "scriptSrc": [
    "cdn\\.mailerlite\\.com/moment/moment\\.min\\.js"
+  ],
+  "requires": [
+   "MailerLite",
+   "Go",
+   "Caddy"
   ]
  },
  {
@@ -48770,6 +49911,9 @@
   },
   "scriptSrc": [
    "mailoptin(?:\\.min)?\\.js(?:\\?v(?:er)?=((?:\\d+\\.)+\\d+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -48997,6 +50141,9 @@
   "website": "https://themesia.com/mangareader-wordpress-theme",
   "scripts": [
    "mangareader\\.themesia"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -49030,6 +50177,9 @@
   },
   "implies": [
    "TypeScript"
+  ],
+  "requires": [
+   "React"
   ]
  },
  {
@@ -49058,6 +50208,9 @@
   },
   "implies": [
    "MySQL"
+  ],
+  "requires": [
+   "PHP"
   ]
  },
  {
@@ -49181,6 +50334,9 @@
   "website": "https://www.mapmychannel.com",
   "scriptSrc": [
    "\\.mapmychannel\\.com/"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -49248,7 +50404,10 @@
   "website": "https://mappresspro.com",
   "dom": {
    "link[href*='wp-content/plugins/mappress-google-maps-for-wordpress/'], #mappress-leaflet-css, #mappress-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Maptalks",
@@ -49579,6 +50738,9 @@
   },
   "implies": [
    "Master Slider"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -49600,7 +50762,10 @@
   },
   "dom": {
    "style[id*='masteriyo-public-inline-css']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "MasterkinG32 Framework",
@@ -49941,7 +51106,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/uploads/maxmegamenu/'], link[href*='/wp-content/plugins/megamenu-pro/'], link#megamenu-css, .mega-menu, .max-mega-menu, .mega-menu-megamenu, .mega-menu-primary, .mega-menu-item": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "MaxCDN",
@@ -50076,6 +51244,9 @@
   },
   "implies": [
    "MDBootstrap"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -50087,6 +51258,9 @@
   ],
   "scripts": [
    "app\\.mdirector\\.com"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -50095,7 +51269,11 @@
   "website": "https://mdsbrand.com",
   "dom": {
    "a[href*='mdsbrand.com/']": {}
-  }
+  },
+  "requires": [
+   "Nginx",
+   "UserWay"
+  ]
  },
  {
   "name": "MDUI",
@@ -50419,7 +51597,10 @@
   "website": "https://wordpress.org/plugins/meks-simple-flickr-widget",
   "dom": {
    "link[href*='/wp-content/plugins/meks-simple-flickr-widget/'], link#meks-flickr-widget-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Melibo",
@@ -50734,7 +51915,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/mesmerize-companion/'], link#companion-bundle-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "MessageGears",
@@ -50769,7 +51953,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/ml-slider/'], link#metaslider-pro-public-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Meteor",
@@ -50938,6 +52125,9 @@
   "website": "https://themeisle.com/themes/metrox/",
   "scriptSrc": [
    "/wp-content/themes/metro-creativex/js/.*\\.js\\?ver=([\\d\\.]+)\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -50949,7 +52139,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/metronet-profile-picture/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "MetroUI",
@@ -51040,6 +52233,9 @@
   ],
   "implies": [
    "MySQL"
+  ],
+  "requires": [
+   "PHP"
   ]
  },
  {
@@ -51232,6 +52428,10 @@
   "website": "https://dynamics.microsoft.com/commerce/overview",
   "scriptSrc": [
    "\\.dynamics365commerce\\.ms/"
+  ],
+  "requires": [
+   "React",
+   "Azure"
   ]
  },
  {
@@ -51623,6 +52823,9 @@
   ],
   "scripts": [
    "apps\\.minibc\\.com"
+  ],
+  "requires": [
+   "BigCommerce"
   ]
  },
  {
@@ -51654,7 +52857,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/miniorange-login-openid/'], #js-cookie-script-js, #mo-social-login-script-js": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "MiniServ",
@@ -52000,6 +53206,9 @@
   },
   "scripts": [
    "\\.moast\\.io"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -52299,7 +53508,10 @@
    "generator": [
     "^webp-uploads ([\\d.]+)?\\;version:\\1"
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Modernizr",
@@ -52385,7 +53597,10 @@
    "modulaInViewport": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Module Federation",
@@ -52727,6 +53942,9 @@
   "website": "https://www.mondialrelay.com",
   "html": [
    "\\bMondial Relay\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -52769,6 +53987,9 @@
   "implies": [
    "Moneris",
    "WooCommerce"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -52823,6 +54044,9 @@
   },
   "scriptSrc": [
    "\\.monitus\\.net/"
+  ],
+  "requires": [
+   "Yahoo! Ecommerce"
   ]
  },
  {
@@ -52929,6 +54153,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/google-analytics-for-wordpress/.+\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -52942,6 +54169,9 @@
   },
   "scriptSrc": [
    "cdn\\.monto\\.io/"
+  ],
+  "requires": [
+   "Webflow"
   ]
  },
  {
@@ -53068,7 +54298,10 @@
    "moove_frontend_gdpr_scripts": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Moovin",
@@ -53142,6 +54375,10 @@
   "website": "https://morrisjs.github.io/morris.js/",
   "scriptSrc": [
    "morris(?:\\/(?:area|bar|donut|grid|hover|line))?(?:\\.min)?\\.js(?:\\?ver=((?:\\d+\\.)+\\d+))?\\;version:\\1"
+  ],
+  "requires": [
+   "jQuery",
+   "Raphael"
   ]
  },
  {
@@ -53400,6 +54637,9 @@
   "website": "https://www.mrw.es",
   "html": [
    "\\bMRW\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -53677,6 +54917,9 @@
   "website": "https://www.myflyingbox.com/",
   "html": [
    "\\bMy Flying Box\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -53916,6 +55159,9 @@
   "website": "https://mysterythemes.com/wp-themes/news-portal",
   "scriptSrc": [
    "/wp-content/themes/news-portal(?:-pro)?/.+np-custom-scripts\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -53927,6 +55173,9 @@
   },
   "excludes": [
    "MysteryThemes News Portal"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -53938,6 +55187,9 @@
   },
   "excludes": [
    "MysteryThemes News Portal"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -54080,6 +55332,9 @@
   "website": "https://www.nacex.es",
   "html": [
    "\\bNACEX\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -54424,7 +55679,10 @@
    "nabSettings": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Nemu",
@@ -54783,7 +56041,10 @@
      "href": "neve\\S*\\.css(?:\\?ver=([0-9.]+))?\\;version:\\1"
     }
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "New Relic",
@@ -54823,7 +56084,10 @@
   "website": "https://github.com/Automattic/newspack-plugin",
   "dom": {
    "a.imprint[href*='newspack.pub']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Newspack by Automattic",
@@ -54875,6 +56139,9 @@
   "website": "https://www.nexive.it",
   "html": [
    "\\bNexive\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -55004,7 +56271,10 @@
    "__Secure-next-auth.callback-url": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Next.js"
+  ]
  },
  {
   "name": "Nextcloud",
@@ -55056,6 +56326,9 @@
   ],
   "scriptSrc": [
    "/nextgen-gallery/js/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -55077,7 +56350,10 @@
    "div.nextra-container": {},
    "div.nextra-nav-container": {},
    "div.nextra-sidebar-container": {}
-  }
+  },
+  "requires": [
+   "Next.js"
+  ]
  },
  {
   "name": "Nextsale",
@@ -55345,7 +56621,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/ninja-forms/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "NinjaCat",
@@ -55384,6 +56663,9 @@
   },
   "scriptSrc": [
    "tracker\\.nocodelytics\\.com/"
+  ],
+  "requires": [
+   "Webflow"
   ]
  },
  {
@@ -55442,6 +56724,9 @@
   "website": "https://www.nofraud.com",
   "scriptSrc": [
    "services\\.nofraud\\.com/"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -55458,6 +56743,9 @@
   },
   "scriptSrc": [
    "\\.nogin\\.com/"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -55556,6 +56844,9 @@
   },
   "implies": [
    "Microsoft ASP.NET"
+  ],
+  "requires": [
+   "nopCommerce"
   ]
  },
  {
@@ -55944,6 +57235,9 @@
   "scriptSrc": [
    "\\.nudgify\\.com/",
    "cdn\\.convertize\\.com/nudgify-shopify\\.js"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -56015,7 +57309,10 @@
   "website": "https://ui.nuxt.com",
   "dom": {
    "style[id*='nuxt-ui-']": {}
-  }
+  },
+  "requires": [
+   "Nuxt.js"
+  ]
  },
  {
   "name": "Nuxt.js",
@@ -56080,7 +57377,10 @@
    "nyehandelse_session": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Caddy"
+  ]
  },
  {
   "name": "Oat++",
@@ -56103,6 +57403,9 @@
   },
   "scriptSrc": [
    "cdn\\.shopify\\.com/extensions/.+/([\\.\\d]{3,})/assets/upsell\\.min\\.js\\;version:\\1"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -56130,6 +57433,9 @@
   },
   "scriptSrc": [
    "deploy\\.hiconversion\\.com"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -56176,7 +57482,10 @@
      "href": "oceanwp\\S*\\.css(?:\\?ver=([0-9.]+))?\\;version:\\1"
     }
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Ochanoko",
@@ -56635,6 +57944,9 @@
   },
   "scriptSrc": [
    "\\.omegacommerce\\.com"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -56791,6 +58103,9 @@
   ],
   "implies": [
    "Omnisend"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -56932,7 +58247,10 @@
   ],
   "dom": {
    "link#one-page-express-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "OnePress Social Locker",
@@ -56948,6 +58266,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/social-?locker(?:-next-premium)?/bizpanda/assets/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -57021,6 +58342,9 @@
   },
   "scriptSrc": [
    "/modules/oney(?:/)?/views/js/front\\.js"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -57709,6 +59033,9 @@
   "website": "https://www.opigno.org",
   "scripts": [
    "opigno_(?:commerce|wtp_app|scorm|learning_path)"
+  ],
+  "requires": [
+   "Drupal"
   ]
  },
  {
@@ -57772,6 +59099,9 @@
   },
   "scriptSrc": [
    "app\\.optibase\\.io/"
+  ],
+  "requires": [
+   "Webflow"
   ]
  },
  {
@@ -57795,7 +59125,10 @@
    "generator": [
     "^optimization-detective ([\\d.]+)?\\;version:\\1"
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Optimizely",
@@ -57834,7 +59167,10 @@
    "generator": [
     "EPiServer"
    ]
-  }
+  },
+  "requiresCategory": [
+   "Ecommerce"
+  ]
  },
  {
   "name": "Optimizely Content Management",
@@ -57965,6 +59301,9 @@
   ],
   "implies": [
    "OptinMonster"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -58199,7 +59538,10 @@
   "website": "https://themeisle.com/plugins/orbit-fox-companion",
   "dom": {
    "link[href*='/wp-content/plugins/themeisle-companion/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Orchard Core",
@@ -58336,7 +59678,11 @@
   "website": "https://orderport.net",
   "dom": {
    "span#updViewCart a[href*='orderport.net']": {}
-  }
+  },
+  "requires": [
+   "Cart Functionality",
+   "Microsoft ASP.NET"
+  ]
  },
  {
   "name": "Ordersify Product Alerts",
@@ -58476,6 +59822,9 @@
    "\\bpost\\.at\\b",
    "\\bPost AG\\b",
    "\\b[ÖO]sterreichische Post\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -58532,7 +59881,10 @@
    "link[href*='/wp-content/plugins/otter-blocks']": {
     "exists": ""
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "OtterText",
@@ -58693,7 +60045,10 @@
   ],
   "dom": {
    "link#panoramic_customizer_theme_fonts-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Ova",
@@ -58935,7 +60290,10 @@
   ],
   "dom": {
    "body[class*='oxygen-body'], link[href*='wp-content/plugins/oxygen/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "oXyShop",
@@ -59090,6 +60448,9 @@
   "website": "https://wp-pagebuilderframework.com",
   "scriptSrc": [
    "/wp-content/themes/page-builder-framework/.+site-min\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -59165,7 +60526,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/pagelayer/'], #pagelayer-frontend-css, #pagelayer-global-styles, .pagelayer-body, .pagelayer-header, .pagelayer-footer, .pagelayer-content": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Pagely",
@@ -59322,6 +60686,9 @@
   },
   "scriptSrc": [
    "\\.getpaloma\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -59594,6 +60961,9 @@
   "website": "https://www.parcelforce.com",
   "html": [
    "\\bParcelforce\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -59819,6 +61189,9 @@
    "Handlebars",
    "Microsoft ASP.NET",
    "Bootstrap"
+  ],
+  "requires": [
+   "Microsoft ASP.NET"
   ]
  },
  {
@@ -60124,6 +61497,9 @@
   "website": "https://demo.paymattic.com",
   "scriptSrc": [
    "\\.paymattic\\.com"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -60238,6 +61614,9 @@
   },
   "implies": [
    "PayPal"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -60631,6 +62010,9 @@
   },
   "scriptSrc": [
    "/pegboard\\.min\\.js"
+  ],
+  "requires": [
+   "Microsoft ASP.NET"
   ]
  },
  {
@@ -60644,6 +62026,9 @@
   },
   "scriptSrc": [
    "(?:jquery\\.)?peity(?:-demo)?(?:\\.min)?\\.js(?:\\?v(?:er)?=((?:\\d+\\.)+\\d+))?\\;version:\\1"
+  ],
+  "requires": [
+   "jQuery"
   ]
  },
  {
@@ -60787,6 +62172,9 @@
   },
   "scriptSrc": [
    "swift\\.perfectapps\\.io/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -60815,6 +62203,9 @@
   "cpe": "cpe:2.3:a:perfmatters:perfmatters:*:*:*:*:*:wordpress:*:*",
   "scriptSrc": [
    "/wp-content/(?:plugins|cache|uploads)/perfmatters/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -60825,7 +62216,10 @@
    "generator": [
     "^Performance Lab ?([\\d.]+)?\\;version:\\1"
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Performant Translations",
@@ -60835,7 +62229,10 @@
    "generator": [
     "^performant-translations ([\\d.]+)?\\;version:\\1"
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "PerimeterX",
@@ -61084,7 +62481,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/themes/phlox/'], link[href*='/wp-content/themes/phlox-pro/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Phoenix",
@@ -61107,7 +62507,7 @@
   "website": "https://phoenixcart.org",
   "cookies": {
    "ceid": [
-    ""
+    "\\;confidence:30"
    ]
   }
  },
@@ -61188,7 +62588,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/photo-gallery/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "PhotoShelter",
@@ -61289,7 +62692,7 @@
    "\\.php(?:\\?|$)"
   ],
   "url": [
-   "\\.php(?:$|\\?)"
+   "\\.php(?:$|\\?)\\;confidence:50"
   ],
   "dom": {
    "form[action*='login_process.php'], form[action*='assets/mail.php']": {}
@@ -61717,6 +63120,9 @@
   "website": "https://www.pictureit.co",
   "scriptSrc": [
    "app\\.pictureit\\.co/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -61930,7 +63336,10 @@
    "script": {
     "text": "\"pinia\""
    }
-  }
+  },
+  "requires": [
+   "Vue.js"
+  ]
  },
  {
   "name": "PinnacleCart",
@@ -62158,6 +63567,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/pixelyoursite/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -62417,6 +63829,9 @@
   "website": "https://www.planzer.ch",
   "scriptSrc": [
    "/wp-content/plugins/planzer-jobs/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -62498,6 +63913,9 @@
   },
   "scriptSrc": [
    "//platincdn\\.com/"
+  ],
+  "requires": [
+   "Microsoft ASP.NET"
   ]
  },
  {
@@ -62516,7 +63934,10 @@
   "website": "https://www.platter.co",
   "dom": {
    "link[href*='/platter.css']": {}
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "Plausible",
@@ -63177,7 +64598,10 @@
   },
   "dom": {
    "#pll_switcher": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Polymer",
@@ -63342,7 +64766,10 @@
   ],
   "dom": {
    "link#popularfx-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Popup Maker",
@@ -63355,6 +64782,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/popup-maker/(?:.+site(?:\\.min)?\\.js\\?.+ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -63515,6 +64945,9 @@
   "website": "https://www.poste.it",
   "html": [
    "\\bPoste Italiane\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -63593,7 +65026,10 @@
   ],
   "dom": {
    "img[alt*='postnl' i], img[src*='postnl' i]": {}
-  }
+  },
+  "requiresCategory": [
+   "Ecommerce"
+  ]
  },
  {
   "name": "Postpay",
@@ -63710,7 +65146,11 @@
    "style#powerfolio-portfolio-block-style-inline-css": {
     "exists": ""
    }
-  }
+  },
+  "requires": [
+   "Elementor",
+   "WordPress"
+  ]
  },
  {
   "name": "Powerful Form",
@@ -63718,6 +65158,9 @@
   "website": "https://powerfulform.com",
   "scripts": [
    "app\\.powerfulform\\.com"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -63976,6 +65419,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/chaty/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -64026,7 +65472,10 @@
   ],
   "dom": {
    "img[src*='.prepr.io/']": {}
-  }
+  },
+  "requiresCategory": [
+   "JavaScript frameworks"
+  ]
  },
  {
   "name": "PreProduct",
@@ -64042,6 +65491,9 @@
   ],
   "scripts": [
    "/preproduct-embed\\.js"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -64053,7 +65505,10 @@
   ],
   "dom": {
    "style#customizr-skin-inline-css, link#customizr-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Press Hueman",
@@ -64069,7 +65524,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/themes/hueman/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Pressable",
@@ -64111,6 +65569,9 @@
   },
   "scriptSrc": [
    "/wp-content/themes/customify/.+theme\\.min\\.js(?:.+ver=([\\d\\.]+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -64184,7 +65645,10 @@
    "prestoPlayer.proVersion": [
     "^(.+)$\\;version:\\1"
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Pretty Damn Quick",
@@ -64208,7 +65672,10 @@
   "website": "https://prettylinks.com",
   "dom": {
    "link[href*='/wp-content/plugins/pretty-link/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "prettyPhoto",
@@ -64252,7 +65719,10 @@
    "wc_price_based_country_pro_frontend_params": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WooCommerce"
+  ]
  },
  {
   "name": "PriceSpider",
@@ -64328,7 +65798,10 @@
   "website": "https://primeng.org",
   "dom": {
    "\\.p-(?:toast|calendar|dialog-mask|menuitem-text|sidebar)(?:-content)?\\{": {}
-  }
+  },
+  "requires": [
+   "Angular"
+  ]
  },
  {
   "name": "PrimeReact",
@@ -64336,7 +65809,10 @@
   "website": "https://primereact.org",
   "dom": {
    "\\.p-(?:toast|calendar|dialog-mask|menuitem-text|sidebar)(?:-content)?\\{": {}
-  }
+  },
+  "requires": [
+   "React"
+  ]
  },
  {
   "name": "PrimeVue",
@@ -64345,7 +65821,10 @@
   "dom": {
    "style[data-primevue-style-id]": {},
    "\\.p-(?:toast|calendar|dialog-mask|menuitem-text|sidebar)(?:-content)?\\{": {}
-  }
+  },
+  "requires": [
+   "Vue.js"
+  ]
  },
  {
   "name": "Primis",
@@ -64543,6 +66022,9 @@
   ],
   "implies": [
    "Privy"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -64662,7 +66144,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/wp-user-avatar/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Profit Lifter",
@@ -64770,7 +66255,10 @@
   ],
   "dom": {
    "form[name='formLogin'][action='login.aspx' i][id='formLogin']\\;confidence:40": {}
-  }
+  },
+  "requires": [
+   "Microsoft ASP.NET"
+  ]
  },
  {
   "name": "ProgressBar.js",
@@ -64839,6 +66327,9 @@
   "website": "https://www.promio.com",
   "scripts": [
    "api\\.promio\\.com/"
+  ],
+  "requires": [
+   "jQuery"
   ]
  },
  {
@@ -65184,7 +66675,10 @@
    "pmg-spam-archive": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Proxmox VE"
+  ]
  },
  {
   "name": "Proxmox VE",
@@ -65350,7 +66844,10 @@
    "link[href*='/wp-content/plugins/advanced-gutenberg/assets/css/blocks.css?ver=([\\d\\.]+))?\\;version:\\1']": {
     "exists": ""
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Publishrr",
@@ -65579,6 +67076,9 @@
   "website": "https://puppetvendors.com",
   "scripts": [
    "app\\.puppetvendors\\.com"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -65790,6 +67290,9 @@
   ],
   "implies": [
    "PushOwl"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -65900,7 +67403,10 @@
    "p.theme-version": {
     "text": "([\\d]+(?:\\.[\\d]+)*)\\;version:\\1"
    }
-  }
+  },
+  "requires": [
+   "Sphinx"
+  ]
  },
  {
   "name": "Pygments",
@@ -66080,6 +67586,9 @@
   "website": "https://qikify.com",
   "scriptSrc": [
    "sdk\\.qikify\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -66417,6 +67926,9 @@
   },
   "implies": [
    "Vue.js"
+  ],
+  "requires": [
+   "Vue.js"
   ]
  },
  {
@@ -66495,7 +68007,10 @@
    "QuformRecaptchaLoaded": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Quick.Cart",
@@ -66730,6 +68245,9 @@
   "website": "https://quoli.io",
   "scriptSrc": [
    "\\.quoli\\.io/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -66921,7 +68439,10 @@
    "--radix-select-content-available-height": {},
    "--radix-select-content-transform-origin": {},
    "--radix-tooltip-content-transform-origin": {}
-  }
+  },
+  "requires": [
+   "React"
+  ]
  },
  {
   "name": "RafflePress",
@@ -66937,6 +68458,9 @@
   },
   "scripts": [
    "\\.rafflepress\\.com"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -67151,7 +68675,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/seo-by-rank-math/'], script.rank-math-schema-pro, script.rank-math-schema": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "RankScience",
@@ -67188,6 +68715,9 @@
   "website": "https://www.rapidsearch.app",
   "scripts": [
    "\\.rapidsearch\\.dev"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -67590,6 +69120,9 @@
   },
   "implies": [
    "React"
+  ],
+  "requires": [
+   "React"
   ]
  },
  {
@@ -67600,7 +69133,10 @@
    "style[type='text/css']": {
     "text": "react-flow"
    }
-  }
+  },
+  "requires": [
+   "React"
+  ]
  },
  {
   "name": "React Native for Web",
@@ -67771,6 +69307,9 @@
   },
   "scriptSrc": [
    "\\.realgeeks\\.com/"
+  ],
+  "requires": [
+   "React"
   ]
  },
  {
@@ -67787,7 +69326,10 @@
   "website": "https://wordpress.org/plugins/really-simple-captcha",
   "dom": {
    "img[src*='/wp-content/plugins/really-simple-captcha/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Really Simple SSL & Security",
@@ -67906,6 +69448,9 @@
   ],
   "implies": [
    "Contact Form 7"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -67942,7 +69487,10 @@
      "href": "/wp-content/plugins/recent-posts-widget-with-thumbnails/.+\\.css(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
     }
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Recharge",
@@ -68166,7 +69714,10 @@
      "href": "cdn\\.shopify\\.com/.+/recurate-site\\.css"
     }
    }
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "Recurly",
@@ -68207,6 +69758,9 @@
   "website": "https://redjepakketje.nl",
   "html": [
    "\\bRed je Pakketje\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -68410,7 +69964,10 @@
    "generator": [
     "Redux\\s([\\d\\.]+)\\;version:\\1"
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "RedwoodJS",
@@ -68584,7 +70141,10 @@
    "__reflex.react": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "React"
+  ]
  },
  {
   "name": "Reform",
@@ -68610,7 +70170,10 @@
   },
   "dom": {
    "a[href*='.refundid.com/']": {}
-  }
+  },
+  "requiresCategory": [
+   "Ecommerce"
+  ]
  },
  {
   "name": "Regiondo",
@@ -68647,6 +70210,9 @@
   },
   "scriptSrc": [
    "unpkg\\.com/@regulaforensics/"
+  ],
+  "requires": [
+   "Unpkg"
   ]
  },
  {
@@ -68686,6 +70252,9 @@
   "website": "https://www.relaiscolis.com",
   "html": [
    "\\bRelais Colis\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -68715,7 +70284,10 @@
   },
   "dom": {
    "script#rsi-cod-form-product-cache": {}
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "Releva",
@@ -68848,7 +70420,10 @@
    "renderbetter": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "Rent Syst",
@@ -68912,7 +70487,10 @@
   "dom": {
    "div[id='replo-fullpage-element']": {},
    "script[id='replo-deps-element-id']": {}
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "ReplyBox",
@@ -68975,6 +70553,9 @@
   "website": "https://reputon.com",
   "scriptSrc": [
    "\\.reputon\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -69079,6 +70660,9 @@
   "website": "https://www.reshop.com",
   "scriptSrc": [
    "(?:https?:)?//[^\"']*/widgets/reshop-tooltip(?:\\.min)?\\.js(?:\\?[^\"']*)?"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -69236,6 +70820,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/responsive-lightbox/.+front\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -69407,6 +70994,9 @@
   "website": "https://www.returnprime.com/",
   "scriptSrc": [
    "//return-prime-proxy-prod\\.s3[^ ]*\\.amazonaws\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -69594,6 +71184,9 @@
   },
   "scriptSrc": [
    "api\\.reviefy\\.com/"
+  ],
+  "requires": [
+   "MyCashFlow"
   ]
  },
  {
@@ -69832,6 +71425,9 @@
   },
   "scriptSrc": [
    "api\\.revy\\.io/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -69915,7 +71511,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/widget-google-reviews/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Richpanel",
@@ -70129,6 +71728,9 @@
   },
   "scriptSrc": [
    "strn\\.rise-ai\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -70261,7 +71863,11 @@
   ],
   "dom": {
    "div#rnd-mobile-menu, a[href*='www.rnd.com.tr/?utm_source='][target='_blank'], a[href*='www.rndecommerce.com/'] > span > svg[title*='RND']": {}
-  }
+  },
+  "requires": [
+   "Microsoft ASP.NET",
+   "New Relic"
+  ]
  },
  {
   "name": "Roadiz CMS",
@@ -70709,6 +72315,9 @@
   "website": "https://www.royalmail.com",
   "html": [
    "\\bRoyal Mail\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -71198,7 +72807,10 @@
    "saffire.angular": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "AngularJS"
+  ]
  },
  {
   "name": "Sails.js",
@@ -72011,7 +73623,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/sassy-social-share/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Satori",
@@ -72035,6 +73650,9 @@
   "website": "https://satoristudio.net/bento-free-wordpress-theme",
   "scriptSrc": [
    "/wp-content/themes/bento/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -72248,6 +73866,9 @@
   },
   "scriptSrc": [
    "//schemaplusfiles\\.s3\\.amazonaws\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -72280,7 +73901,10 @@
   ],
   "dom": {
    "link#WRT-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Scoop.it",
@@ -72581,7 +74205,10 @@
   ],
   "dom": {
    "div[id*='shopify-section-searchtap']": {}
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "Seated",
@@ -72705,6 +74332,9 @@
   ],
   "scripts": [
    "\\.seedgrow\\.net"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -72716,7 +74346,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/coming-soon/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Seel",
@@ -72818,6 +74451,9 @@
   },
   "scriptSrc": [
    "\\.segmentify\\.com/"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -72976,6 +74612,9 @@
   "website": "https://www.sellerscommerce.com",
   "scriptSrc": [
    "\\.sellerscommerce\\.com/"
+  ],
+  "requires": [
+   "Microsoft ASP.NET"
   ]
  },
  {
@@ -73142,6 +74781,9 @@
   },
   "scriptSrc": [
    "/wp-content/themes/semplice(?:\\d+)?(?:-child)?(?:-theme)?/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -73171,6 +74813,9 @@
   "website": "https://send2.co/",
   "scriptSrc": [
    "/wp-content/plugins/send-app/assets/js/.*\\.js"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -73391,6 +75036,9 @@
   "website": "https://venntov.com/pages/seo-manager",
   "scripts": [
    "\\.seomanager\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -73415,7 +75063,10 @@
    "SEOAnt_toConsumableArray": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "SEOmatic",
@@ -73460,6 +75111,9 @@
   "website": "https://www.seopress.org",
   "scriptSrc": [
    "/wp-content/themes/seopress/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -73646,6 +75300,10 @@
   "website": "https://sessionly.hubspotpagebuilder.com",
   "scriptSrc": [
    "//sessionly\\.io/"
+  ],
+  "requires": [
+   "Shopware",
+   "Shopify"
   ]
  },
  {
@@ -73724,6 +75382,9 @@
   "website": "https://www.seur.com",
   "html": [
    "\\bSEUR\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -73784,7 +75445,10 @@
   },
   "dom": {
    "link[href*='shadcn-svelte']": {}
-  }
+  },
+  "requires": [
+   "Svelte"
+  ]
  },
  {
   "name": "shadcn/ui",
@@ -74257,6 +75921,9 @@
   ],
   "implies": [
    "Shogun Page Builder"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -74309,7 +75976,10 @@
    "ul[data-shopify-buttoncontainer] li": {
     "text": "ShopPay"
    }
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "Shop Pay Installments",
@@ -74321,6 +75991,9 @@
   "implies": [
    "Affirm",
    "Shop Pay"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -74339,7 +76012,10 @@
   },
   "dom": {
    "[class*='_shopaholic']": {}
-  }
+  },
+  "requires": [
+   "October CMS"
+  ]
  },
  {
   "name": "Shopapps",
@@ -74555,6 +76231,9 @@
   },
   "scriptSrc": [
    "app\\.tryshophub\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -74748,6 +76427,9 @@
   },
   "scriptSrc": [
    "\\.shopixai\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -74756,6 +76438,9 @@
   "website": "https://www.shopkeepertools.com",
   "scriptSrc": [
    "magic-button-app\\.shopkeepertools\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -74790,6 +76475,9 @@
   },
   "scripts": [
    "\\.shoplift\\.ai"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -74899,7 +76587,10 @@
    "updateShopPHPUrunFiyat": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "PHP"
+  ]
  },
  {
   "name": "Shoppiko",
@@ -74928,7 +76619,14 @@
    "sfdrUniqid": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Magento",
+   "Shopify",
+   "OpenCart",
+   "PrestaShop",
+   "WooCommerce"
+  ]
  },
  {
   "name": "ShoppingGives",
@@ -75039,6 +76737,9 @@
   "website": "https://shopstorm.com",
   "scripts": [
    "\\.shopstorm\\.com"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -75107,7 +76808,10 @@
    "isshoptimized": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "Shoptrader",
@@ -75260,7 +76964,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/shortcodes-ultimate/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Shortly",
@@ -75281,7 +76988,10 @@
    "spPicTest": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "ShoutCMS",
@@ -75304,6 +77014,9 @@
   "website": "https://www.shoutout.global",
   "scriptSrc": [
    "\\.shoutout\\.global/"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -75320,6 +77033,9 @@
   "website": "https://www.nice-team.net",
   "scriptSrc": [
    "\\.nice-team\\.net/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -75408,6 +77124,9 @@
   "website": "https://www.sidepanda.com/depo",
   "scripts": [
    "depo\\.sidepanda\\.com"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -75989,6 +77708,9 @@
   },
   "scriptSrc": [
    "/wp-content/themes/sinatra/.+sinatra\\.min\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -76053,6 +77775,9 @@
   "website": "https://www.sirge.com",
   "scriptSrc": [
    "cdn\\.app\\.sirge\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -76100,7 +77825,10 @@
    "generator": [
     "^Site Kit by Google ?([\\d.]+)?\\;version:\\1"
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Site Meter",
@@ -76217,6 +77945,9 @@
   "implies": [
    "GraphQL",
    "Sitecore Experience Platform"
+  ],
+  "requiresCategory": [
+   "JavaScript frameworks"
   ]
  },
  {
@@ -76290,7 +78021,10 @@
   "website": "https://www.jp-secure.com/siteguard_wp_plugin_en",
   "dom": {
    "img[src*='/wp-content/plugins/siteguard/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Sitehood",
@@ -76357,7 +78091,10 @@
   ],
   "dom": {
    "link[href*='.sitemn.gr/']": {}
-  }
+  },
+  "requires": [
+   "PHP"
+  ]
  },
  {
   "name": "SiteMinder",
@@ -76376,7 +78113,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/siteorigin-panels/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "SiteOrigin Vantage",
@@ -76387,7 +78127,10 @@
   ],
   "dom": {
    "style#vantage-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "SiteOrigin Widgets Bundle",
@@ -76398,7 +78141,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/so-widgets-bundle/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "SitePad",
@@ -76450,7 +78196,10 @@
   ],
   "dom": {
    "script#sitepoint-base-vendors-js": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Siter",
@@ -76814,6 +78563,9 @@
   "website": "https://skitter-slider.net",
   "scriptSrc": [
    "/jquery\\.skitter\\.min\\.js"
+  ],
+  "requires": [
+   "jQuery"
   ]
  },
  {
@@ -76863,6 +78615,9 @@
   },
   "scripts": [
    "sky_pilot_"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -76998,6 +78753,9 @@
   "website": "https://sleekplan.com",
   "scriptSrc": [
    "\\.sleekplan\\.com/"
+  ],
+  "requires": [
+   "Vue.js"
   ]
  },
  {
@@ -77134,7 +78892,10 @@
    "#slim-seo-schema": {
     "exists": ""
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Slimbox",
@@ -77220,6 +78981,9 @@
   },
   "scriptSrc": [
    "\\.smallbox\\.ca/"
+  ],
+  "requires": [
+   "PHP"
   ]
  },
  {
@@ -77270,6 +79034,9 @@
   "website": "https://smartslider3.com",
   "scriptSrc": [
    "/wp-content/plugins/smart-slider-3(?:-pro)?/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -77505,7 +79272,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/instagram-feed/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Smile",
@@ -77529,6 +79299,9 @@
   ],
   "implies": [
    "Smile"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -77571,6 +79344,9 @@
   },
   "scriptSrc": [
    "cdn\\.smootify\\.io"
+  ],
+  "requires": [
+   "Webflow"
   ]
  },
  {
@@ -77845,6 +79621,9 @@
   },
   "scriptSrc": [
    "\\.sniperfast\\.com"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -77868,7 +79647,10 @@
    "sno_infographics_ajax_object": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Snoobi",
@@ -78059,6 +79841,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/ag-core/.+\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -78898,6 +80683,9 @@
   },
   "implies": [
    "Gutenberg"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -78916,7 +80704,10 @@
    "generator": [
     "^speculation-rules ([\\d.]+)?\\;version:\\1"
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Speed Kit",
@@ -78953,6 +80744,9 @@
   "website": "https://speed-ecom.eu",
   "scriptSrc": [
    "\\.speed-ecom\\.eu/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -78999,7 +80793,10 @@
   },
   "dom": {
    "link[href*='/wp-content/cache/speedycache/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Spektrix",
@@ -79015,6 +80812,9 @@
   "website": "https://spexoaddons.com/",
   "scriptSrc": [
    "/wp-content/plugins/sastra-essential-addons-for-elementor/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -79056,6 +80856,9 @@
   "website": "https://spicethemes.com/spicepress-wordpress-theme",
   "scriptSrc": [
    "/wp-content/themes/spicepress(?:-pro)?/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -79095,6 +80898,9 @@
   "website": "https://spinasale.com",
   "scriptSrc": [
    "client\\.spinasale\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -79242,6 +81048,9 @@
   "website": "https://splithero.com",
   "scriptSrc": [
    "app\\.splithero\\.com/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -79531,7 +81340,10 @@
   "website": "https://putyourlightson.com/plugins/sprig",
   "dom": {
    "form[sprig], button[sprig], input[sprig], div.sprig-component": {}
-  }
+  },
+  "requires": [
+   "Craft CMS"
+  ]
  },
  {
   "name": "Sprii",
@@ -79592,6 +81404,9 @@
   "website": "https://springbig.com",
   "scriptSrc": [
    "/plugins/springbig-integration-plugin-main/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -79886,6 +81701,9 @@
   },
   "implies": [
    "Weebly"
+  ],
+  "requires": [
+   "Weebly"
   ]
  },
  {
@@ -80016,6 +81834,9 @@
   "website": "https://sqwiz.com",
   "scriptSrc": [
    "//sqwiz\\.com/Scripts/"
+  ],
+  "requires": [
+   "Microsoft ASP.NET"
   ]
  },
  {
@@ -80052,6 +81873,9 @@
   },
   "implies": [
    "Gutenberg"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -80269,7 +82093,10 @@
    "StarlightThemeProvider.updatePickers": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Astro"
+  ]
  },
  {
   "name": "StarTest",
@@ -80364,7 +82191,11 @@
    "noscript": {
     "text": "We're\\ssorry\\sbut\\sStatping"
    }
-  }
+  },
+  "requires": [
+   "Vue.js",
+   "core-js"
+  ]
  },
  {
   "name": "Statsig",
@@ -80773,6 +82604,9 @@
   },
   "scripts": [
    "\\.storeify\\.app"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -81629,7 +83463,10 @@
   },
   "dom": {
    "img[srcset*='assets.suncel.io']": {}
-  }
+  },
+  "requires": [
+   "Next.js"
+  ]
  },
  {
   "name": "SunOS",
@@ -81717,6 +83554,9 @@
   "website": "https://super-socializer-wordpress.heateor.com",
   "scriptSrc": [
    "plugins/super-socializer/.+?ver=([\\d.]+)\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -81783,6 +83623,9 @@
   ],
   "implies": [
    "WhatsApp Business Chat"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -81862,6 +83705,9 @@
   ],
   "scripts": [
    "/plugins/data-tables-generator-by-supsystic/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -82027,7 +83873,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/svg-support/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Swagger UI",
@@ -82062,6 +83911,9 @@
   },
   "scriptSrc": [
    "api\\.swagifyapp\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -82160,7 +84012,10 @@
    "sweetHelpBtnLoad": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "Swell",
@@ -82680,6 +84535,9 @@
   },
   "scriptSrc": [
    "cdn\\.tabarn\\.app/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -82772,7 +84630,10 @@
   "website": "https://tablepress.org",
   "dom": {
    "link[href*='/wp-content/plugins/tablepress/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Tablesorter",
@@ -83323,7 +85184,10 @@
   ],
   "dom": {
    "a[href*='tapcart.app'][target='_blank']": {}
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "Tapfiliate",
@@ -83344,6 +85208,9 @@
   "website": "https://www.tapmango.com",
   "scriptSrc": [
    "shopify\\.tapmango\\.com"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -83729,6 +85596,9 @@
    "MySQL",
    "Sass",
    "PHP"
+  ],
+  "requires": [
+   "Cart Functionality"
   ]
  },
  {
@@ -83959,6 +85829,9 @@
   "website": "https://www.tern.eco",
   "scriptSrc": [
    "live\\.tern-returns\\.eastsideapps\\.io/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -84146,7 +86019,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/the-events-calendar/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "The Hotels Network",
@@ -84196,6 +86072,9 @@
   "website": "https://theseoframework.com",
   "html": [
    "<!--[^>]+The SEO Framework by Sybre Waaijer"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -84212,6 +86091,9 @@
   },
   "scriptSrc": [
    "/wp-content/themes/make(?:-child)?/.+frontend\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -84335,6 +86217,9 @@
   },
   "scriptSrc": [
    "/wp-content/themes/edge(?:-plus)?/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -84343,6 +86228,9 @@
   "website": "https://themefreesia.com/themes/Photograph",
   "scriptSrc": [
    "/wp-content/themes/photograph(?:-plus)?/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -84356,6 +86244,9 @@
   },
   "scriptSrc": [
    "/wp-content/themes/shoppingcart(?:-plus)?/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -84367,7 +86258,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/themes/attitude-pro/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Theme Horse NewsCard",
@@ -84378,7 +86272,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/themes/newscard-pro/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Theme Vision Agama",
@@ -84394,6 +86291,9 @@
   },
   "scriptSrc": [
    "/wp-content/themes/agama(?:-pro)?/.+functions\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -84407,6 +86307,9 @@
   },
   "scriptSrc": [
    "/wp-content/themes/evolve(?:-plus)?/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -84418,6 +86321,9 @@
   },
   "excludes": [
    "Themeansar Newsup"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -84426,6 +86332,9 @@
   "website": "https://themeansar.com/free-themes/newsup",
   "scriptSrc": [
    "/wp-content/themes/newsup(?:-pro)?/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -84436,7 +86345,10 @@
    "cream_magazine_script_obj": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Themebeez Orchid Store",
@@ -84449,6 +86361,9 @@
   },
   "scriptSrc": [
    "/wp-content/themes/orchid-store(?:-child)?/.+bundle\\.min\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -84457,6 +86372,9 @@
   "website": "https://themegraphy.com/wordpress-themes/graphy",
   "scriptSrc": [
    "/wp-content/themes/graphy(?:-pro)?/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -84468,7 +86386,10 @@
   ],
   "dom": {
    "link#accelerate_style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "ThemeGrill Cenote",
@@ -84479,7 +86400,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/themes/cenote/'], link[href*='/wp-content/themes/cenote-pro/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "ThemeGrill ColorMag",
@@ -84490,7 +86414,10 @@
   ],
   "dom": {
    "link#colormag_style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "ThemeGrill eStore",
@@ -84506,6 +86433,9 @@
   ],
   "implies": [
    "Cart Functionality"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -84517,7 +86447,10 @@
   ],
   "dom": {
    "link[href='/wp-content/themes/flash']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "ThemeGrill Radiate",
@@ -84533,7 +86466,10 @@
   ],
   "dom": {
    "link#radiate-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "ThemeGrill Spacious",
@@ -84549,7 +86485,10 @@
   ],
   "dom": {
    "link#spacious_style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "ThemeIsle Menu Icons",
@@ -84557,7 +86496,10 @@
   "website": "https://wordpress.org/plugins/menu-icons",
   "dom": {
    "link[href*='/wp-content/plugins/menu-icons/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Themes4Wp Bulk",
@@ -84565,6 +86507,9 @@
   "website": "https://themes4wp.com/theme/bulk",
   "scriptSrc": [
    "/wp-content/themes/bulk(?:-pro)?/.+customscript\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -84581,6 +86526,9 @@
   },
   "scriptSrc": [
    "/wp-content/themes/donovan/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -84594,6 +86542,9 @@
   },
   "scriptSrc": [
    "/wp-content/themes/poseidon/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -84607,6 +86558,9 @@
   },
   "scriptSrc": [
    "/wp-content/themes/wellington/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -84615,6 +86569,9 @@
   "website": "https://themezhut.com/themes/bam",
   "scriptSrc": [
    "/wp-content/themes/bam(?:-pro)?/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -84623,6 +86580,9 @@
   "website": "https://themezhut.com/themes/hitmag",
   "scriptSrc": [
    "/wp-content/themes/hitmag(?:-pro)?/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -84631,6 +86591,9 @@
   "website": "https://themify.me/builder",
   "html": [
    "<div[^>]+class=[\"']themify_builder_*"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -84639,6 +86602,9 @@
   "website": "https://themonic.com/iconic-one",
   "scriptSrc": [
    "/wp-content/themes/iconic-one(?:-[\\w]+)?/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -84719,7 +86685,10 @@
   "website": "https://wordpress.org/plugins/learnpress-course-review",
   "dom": {
    "link[href*='/wp-content/plugins/learnpress-course-review/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "ThimPress Course Wishlist",
@@ -84727,7 +86696,11 @@
   "website": "https://wordpress.org/plugins/learnpress-wishlist",
   "dom": {
    "link[href*='/wp-content/plugins/learnpress-wishlist/']": {}
-  }
+  },
+  "requires": [
+   "WordPress",
+   "ThimPress LearnPress"
+  ]
  },
  {
   "name": "ThimPress Gradebook",
@@ -84735,7 +86708,11 @@
   "website": "https://thimpress.com/product/gradebook-add-on-for-learnpress",
   "dom": {
    "link[href*='/wp-content/plugins/learnpress-gradebook/']": {}
-  }
+  },
+  "requires": [
+   "WordPress",
+   "ThimPress LearnPress"
+  ]
  },
  {
   "name": "ThimPress LearnPress",
@@ -84746,7 +86723,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/learnpress/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "ThingPark Enterprise",
@@ -84773,7 +86753,10 @@
   ],
   "dom": {
    "link#consulting-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Think Up Themes Minamaze",
@@ -84784,7 +86767,10 @@
   ],
   "dom": {
    "link#minamaze-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Thinkific",
@@ -84976,7 +86962,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/thrive-apprentice/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Thrive Architect",
@@ -84987,7 +86976,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/thrive-visual-editor/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Thrive Comments",
@@ -84998,7 +86990,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/thrive-comments/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Thrive Leads",
@@ -85009,7 +87004,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/thrive-leads/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Thrive Quiz Builder",
@@ -85020,7 +87018,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/thrive-quiz-builder/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Thrive Ultimatum",
@@ -85031,7 +87032,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/thrive-ultimatum/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "ThriveCart",
@@ -85095,6 +87099,9 @@
   "website": "https://tickera.com",
   "scriptSrc": [
    "/wp-content/plugins/tickera/js/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -85237,6 +87244,9 @@
   "website": "https://tikshop.co",
   "scriptSrc": [
    "app\\.tikshop\\.co/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -85516,6 +87526,9 @@
   "website": "https://www.tip-sa.com",
   "html": [
    "\\bTipsa\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -85845,7 +87858,10 @@
    "TontineApp.tontineAnalytics": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "Toolbx",
@@ -86096,6 +88112,9 @@
   },
   "scriptSrc": [
    "track123\\.com\\/common\\/checkout-script-loader\\.js"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -86376,6 +88395,9 @@
   "website": "https://gtranslate.io",
   "scriptSrc": [
    "/wp-content/plugins/google-language-translator/.+scripts\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -86392,7 +88414,10 @@
    "trp_ls_shortcodes": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Transloadit",
@@ -86409,6 +88434,9 @@
   "website": "https://transmartshipping.com",
   "html": [
    "\\bTransmart\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -86574,6 +88602,9 @@
   "website": "https://tridentab.com",
   "scripts": [
    "Trident/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -86834,6 +88865,9 @@
   "website": "https://trunkrs.nl",
   "html": [
    "\\bTrunkrs\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -87192,7 +89226,10 @@
    "TURBOPACK.push": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Next.js"
+  ]
  },
  {
   "name": "TurfJS",
@@ -87281,7 +89318,10 @@
   "website": "https://wordpress.org/themes/twentyeleven",
   "dom": {
    "link[href*='/wp-content/themes/twentyeleven/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Twenty Fifteen",
@@ -87292,7 +89332,10 @@
   ],
   "dom": {
    "link#twentyfifteen-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Twenty Fourteen",
@@ -87303,7 +89346,10 @@
   ],
   "dom": {
    "link#twentyfourteen-style-css, style#twentyfourteen-lato-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Twenty Nineteen",
@@ -87314,7 +89360,10 @@
   ],
   "dom": {
    "link#twentynineteen-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Twenty Seventeen",
@@ -87330,7 +89379,10 @@
   ],
   "dom": {
    "link#twentyseventeen-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Twenty Sixteen",
@@ -87341,7 +89393,10 @@
   ],
   "dom": {
    "link#twentysixteen-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Twenty Ten",
@@ -87352,7 +89407,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/themes/twentyten/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Twenty Thirteen",
@@ -87363,7 +89421,10 @@
   ],
   "dom": {
    "link#twentythirteen-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Twenty Twelve",
@@ -87374,7 +89435,10 @@
   ],
   "dom": {
    "link#twentytwelve-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Twenty Twenty",
@@ -87390,7 +89454,10 @@
   ],
   "dom": {
    "link#twentytwenty-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Twenty Twenty-Five",
@@ -87403,7 +89470,10 @@
    "link[href*='/wp-content/themes/twentytwentyfive/']": {
     "exists": ""
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Twenty Twenty-Four",
@@ -87416,7 +89486,10 @@
    "link[href*='/wp-content/themes/twentytwentyfour/']": {
     "exists": ""
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Twenty Twenty-One",
@@ -87435,7 +89508,10 @@
   ],
   "dom": {
    "link#twenty-twenty-one-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Twenty Twenty-Three",
@@ -87448,7 +89524,10 @@
    "style#wp-webfonts-inline-css": {
     "text": "/wp-content/themes/twentytwentythree/assets/fonts/"
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Twenty Twenty-Two",
@@ -87462,7 +89541,10 @@
    "style#wp-webfonts-inline-css": {
     "text": "/wp-content/themes/twentytwentytwo/assets/fonts/"
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Twiago",
@@ -88043,6 +90125,9 @@
   "website": "https://www.uiavenue.ca",
   "scripts": [
    "analytics\\.uiavenue\\.ca"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -88062,6 +90147,9 @@
   "website": "https://www.ukmail.com",
   "html": [
    "\\bUK Mail\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -88129,6 +90217,9 @@
   },
   "implies": [
    "Elementor"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -88152,7 +90243,10 @@
    "ct_ultimate_gdpr_cookie": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Ultimate Tables",
@@ -88160,6 +90254,9 @@
   "website": "https://wphive.com/plugins/ultimate-tables",
   "scriptSrc": [
    "/wp-content/plugins/ultimate-tables/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -88168,6 +90265,9 @@
   "website": "https://www.ultimatelysocial.com",
   "scriptSrc": [
    "/wp-content/plugins/ultimate-social-media-icons/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -88419,7 +90519,10 @@
   },
   "dom": {
    "link[imagesrcset*='unbox-customer-images-production'], img[srcset*='unbox-customer-images-production']": {}
-  }
+  },
+  "requires": [
+   "Next.js"
+  ]
  },
  {
   "name": "Unbxd",
@@ -88472,6 +90575,9 @@
   "implies": [
    "Bootstrap",
    "Underscore.js"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -88501,7 +90607,10 @@
    "unifiConstant.VERSION": [
     "^([\\d+\\.]+)$\\;version:\\1"
    ]
-  }
+  },
+  "requires": [
+   "AngularJS"
+  ]
  },
  {
   "name": "Uniform Digital Experience",
@@ -88691,7 +90800,10 @@
    "author": [
     "Untree\\.co"
    ]
-  }
+  },
+  "requires": [
+   "Bootstrap"
+  ]
  },
  {
   "name": "Upfluence",
@@ -88846,6 +90958,9 @@
   "website": "https://www.ups.com",
   "html": [
    "\\b(?<!-)UPS\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -88947,6 +91062,9 @@
   "website": "https://zephyr.us-themes.com",
   "scriptSrc": [
    "/wp-content/themes/Zephyr/.+us\\.theme\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -88973,7 +91091,10 @@
    "upsy_sdk.getCookie": [
     ""
    ]
-  }
+  },
+  "requiresCategory": [
+   "Ecommerce"
+  ]
  },
  {
   "name": "Uptain",
@@ -88986,6 +91107,9 @@
   },
   "scriptSrc": [
    "\\.uptain\\.de/"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -89377,6 +91501,9 @@
   "website": "https://www.usps.com",
   "html": [
    "\\bUnited States Postal Service\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -89640,6 +91767,9 @@
   },
   "implies": [
    "TypeScript"
+  ],
+  "requires": [
+   "Vue.js"
   ]
  },
  {
@@ -90136,6 +92266,9 @@
   "scriptSrc": [
    "/va/script\\.js",
    "/_vercel/insights/script\\.js"
+  ],
+  "requires": [
+   "Vercel"
   ]
  },
  {
@@ -90410,6 +92543,9 @@
   },
   "scriptSrc": [
    "/wp-content/themes/Vertex/js/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -90639,7 +92775,10 @@
    "__vg.video_greet_button_src": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "Videobot",
@@ -90985,6 +93124,9 @@
   "website": "https://try.virtooal.com",
   "scriptSrc": [
    "\\.virtooal\\.com/"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -91042,6 +93184,9 @@
    "div#vmMainPage": {}
   },
   "implies": [
+   "Joomla"
+  ],
+  "requires": [
    "Joomla"
   ]
  },
@@ -91131,7 +93276,10 @@
    "ViselyPage": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "Visenze",
@@ -91238,7 +93386,10 @@
    "VPData.version": [
     "([\\d\\.]+)\\;version:\\1"
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Visual Quiz Builder",
@@ -91246,6 +93397,9 @@
   "website": "https://apps.shopify.com/product-recommendation-quiz",
   "scriptSrc": [
    "//whai-cdn\\.nyc\\d\\.cdn\\.digitaloceanspaces\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -91276,7 +93430,10 @@
      "class": "(?:v(?:is)?x)-group"
     }
    }
-  }
+  },
+  "requires": [
+   "React"
+  ]
  },
  {
   "name": "Vitals",
@@ -91298,6 +93455,9 @@
   },
   "scriptSrc": [
    "//appsolve\\.io/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -91998,7 +94158,10 @@
   "website": "https://vxetable.cn",
   "dom": {
    "div[class*='vxe-table']": {}
-  }
+  },
+  "requires": [
+   "Vue.js"
+  ]
  },
  {
   "name": "Vyper",
@@ -92035,6 +94198,9 @@
   },
   "html": [
    "<!--[^>]+W3 Total Cache"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -92195,7 +94361,10 @@
   },
   "dom": {
    "link[href*='.fbitsstatic.net/']": {}
-  }
+  },
+  "requires": [
+   "Cart Functionality"
+  ]
  },
  {
   "name": "WalkMe",
@@ -92416,6 +94585,9 @@
   },
   "scriptSrc": [
    "\\.wavecommerce\\.hk/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -92426,7 +94598,10 @@
    "Waveform": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Waveme",
@@ -92438,6 +94613,9 @@
   "implies": [
    "Gutenberg",
    "Waveform"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -92510,7 +94688,10 @@
   ],
   "dom": {
    "link#weaverx-style-sheet-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Weaverse",
@@ -92587,6 +94768,9 @@
   },
   "implies": [
    "Web Stories"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -92610,7 +94794,10 @@
    "generator": [
     "^web-worker-offloading ([\\d.]+)?\\;version:\\1"
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "web-vitals",
@@ -92886,7 +95073,10 @@
    "webeyezstartAll": [
     ""
    ]
-  }
+  },
+  "requiresCategory": [
+   "Ecommerce"
+  ]
  },
  {
   "name": "WebFactory Maintenance",
@@ -92899,7 +95089,10 @@
   },
   "dom": {
    "link[href*='/wp-content/plugins/maintenance/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "WebFactory Under Construction",
@@ -92907,7 +95100,10 @@
   "website": "https://wordpress.org/plugins/under-construction-page",
   "dom": {
    "link[href*='/wp-content/plugins/under-construction-page/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Webflow",
@@ -92938,7 +95134,10 @@
    "__WEBFLOW_CURRENCY_SETTINGS": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Webflow"
+  ]
  },
  {
   "name": "Webgains",
@@ -93116,6 +95315,9 @@
   "website": "https://www.weblocks.com",
   "scriptSrc": [
    "//weblocks\\.io/"
+  ],
+  "requires": [
+   "Webflow"
   ]
  },
  {
@@ -93289,6 +95491,9 @@
   "website": "https://webriti.com/busiprof-premium-wordpress-theme-1",
   "scriptSrc": [
    "/wp-content/themes/busiprof(?:-pro)?/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -93449,6 +95654,9 @@
   "implies": [
    "Stripe",
    "WooCommerce"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -93656,7 +95864,10 @@
   ],
   "dom": {
    "link[href*='usces_default.css'],link[href*='usces_default.min.css']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "WeltPixel Pearl Theme",
@@ -93685,6 +95896,9 @@
   },
   "scriptSrc": [
    "/wp-content/themes/education-hub(?:-pro)?/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -93695,7 +95909,10 @@
    "signifyOptions": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Wepay",
@@ -93871,6 +96088,9 @@
   "website": "https://www.whistl.co.uk",
   "html": [
    "\\bWhistl\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -94338,7 +96558,10 @@
    "Appmate.wk": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Shopify"
+  ]
  },
  {
   "name": "Wishloop",
@@ -94478,7 +96701,10 @@
    "wized_config_dev": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Webflow"
+  ]
  },
  {
   "name": "WiziShop",
@@ -94659,7 +96885,10 @@
   ],
   "dom": {
    ".woocommerce, .woocommerce-no-js, link[rel*='woocommerce']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "WooCommerce Blocks",
@@ -94671,7 +96900,11 @@
      "href": "/wp-content/plugins/woo-gutenberg-products-block/.+\\.css(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
     }
    }
-  }
+  },
+  "requires": [
+   "WordPress",
+   "WooCommerce"
+  ]
  },
  {
   "name": "WooCommerce Multilingual",
@@ -94679,6 +96912,10 @@
   "website": "https://wordpress.org/plugins/woocommerce-multilingual",
   "scriptSrc": [
    "/wp-content/plugins/woocommerce-multilingual/.+\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress",
+   "WooCommerce"
   ]
  },
  {
@@ -94693,6 +96930,9 @@
   },
   "implies": [
    "PayPal"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -94707,6 +96947,9 @@
   },
   "implies": [
    "PayPal"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -94721,6 +96964,9 @@
   },
   "implies": [
    "Stripe"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -94737,6 +96983,9 @@
   },
   "implies": [
    "WooCommerce"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -94750,7 +96999,10 @@
    "woodmart_settings": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "WookMark",
@@ -94763,6 +97015,9 @@
   },
   "scriptSrc": [
    "wookmark\\.min\\.js(?:\\?ver=([\\d\\.]+))?\\;version:\\1"
+  ],
+  "requires": [
+   "jQuery"
   ]
  },
  {
@@ -94798,6 +97053,9 @@
   ],
   "implies": [
    "WooCommerce"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -94855,6 +97113,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/wordfence/.+admin\\.ajaxWatcher\\.\\d+\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -94863,6 +97124,9 @@
   "website": "https://www.wordfence.com",
   "scriptSrc": [
    "/wp-content/plugins/wordfence/.+login\\.\\d+\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -94945,7 +97209,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/themes/default/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "WordPress Multisite",
@@ -94966,7 +97233,10 @@
    "style": {
     "text": "wp-content/uploads/sites/\\d+"
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "WordPress Popular Posts",
@@ -94979,6 +97249,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/wordpress-popular-posts/.+wpp\\.min\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -94987,6 +97260,9 @@
   "website": "https://wedevs.com/wp-project-manager-pro",
   "scriptSrc": [
    "/wp-content/plugins/wedevs-project-manager/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -95008,6 +97284,9 @@
   },
   "html": [
    "<!--[^>]+WP-Super-Cache"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -95208,6 +97487,9 @@
   "website": "https://wpautomatic.com",
   "scriptSrc": [
    "/wp-content/plugins/wp-automatic/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -95221,6 +97503,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/wp-courseware/.+frontend\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -95259,7 +97544,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/cache/wpfc-minified/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "WP Featherlight",
@@ -95267,6 +97555,9 @@
   "website": "https://wordpress.org/plugins/wp-featherlight",
   "scriptSrc": [
    "/wpFeatherlight\\.pkgd\\.min\\.js"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -95278,6 +97569,9 @@
   },
   "implies": [
    "Google Maps"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -95294,6 +97588,9 @@
   ],
   "implies": [
    "Google Maps"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -95307,6 +97604,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/wp-grid-builder/frontend/assets/js/layout\\.js\\?ver=([\\d.]+)\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -95320,6 +97620,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/wp-job-openings/.+\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -95328,7 +97631,10 @@
   "website": "https://wordpress.org/plugins/wp-visitors-widget/",
   "dom": {
    "link[href*='/wp-content/plugins/wp-visitors-widget/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "WP Maintenance Mode",
@@ -95341,6 +97647,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/wp-maintenance-mode/.+wpmm\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -95349,6 +97658,9 @@
   "website": "https://wpportfolio.net",
   "scriptSrc": [
    "/wp-content/plugins/astra-portfolio/.+\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -95357,6 +97669,9 @@
   "website": "https://wp-puzzle.com/basic",
   "scriptSrc": [
    "/wp-content/themes/basic/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -95401,7 +97716,10 @@
   ],
   "dom": {
    "style#wpr-usedcss": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "WP SEO AI",
@@ -95409,7 +97727,10 @@
   "website": "https://wpseoai.com",
   "dom": {
    "script[id*='seoaic_front_main_js-js']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "WP-Optimize",
@@ -95417,6 +97738,9 @@
   "website": "https://getwpo.com",
   "html": [
    "<!--[^>]+Cached by WP-Optimize"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -95425,7 +97749,10 @@
   "website": "https://github.com/lesterchan/wp-pagenavi",
   "dom": {
    "link[href*='/wp-content/plugins/wp-pagenavi/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "WP-Royal Ashe",
@@ -95444,7 +97771,10 @@
   ],
   "dom": {
    "link#ashe-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "WP-Royal Bard",
@@ -95455,7 +97785,10 @@
   ],
   "dom": {
    "link#bard-style-css, style#bard_predefined_custom_css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "WP-Statistics",
@@ -95474,7 +97807,10 @@
   ],
   "dom": {
    "link[href*='/wp-content/plugins/wp-statistics/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "wp.cloud",
@@ -95500,6 +97836,9 @@
   },
   "implies": [
    "PHP"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -95527,6 +97866,9 @@
   ],
   "implies": [
    "PHP"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -95537,7 +97879,10 @@
    "x-powered-by": [
     "^Optimized by WPCacheOn"
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "WPForms",
@@ -95554,6 +97899,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/wpforms(?:-lite)?/.+(?:frontend\\.min|wpforms)\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -95573,6 +97921,9 @@
   },
   "scriptSrc": [
    "/wp-content/plugins/sitepress-multilingual-cms/"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -95581,6 +97932,9 @@
   "website": "https://wpmudev.com/project/wp-smush-pro",
   "scriptSrc": [
    "/wp-content/plugins/wp-smushit(?:-pro)?/.+\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -95591,7 +97945,10 @@
    "wpspagevisit": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "WSHOP",
@@ -96195,7 +98552,10 @@
      "href": "/wp-content/themes/xtra/.+core(?:-laptop|-mobile)?\\.css(?:\\?ver=(\\d+(?:\\.\\d+)+))?\\;version:\\1"
     }
    }
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Xtremepush",
@@ -96855,7 +99215,10 @@
   "website": "https://wordpress.org/plugins/duplicate-post",
   "dom": {
    "link[href*='/wp-content/plugins/duplicate-post/']": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Yoast SEO",
@@ -96900,6 +99263,9 @@
   "website": "https://www.yodel.co.uk/",
   "html": [
    "\\bYodel\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -97047,6 +99413,9 @@
   "website": "https://www.yotpo.com/platform/subscriptions/",
   "html": [
    "<!-- BEGIN app block: shopify://apps/yotpo-subscriptions/blocks/app-embed-block"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -97375,6 +99744,9 @@
   ],
   "implies": [
    "Zakeke"
+  ],
+  "requires": [
+   "WooCommerce"
   ]
  },
  {
@@ -97386,6 +99758,9 @@
   ],
   "implies": [
    "Zakeke"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -97405,7 +99780,10 @@
   ],
   "dom": {
    "link#zakra-style-css": {}
-  }
+  },
+  "requires": [
+   "WordPress"
+  ]
  },
  {
   "name": "Zalify",
@@ -97421,6 +99799,9 @@
   },
   "scriptSrc": [
    "\\.zalify\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -97518,7 +99899,10 @@
    "ZES_BACKEND": [
     "zeald"
    ]
-  }
+  },
+  "requires": [
+   "Cart Functionality"
+  ]
  },
  {
   "name": "Zeeg",
@@ -97555,6 +99939,9 @@
   "website": "https://www.zeleris.com",
   "html": [
    "\\bZeleris\\b"
+  ],
+  "requiresCategory": [
+   "Ecommerce"
   ]
  },
  {
@@ -97670,6 +100057,9 @@
   "website": "https://zendapps.com",
   "scriptSrc": [
    "\\.zend-apps\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -97896,6 +100286,9 @@
   },
   "scriptSrc": [
    "zestardshop\\.com/shopifyapp"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {
@@ -98181,6 +100574,9 @@
   "website": "https://zipwp.com",
   "scripts": [
    "app\\.zipwp\\.com"
+  ],
+  "requires": [
+   "WordPress"
   ]
  },
  {
@@ -98221,7 +100617,10 @@
    "ZnodeBase": [
     ""
    ]
-  }
+  },
+  "requires": [
+   "Microsoft ASP.NET"
+  ]
  },
  {
   "name": "Zocdoc",
@@ -98469,6 +100868,9 @@
   },
   "scriptSrc": [
    "\\.zoorix\\.com/"
+  ],
+  "requires": [
+   "Shopify"
   ]
  },
  {

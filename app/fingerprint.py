@@ -146,12 +146,22 @@ def compile_rule(raw: dict) -> dict:
     rule["dom"] = rule.get("dom") or {}
     rule["implies"] = rule.get("implies") or []
     rule["excludes"] = rule.get("excludes") or []
+    rule["requires"] = rule.get("requires") or []
+    rule["requiresCategory"] = rule.get("requiresCategory") or []
     rule["_keys"] = {
-        f: [(re.compile(k, re.I), pats) for k, pats in rule[f].items()]
+        f: [(_key_re(k), pats) for k, pats in rule[f].items()]
         for f in ("headers", "cookies", "meta", "js", "probe")
     }
     rule["_tokens"] = _rule_tokens(rule)
     return rule
+
+
+def _key_re(k: str) -> re.Pattern:
+    """Map keys (header/cookie/meta names, js global paths) are matched as
+    FULL matches — upstream .test() semantics substring-hit ("ceid" matches
+    "deviceId", "session" matches "mysession_id") and false-positive
+    constantly on generic names."""
+    return re.compile(f"^(?:{k})$", re.I)
 
 
 _cache = None
@@ -171,11 +181,12 @@ def _merge_rules(base: dict, new: dict):
         base[f] += [p for p in new[f] if p.raw not in have]
     for sel, cond in new["dom"].items():
         base["dom"].setdefault(sel, cond)
-    for f in ("favicon", "implies", "excludes"):
+    for f in ("favicon", "implies", "excludes", "requires",
+              "requiresCategory"):
         base[f] = sorted(set(base[f]) | set(new[f]))
     base["cpe"] = base.get("cpe") or new.get("cpe")
     base["_keys"] = {
-        f: [(re.compile(k, re.I), pats) for k, pats in base[f].items()]
+        f: [(_key_re(k), pats) for k, pats in base[f].items()]
         for f in ("headers", "cookies", "meta", "js", "probe")
     }
     base["_tokens"] = _rule_tokens(base)
@@ -237,6 +248,10 @@ def raw_of(rule: dict) -> dict:
         raw["implies"] = rule["implies"]
     if rule.get("excludes"):
         raw["excludes"] = rule["excludes"]
+    if rule.get("requires"):
+        raw["requires"] = rule["requires"]
+    if rule.get("requiresCategory"):
+        raw["requiresCategory"] = rule["requiresCategory"]
     raw["_file"] = rule.get("_file")
     return raw
 
@@ -484,7 +499,37 @@ def match(signals: dict, rules: list | None = None) -> dict:
     # minutes and milliseconds per page
     pool = [r for r in rules
             if not r["_tokens"] or any(t in hay for t in r["_tokens"])]
-    hits = [h for rule in pool if (h := evaluate(rule, signals))]
+    hits, detected, cats = [], set(), set()
+    deferred = []
+    for rule in pool:
+        if rule["requires"] or rule["requiresCategory"]:
+            deferred.append(rule)
+            continue
+        h = evaluate(rule, signals)
+        if h:
+            hits.append(h)
+            detected.add(rule["name"])
+            cats.add(rule.get("category") or "")
+    # upstream semantics: `requires`/`requiresCategory` rules are only
+    # evaluated once their dependency is detected — two passes cover
+    # dependency chains without ordering headaches
+    for _ in range(2):
+        pending = []
+        for rule in deferred:
+            reqs = [x.split("\\;")[0] for x in rule["requires"]]
+            reqcs = [x.split("\\;")[0] for x in rule["requiresCategory"]]
+            if any(x not in detected for x in reqs) or \
+               any(x not in cats for x in reqcs):
+                pending.append(rule)
+                continue
+            h = evaluate(rule, signals)
+            if h:
+                hits.append(h)
+                detected.add(rule["name"])
+                cats.add(rule.get("category") or "")
+        if len(pending) == len(deferred):
+            break
+        deferred = pending
     candidates = [r for r in rules if r["probe"]]
     return {"hits": hits, "candidates": candidates}
 
@@ -534,7 +579,12 @@ def postprocess(hits: list) -> list:
     detected = set(by_name)
 
     rules = {r["name"]: r for r in load_rules()}
+    # implies/excludes only propagate from CONFIRMED hits — a "possible"
+    # match must not drag in implied techs (Jenkins-possible ⇒ implied Java
+    # noise) or veto other detections
     for name in list(detected):
+        if by_name[name]["score"] < CONFIRMED:
+            continue
         for imp in rules.get(name, {}).get("implies", []):
             imp = imp.split("\\;")[0]
             if imp not in detected:
@@ -549,6 +599,8 @@ def postprocess(hits: list) -> list:
                 detected.add(imp)
 
     for name in list(detected):
+        if by_name[name]["score"] < CONFIRMED:
+            continue
         for exc in rules.get(name, {}).get("excludes", []):
             exc = exc.split("\\;")[0]
             detected.discard(exc)

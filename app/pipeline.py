@@ -97,15 +97,24 @@ async def run_scan(scan_id: int):
             hits = list(matched["hits"])
 
             # active probe: extra requests on characteristic paths
-            if opts.get("active_probe", cfg["active_probe"]):
+            if opts.get("active_probe", cfg["active_probe"]) and \
+                    matched["candidates"]:
                 base = resp["final_url"]
+                baseline = await probe.probe_baseline(
+                    client, base, probe_sem)
                 for rule in matched["candidates"]:
                     for path in rule["probe"]:
                         probe_url = base.rstrip("/") + "/" + path.lstrip("/")
                         try:
                             r = await client.get(probe_url)
-                            if r.status_code >= 400 or probe.probe_is_fallback(path, r):
-                                continue  # 404/soft-404/html-fallback echoes would false-positive
+                            if r.status_code >= 400 or \
+                                    probe.probe_is_fallback(path, r) or \
+                                    (baseline is not None and
+                                     probe.probe_matches_baseline(
+                                         r.text[:300_000],
+                                         "/" + path.lstrip("/"),
+                                         baseline)):
+                                continue  # 404/soft-404/catch-all echoes would false-positive
                             h = fp.evaluate_probe(rule, r.text[:300_000])
                         except Exception:
                             h = None
