@@ -287,17 +287,21 @@ class ExposureIn(BaseModel):
     auto_deep: bool = True               # 完成后自动深扫(截图+指纹)
     deep_limit: int = 200                # 自动深扫的URL上限
     fingerprint: bool = True             # 深扫指纹识别开关
+    target_ids: list[int] = []           # 非空时仅测绘所选目标
 
 
 @app.post("/api/projects/{pid}/exposure")
 async def create_exposure(pid: int, body: ExposureIn):
     if not store.get_project(pid):
         raise HTTPException(404)
-    total = len(
-        store.alive_targets(pid)
-        if body.scope == "alive"
-        else store.list_targets(pid)
-    )
+    if body.target_ids:
+        total = len(store.targets_by_ids(pid, body.target_ids))
+    else:
+        total = len(
+            store.alive_targets(pid)
+            if body.scope == "alive"
+            else store.list_targets(pid)
+        )
     if total == 0:
         raise HTTPException(400, "no targets to scan")
     running = [r for r in store.list_exposure_runs(pid) if r["status"] == "running"]

@@ -405,6 +405,22 @@ def list_targets(project_id: int) -> list:
     return [dict(r) for r in rows]
 
 
+def targets_by_ids(project_id: int, ids: list) -> list:
+    """Selected targets for per-target scans/exposure runs."""
+    ids = [int(i) for i in (ids or [])]
+    if not ids:
+        return []
+    conn = _conn()
+    ph = ",".join("?" * len(ids))
+    rows = conn.execute(
+        f"SELECT * FROM targets WHERE project_id=? AND id IN ({ph})"
+        " ORDER BY id",
+        (project_id, *ids),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
 def update_target(target_id: int, url: str) -> dict:
     """Change a target's URL. Past results keep their own url snapshot."""
     conn = _conn()

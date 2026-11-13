@@ -41,7 +41,7 @@
             </a-button>
             <a-button
               :disabled="!aliveCount || !!expRunning"
-              @click="showExposure = true"
+              @click="expTargetIds = []; showExposure = true"
             >
               <template #icon><RadarChartOutlined /></template>暴露面测绘
             </a-button>
@@ -76,6 +76,10 @@
                 删除选中{{ targetSel.length ? ` (${targetSel.length})` : '' }}
               </a-button>
             </a-popconfirm>
+            <a-button size="small" :disabled="!targetSel.length || !!expRunning"
+                      @click="expTargetIds = [...targetSel]; showExposure = true">
+              测绘选中{{ targetSel.length ? ` (${targetSel.length})` : '' }}
+            </a-button>
             <a-radio-group v-model:value="targetFilter" size="small" option-type="button">
               <a-radio-button value="all">全部</a-radio-button>
               <a-radio-button value="alive">存活</a-radio-button>
@@ -140,6 +144,8 @@
                   <a-button v-if="record.latest" size="small"
                             @click="router.push(`/results/${record.latest.id}`)">详情</a-button>
                   <a-button size="small" @click="openEditTarget(record)">编辑</a-button>
+                  <a-button size="small" :disabled="!!expRunning"
+                            @click="expTargetIds = [record.id]; showExposure = true">测绘</a-button>
                   <a-popconfirm title="删除该目标？" @confirm="delTarget(record.id)">
                     <a-button size="small" danger>删除</a-button>
                   </a-popconfirm>
@@ -248,7 +254,7 @@
 
     <!-- 暴露面扫描 -->
     <ExposureScanModal v-model:open="showExposure" :project="project"
-                       @started="onExpStarted" />
+                       :target-ids="expTargetIds" @started="onExpStarted" />
 
     <!-- 导入目标 -->
     <a-modal v-model:open="showImport" title="导入目标" ok-text="导入" cancel-text="取消"
@@ -369,6 +375,7 @@ const importFiles = ref([])
 const scanOpts = reactive({ scope: 'all', active_probe: true, screenshot: true, fingerprint: true, concurrency: 50 })
 const settingsLoaded = ref(false)
 const showExposure = ref(false)
+const expTargetIds = ref([])
 const expRuns = ref([])
 const expExpanded = ref([])
 const expRunning = computed(() => expRuns.value.some((r) => r.status === 'running'))
@@ -482,7 +489,7 @@ const targetCols = [
   { title: '指纹', key: 'fps' },
   { title: '截图', key: 'shot', width: 140 },
   { title: '来源', key: 'src', width: 170 },
-  { title: '操作', key: 'op', width: 150 },
+  { title: '操作', key: 'op', width: 205 },
 ]
 
 // 目标表列显示控制（#序号、行勾选、操作固定）；v2 起新增 来源 列

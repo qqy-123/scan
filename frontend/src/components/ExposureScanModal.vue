@@ -7,7 +7,11 @@
         <a-select v-model:value="pid" placeholder="选择要测绘的项目" :options="projectOptions"
                   :loading="!projects.length" @change="pickProject" />
       </a-form-item>
-      <a-form-item label="扫描范围">
+      <a-form-item v-if="targetIds.length" label="扫描范围">
+        <a-alert type="info" show-icon
+                 :message="`已选 ${targetIds.length} 个目标，仅对所选目标测绘`" />
+      </a-form-item>
+      <a-form-item v-else label="扫描范围">
         <a-radio-group v-model:value="opts.scope">
           <a-radio value="alive">存活目标（{{ aliveCount }}）</a-radio>
           <a-radio value="all">全部目标（{{ targetCount }}）</a-radio>
@@ -67,6 +71,7 @@ import api from '../api'
 const props = defineProps({
   open: Boolean,
   project: Object,          // fixed project (detail page); null → picker
+  targetIds: { type: Array, default: () => [] },  // 指定目标 id（空=按范围）
 })
 const emit = defineEmits(['update:open', 'started'])
 
@@ -119,7 +124,7 @@ async function start() {
   if (!opts.kinds.length) return message.warning('至少选一种测绘方式')
   starting.value = true
   try {
-    await api.createExposure(p.id, { ...opts })
+    await api.createExposure(p.id, { ...opts, target_ids: props.targetIds })
     message.success('测绘任务已开始')
     emit('update:open', false)
     emit('started')

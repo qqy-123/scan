@@ -1266,8 +1266,12 @@ async def run_exposure(run_id: int):
     kinds = opts.get("kinds") or ["js", "dir"]
     cfg = store.get_settings()
 
-    targets = store.alive_targets(project_id) if opts.get("scope", "alive") == "alive" \
-        else store.list_targets(project_id)
+    if opts.get("target_ids"):
+        targets = store.targets_by_ids(project_id, opts["target_ids"])
+    elif opts.get("scope", "alive") == "alive":
+        targets = store.alive_targets(project_id)
+    else:
+        targets = store.list_targets(project_id)
 
     client = probe.make_client()
     dir_sem = asyncio.Semaphore(4)  # dir scans in parallel across targets
