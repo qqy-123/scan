@@ -6,7 +6,7 @@ import {
   ArrowLeft, Play, RefreshCw, Radar, Import, EllipsisVertical, Upload,
 } from "lucide-react";
 import { api } from "@/lib/api";
-import { fmtTime } from "@/lib/fmt";
+import { fmtTime, setIfChanged } from "@/lib/fmt";
 import { parseFps, FpTags } from "@/components/fp-tags";
 import {
   Checkbox, Chip, Confirm, Empty, Modal, Popover, Progress, Radio,
@@ -86,13 +86,13 @@ function ProjectDetail() {
   /* ---------- data ---------- */
   const loadExposure = useCallback(async () => {
     const runs = await api.listExposure(pid);
-    setExpRuns(runs);
+    setIfChanged(setExpRuns, runs);
   }, [pid]);
 
   const load = useCallback(async () => {
     const data = await api.getProject(pid);
-    setProject(data);
-    setRunning(data.running);
+    setIfChanged(setProject, data);
+    setIfChanged(setRunning, data.running);
     if (!settingsLoaded.current) {
       settingsLoaded.current = true;
       api.getSettings().then((s) =>
@@ -351,9 +351,10 @@ function ProjectDetail() {
           </>
         );
       } },
-    { key: "status", title: "状态", width: 130,
+    { key: "status", title: "状态", width: 190,
       render: (r) => r.status === "running"
-        ? <Tag color="processing" className="pulsing">{r.done}/{r.total}</Tag>
+        ? <><Tag color="processing" className="pulsing">{r.done}/{r.total}</Tag>
+            {r.stage && <span className="text-[11.5px] text-[var(--fg-3)] ml-1">{r.stage}</span>}</>
         : statusTag(r.status) },
     { key: "found", title: "发现", width: 80,
       render: (r) => <span style={{ color: r.found ? "var(--red)" : "inherit" }}>{r.found}</span> },

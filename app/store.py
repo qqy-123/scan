@@ -226,6 +226,7 @@ def init():
         ("exposure_runs", "deep_status TEXT DEFAULT 'none'"),
         ("exposure_runs", "deep_total INTEGER DEFAULT 0"),
         ("exposure_runs", "deep_done INTEGER DEFAULT 0"),
+        ("exposure_runs", "stage TEXT"),
         ("targets", "import_id INTEGER"),
     ):
         try:
@@ -605,10 +606,20 @@ def bump_exposure_done(run_id: int):
     conn.close()
 
 
+def set_exposure_stage(run_id: int, stage: str | None):
+    """Coarse progress hint shown next to done/total — single-target runs
+    otherwise sit at 0/1 for minutes with no visible activity."""
+    conn = _conn()
+    conn.execute("UPDATE exposure_runs SET stage=? WHERE id=?", (stage, run_id))
+    conn.commit()
+    conn.close()
+
+
 def finish_exposure(run_id: int):
     conn = _conn()
     conn.execute(
-        "UPDATE exposure_runs SET status='done', finished_at=CURRENT_TIMESTAMP WHERE id=?",
+        "UPDATE exposure_runs SET status='done', stage=NULL,"
+        " finished_at=CURRENT_TIMESTAMP WHERE id=?",
         (run_id,),
     )
     conn.commit()
@@ -618,9 +629,38 @@ def finish_exposure(run_id: int):
 def fail_exposure(run_id: int):
     conn = _conn()
     conn.execute(
-        "UPDATE exposure_runs SET status='failed', finished_at=CURRENT_TIMESTAMP WHERE id=?",
+        "UPDATE exposure_runs SET status='failed', stage=NULL,"
+        " finished_at=CURRENT_TIMESTAMP WHERE id=?",
         (run_id,),
     )
+    conn.commit()
+    conn.close()
+
+
+def fail_zombie_runs(scan_ids: list = (), exp_ids: list = (),
+                     deep_ids: list = (), min_age_sec: int = 30):
+    """Runtime counterpart of fail_orphaned_runs(): a worker that crashes or
+    is killed mid-run would leave the row 'running' forever and the frontend
+    polls it indefinitely. The caller passes ids whose task is not alive in
+    this process; min_age_sec guards the create→register race."""
+    if not (scan_ids or exp_ids or deep_ids):
+        return
+    conn = _conn()
+    lim = (f"started_at < CURRENT_TIMESTAMP - INTERVAL '{int(min_age_sec)} seconds'"
+           if PG else
+           f"started_at < datetime('now', '-{int(min_age_sec)} seconds')")
+    for ids, sql in (
+        (scan_ids, "UPDATE scans SET status='failed',"
+                   " finished_at=CURRENT_TIMESTAMP WHERE status='running'"
+                   f" AND {lim} AND id=?"),
+        (exp_ids, "UPDATE exposure_runs SET status='failed', stage=NULL,"
+                  " finished_at=CURRENT_TIMESTAMP WHERE status='running'"
+                  f" AND {lim} AND id=?"),
+        (deep_ids, "UPDATE exposure_runs SET deep_status='failed'"
+                   f" WHERE deep_status='running' AND {lim} AND id=?"),
+    ):
+        for i in ids:
+            conn.execute(sql, (i,))
     conn.commit()
     conn.close()
 
@@ -737,7 +777,8 @@ def bump_exposure_deep(rid: int):
 def finish_exposure_deep(rid: int):
     conn = _conn()
     conn.execute(
-        "UPDATE exposure_runs SET deep_status='done' WHERE id=?", (rid,))
+        "UPDATE exposure_runs SET deep_status='done', stage=NULL WHERE id=?",
+        (rid,))
     conn.commit()
     conn.close()
 
@@ -745,7 +786,8 @@ def finish_exposure_deep(rid: int):
 def fail_exposure_deep(rid: int):
     conn = _conn()
     conn.execute(
-        "UPDATE exposure_runs SET deep_status='failed' WHERE id=?", (rid,))
+        "UPDATE exposure_runs SET deep_status='failed', stage=NULL WHERE id=?",
+        (rid,))
     conn.commit()
     conn.close()
 

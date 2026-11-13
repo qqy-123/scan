@@ -1283,14 +1283,18 @@ async def run_exposure(run_id: int):
         out = []
         async with domain_sem:
             if "sub" in kinds:
+                store.set_exposure_stage(run_id, "子域收集")
                 out += await subdomain_scan(
                     url, client, max(20, cfg["concurrency"] // 2))
             if "brute" in kinds:
+                store.set_exposure_stage(run_id, "子域爆破")
                 out += await subdomain_brute(
                     url, client, max(30, cfg["concurrency"]))
             if "net" in kinds:
+                store.set_exposure_stage(run_id, "网络空间搜索")
                 out += await net_search(url, client, cfg)
             if "host" in kinds:
+                store.set_exposure_stage(run_id, "Host碰撞")
                 # host collision: probe this IP with discovered FQDNs
                 fqdns = sorted({
                     urlsplit(r["url"]).hostname
@@ -1306,6 +1310,7 @@ async def run_exposure(run_id: int):
                 if fqdns:
                     out += await host_collision(url, client, fqdns)
             if "origin" in kinds:
+                store.set_exposure_stage(run_id, "源站探测")
                 # fuckcdn: candidate IPs = net-engine IPs + resolved subs
                 ip_pool = set()
                 for r in out:
@@ -1323,8 +1328,10 @@ async def run_exposure(run_id: int):
                     ip_pool.update(lst)
                 out += await origin_scan(url, client, sorted(ip_pool))
             if "wayback" in kinds:
+                store.set_exposure_stage(run_id, "历史URL")
                 out += await wayback_scan(url, client)
             if "takeover" in kinds:
+                store.set_exposure_stage(run_id, "接管检测")
                 ns = {
                     urlsplit(r["url"]).hostname: r.get("status_code")
                     for r in out if r.get("kind") == "sub"
@@ -1339,6 +1346,7 @@ async def run_exposure(run_id: int):
                 if ns:
                     out += await takeover_scan(ns, client)
             if "port" in kinds:
+                store.set_exposure_stage(run_id, "端口扫描")
                 hosts = {host}
                 for r in out:
                     if r.get("kind") == "sub" and r.get("status_code"):
@@ -1352,6 +1360,7 @@ async def run_exposure(run_id: int):
                             hosts.add(m.group(0))
                 out += await port_scan(sorted(hosts)[:MAX_PORT_HOSTS])
             if "dir" in kinds:
+                store.set_exposure_stage(run_id, "扩展目录爆破")
                 # extended directory coverage: alive subdomain roots and
                 # entry-point prefixes discovered by js/url/dir collectors
                 sub_roots, entry_dirs = [], []
@@ -1385,8 +1394,10 @@ async def run_exposure(run_id: int):
         root = _root_domain(host)
         try:
             if "js" in kinds:
+                store.set_exposure_stage(run_id, "JS接口提取")
                 results += await js_scan(url, client)
             if "dir" in kinds:
+                store.set_exposure_stage(run_id, "目录爆破")
                 async with dir_sem:
                     results += await dir_scan(
                         url, client, concurrency=max(10, cfg["concurrency"] // 2),
@@ -1432,6 +1443,7 @@ async def run_exposure(run_id: int):
         await client.aclose()
     # 自动深扫: 验证攻击面(与首页不同的真实页面)并截图+指纹
     if opts.get("auto_deep"):
+        store.set_exposure_stage(run_id, "攻击面深扫")
         try:
             await run_deep_scan(run_id, int(opts.get("deep_limit") or 120),
                                 fingerprint=opts.get("fingerprint", True))

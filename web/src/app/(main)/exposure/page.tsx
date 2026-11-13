@@ -3,7 +3,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { useRouter, useSearchParams } from "next/navigation";
 import { Radar, Crosshair, Info, Database, ArrowLeft } from "lucide-react";
 import { api } from "@/lib/api";
-import { fmtTime } from "@/lib/fmt";
+import { fmtTime, setIfChanged } from "@/lib/fmt";
 import { Confirm, Empty, Modal, Popover, Stat, Tabs, Tag, msg } from "@/components/ui";
 import { DataTable, type Col } from "@/components/data-table";
 import { ExposureScanModal } from "@/components/exposure-scan-modal";
@@ -37,22 +37,26 @@ function ExposurePage() {
   });
   const [diffTab, setDiffTab] = useState("new");
   const resultRef = useRef<HTMLDivElement>(null);
+  const loaded = useRef(false);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    if (!loaded.current) setLoading(true);
     try {
-      api.exposureStats().then(setStats).catch(() => {});
+      api.exposureStats()
+        .then((s) => setIfChanged(setStats, s)).catch(() => {});
       const list = await api.listExposureAll();
-      setRuns(list);
+      setIfChanged(setRuns, list);
       setSelected((sel: any) => {
         if (!sel) {
           const want = Number(sp.get("run"));
           const hit = want && list.find((r: any) => r.id === want);
           return hit || list.find((r: any) => r.status === "done") || list[0] || null;
         }
-        return list.find((r: any) => r.id === sel.id) || sel;
+        const next = list.find((r: any) => r.id === sel.id) || sel;
+        return JSON.stringify(next) === JSON.stringify(sel) ? sel : next;
       });
     } finally {
+      loaded.current = true;
       setLoading(false);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -105,9 +109,10 @@ function ExposurePage() {
           </>
         );
       } },
-    { key: "status", title: "状态", width: 130,
+    { key: "status", title: "状态", width: 190,
       render: (r) => r.status === "running"
-        ? <Tag color="processing" className="pulsing">{r.done}/{r.total}</Tag>
+        ? <><Tag color="processing" className="pulsing">{r.done}/{r.total}</Tag>
+            {r.stage && <span className="text-[11.5px] text-[var(--fg-3)] ml-1">{r.stage}</span>}</>
         : r.status === "done" ? <Tag color="green">done</Tag>
         : <Tag color="red">{r.status}</Tag> },
     { key: "found", title: "发现", width: 80,

@@ -1,6 +1,13 @@
 import { format, formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
 
+/** setState only when the serialized value actually changed — polled
+    endpoints return fresh objects every tick; without this the whole
+    table re-renders every poll and the UI looks like it is refreshing. */
+export function setIfChanged<T>(set: (fn: (p: T) => T) => void, v: T) {
+  set((p) => (JSON.stringify(p) === JSON.stringify(v) ? p : v));
+}
+
 export function fmtTime(s?: string | null): string {
   if (!s) return "-";
   try {

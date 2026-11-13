@@ -62,6 +62,36 @@ def _startup():
     traffic.SHOT_DIR.mkdir(exist_ok=True)
 
 
+# ---------------- background task registry ----------------
+# Every scan/exposure/deep worker is tracked here. A row left 'running'
+# with no live task is a zombie (worker crashed mid-run) — the boot sweep
+# only runs once, so list endpoints re-check and fail zombies at runtime;
+# otherwise the frontend would poll them forever.
+
+_TASKS: dict = {}
+
+
+def _track(key: tuple, coro) -> asyncio.Task:
+    t = asyncio.create_task(coro)
+    _TASKS[key] = t
+    t.add_done_callback(lambda _: _TASKS.pop(key, None))
+    return t
+
+
+def _sweep_zombies(scans=(), exp_runs=()) -> int:
+    scan_ids = [s["id"] for s in scans
+                if s.get("status") == "running" and ("scan", s["id"]) not in _TASKS]
+    exp_ids, deep_ids = [], []
+    for r in exp_runs:
+        live = ("exp", r["id"]) in _TASKS or ("deep", r["id"]) in _TASKS
+        if r.get("status") == "running" and not live:
+            exp_ids.append(r["id"])
+        if r.get("deep_status") == "running" and not live:
+            deep_ids.append(r["id"])
+    store.fail_zombie_runs(scan_ids, exp_ids, deep_ids)
+    return len(scan_ids) + len(exp_ids) + len(deep_ids)
+
+
 # ---------------- projects ----------------
 
 class ProjectIn(BaseModel):
@@ -90,6 +120,7 @@ def get_project(pid: int):
     p["targets"] = store.list_targets(pid)
     p["latest"] = {str(k): v for k, v in store.latest_results_by_target(pid).items()}
     p["scans"] = store.list_scans(pid)
+    _sweep_zombies(scans=p["scans"])
     p["running"] = store.running_scan(pid)
     return p
 
@@ -213,7 +244,7 @@ async def create_scan(pid: int, body: ScanIn):
         options=body.model_dump(),
         total=total,
     )
-    asyncio.create_task(pipeline.run_scan(sid))
+    _track(("scan", sid), pipeline.run_scan(sid))
     return {"id": sid, "total": total}
 
 
@@ -222,6 +253,8 @@ def get_scan(sid: int):
     s = store.get_scan(sid)
     if not s:
         raise HTTPException(404)
+    if _sweep_zombies(scans=[s]):
+        s = store.get_scan(sid)
     s["options"] = json.loads(s["options"] or "{}")
     s["results"] = store.list_results(sid)
     return s
@@ -310,13 +343,16 @@ async def create_exposure(pid: int, body: ExposureIn):
     if running:
         raise HTTPException(409, "an exposure scan is already running")
     rid = store.create_exposure_run(pid, body.model_dump(), total)
-    asyncio.create_task(exposure.run_exposure(rid))
+    _track(("exp", rid), exposure.run_exposure(rid))
     return {"id": rid, "total": total}
 
 
 @app.get("/api/exposure")
 def list_exposure_all():
-    return store.list_exposure_runs()
+    runs = store.list_exposure_runs()
+    if _sweep_zombies(exp_runs=runs):
+        runs = store.list_exposure_runs()
+    return runs
 
 
 # NOTE: must precede /api/exposure/{rid} or "stats" is parsed as an int rid
@@ -327,7 +363,10 @@ def exposure_stats():
 
 @app.get("/api/projects/{pid}/exposure")
 def list_exposure(pid: int):
-    return store.list_exposure_runs(pid)
+    runs = store.list_exposure_runs(pid)
+    if _sweep_zombies(exp_runs=runs):
+        runs = store.list_exposure_runs(pid)
+    return runs
 
 
 @app.get("/api/targets/{tid}/exposure")
@@ -360,7 +399,7 @@ async def deep_scan_exposure(rid: int, body: DeepScanIn = None):
     if run.get("deep_status") == "running":
         raise HTTPException(409, "deep scan is already running")
     limit = min(max(1, (body.limit if body else 120)), 1000)
-    asyncio.create_task(exposure.run_deep_scan(
+    _track(("deep", rid), exposure.run_deep_scan(
         rid, limit, fingerprint=body.fingerprint if body else None))
     return {"ok": True}
 

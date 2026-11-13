@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
-import { fmtTime } from "@/lib/fmt";
+import { fmtTime, setIfChanged } from "@/lib/fmt";
 import { Modal, Spin, Tag } from "@/components/ui";
 import { ColSettings, DataTable, useColPrefs, type Col } from "@/components/data-table";
 import { FpTags } from "@/components/fp-tags";
@@ -34,6 +34,7 @@ export function TargetExposure({
   const [runs, setRuns] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const loaded = useRef(false);
 
   const runningNow = running || runs.some((r) => r.status === "running");
   const surfaceCount = rows.filter((r) => r.surface).length;
@@ -44,12 +45,13 @@ export function TargetExposure({
   }, [runs, rows]);
 
   const load = async () => {
-    setLoading(true);
+    if (!loaded.current) setLoading(true);
     try {
       const d = await api.targetExposure(target.id);
-      setRows(d.results || []);
-      setRuns(d.runs || []);
+      setIfChanged(setRows, d.results || []);
+      setIfChanged(setRuns, d.runs || []);
     } finally {
+      loaded.current = true;
       setLoading(false);
     }
   };
