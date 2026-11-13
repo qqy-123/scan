@@ -350,6 +350,7 @@ import ExposureResults from '../components/ExposureResults.vue'
 import ExposureScanModal from '../components/ExposureScanModal.vue'
 import FpTags from '../components/FpTags.vue'
 import { fmtTime } from '../fmt'
+import { loadColPrefs, saveColPrefs } from '../colprefs'
 
 const props = defineProps({ id: String })
 const pid = Number(props.id)
@@ -474,7 +475,7 @@ async function delSelected() {
 
 const targetCols = [
   { title: '#', key: 'idx', width: 55, customRender: ({ index }) => index + 1 },
-  { title: 'URL', dataIndex: 'url', ellipsis: true },
+  { title: 'URL', key: 'url', dataIndex: 'url', ellipsis: true },
   { title: '状态', key: 'status', width: 90 },
   { title: 'HTTP', key: 'code', width: 80 },
   { title: '标题', key: 'title', dataIndex: ['latest', 'title'], ellipsis: true, customRender: ({ record }) => record.latest?.title || '-' },
@@ -484,14 +485,17 @@ const targetCols = [
   { title: '操作', key: 'op', width: 150 },
 ]
 
-// 目标表列显示控制（#序号、行勾选、操作固定）
+// 目标表列显示控制（#序号、行勾选、操作固定）；v2 起新增 来源 列
 const TARGET_COL_STORE_KEY = 'target_cols'
+const TARGET_COL_VER = 2
+const TARGET_COL_SINCE = { src: 2 }
 const FIXED_TARGET_COLS = ['idx', 'op']
 const visibleTargetCols = ref(
-  JSON.parse(localStorage.getItem(TARGET_COL_STORE_KEY) || 'null') ||
-  targetCols.map((c) => c.key)
+  loadColPrefs(TARGET_COL_STORE_KEY, targetCols.map((c) => c.key),
+               TARGET_COL_VER, TARGET_COL_SINCE)
 )
-watch(visibleTargetCols, (v) => localStorage.setItem(TARGET_COL_STORE_KEY, JSON.stringify(v)),
+watch(visibleTargetCols,
+      (v) => saveColPrefs(TARGET_COL_STORE_KEY, TARGET_COL_VER, v),
       { deep: true })
 const shownTargetCols = computed(() =>
   targetCols.filter((c) => FIXED_TARGET_COLS.includes(c.key) || visibleTargetCols.value.includes(c.key))

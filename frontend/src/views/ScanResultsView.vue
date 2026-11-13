@@ -89,6 +89,7 @@ import api from '../api'
 import FpTags from '../components/FpTags.vue'
 import { useBack } from '../back'
 import { fmtTime } from '../fmt'
+import { loadColPrefs, saveColPrefs } from '../colprefs'
 
 const route = useRoute()
 const router = useRouter()
@@ -141,13 +142,12 @@ const resultCols = [
 ]
 
 const COL_STORE_KEY = 'scan_result_cols'
+const COL_VER = 1
 const FIXED_COLS = ['detail']
 const visibleCols = ref(
-  JSON.parse(localStorage.getItem(COL_STORE_KEY) || 'null') ||
-  resultCols.map((c) => c.key)
+  loadColPrefs(COL_STORE_KEY, resultCols.map((c) => c.key), COL_VER)
 )
-watch(visibleCols, (v) => localStorage.setItem(COL_STORE_KEY, JSON.stringify(v)),
-      { deep: true })
+watch(visibleCols, (v) => saveColPrefs(COL_STORE_KEY, COL_VER, v), { deep: true })
 const shownResultCols = computed(() =>
   resultCols.filter((c) => FIXED_COLS.includes(c.key) || visibleCols.value.includes(c.key))
 )
