@@ -192,6 +192,13 @@ async def get_browser():
         return _browser
 
 
+async def _safe_cancel(download):
+    try:
+        await download.cancel()
+    except Exception:
+        pass
+
+
 async def _collect(resp, packets, tasks_done):
     try:
         req = resp.request
@@ -219,9 +226,32 @@ async def _collect(resp, packets, tasks_done):
         tasks_done.set()
 
 
+CAPTURE_TIMEOUT = 150  # hard ceiling per target — redirect loops and
+                       # unresponsive pages must not stall a scan forever
+
+
 async def capture(url: str, shot_path: Path | None, js_globals: list,
                   dom_selectors: list, headers: dict | None = None,
                   proxy: str | None = None) -> dict:
+    """Hard-bounded wrapper — individual awaits inside (content/evaluate/
+    screenshot) have no playwright timeout and can hang indefinitely on
+    redirect loops or wedged pages."""
+    try:
+        return await asyncio.wait_for(
+            _capture_impl(url, shot_path, js_globals, dom_selectors,
+                          headers, proxy),
+            timeout=CAPTURE_TIMEOUT,
+        )
+    except asyncio.TimeoutError:
+        return {"ok": False, "error": f"capture timeout {CAPTURE_TIMEOUT}s",
+                "packets": [], "html": "", "script_src": [], "js": {},
+                "dom": {}, "title": "", "favicon_hash": None,
+                "challenge": False}
+
+
+async def _capture_impl(url: str, shot_path: Path | None, js_globals: list,
+                        dom_selectors: list, headers: dict | None = None,
+                        proxy: str | None = None) -> dict:
     """Visit url, capture traffic + rendered signals + optional screenshot.
 
     Returns dict:
@@ -252,6 +282,11 @@ async def capture(url: str, shot_path: Path | None, js_globals: list,
             proxy={"server": proxy} if proxy else None,
         )
         page = await ctx.new_page()
+
+        # landing pages that redirect into file downloads (APK/zip) would
+        # make ctx.close() wait on the download — cancel them outright
+        page.on("download",
+                lambda d: asyncio.create_task(_safe_cancel(d)))
 
         def on_response(resp):
             if len(packets) >= MAX_PACKETS:
@@ -395,7 +430,9 @@ async def capture(url: str, shot_path: Path | None, js_globals: list,
     finally:
         if ctx:
             try:
-                await ctx.close()
+                # context.close() can itself block on stuck pages —
+                # bound it so cancellation actually completes
+                await asyncio.wait_for(ctx.close(), 15)
             except Exception:
                 pass
     return out
