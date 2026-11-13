@@ -194,6 +194,7 @@ export function ExposureResults({
   const [codeFilter, setCodeFilter] = useState("");
   const [sevSel, setSevSel] = useState<number[]>([]);
   const [tagSel, setTagSel] = useState<string[]>([]);
+  const [surfaceOnly, setSurfaceOnly] = useState(false);
 
   useEffect(() => {
     if (embedded) { setResults(embedded); return; }
@@ -221,6 +222,7 @@ export function ExposureResults({
     const search = (kw || filter || "").trim().toLowerCase();
     const codeRange = parseCodeRange(codeFilter);
     const match = (r: any) => {
+      if (surfaceOnly && !r.surface) return false;
       if (sevSel.length && !sevSel.includes(sevOf(r))) return false;
       if (tagSel.length && !tagsOf(r).some((t) => tagSel.includes(t))) return false;
       if (codeRange && (r.status_code == null || r.status_code < codeRange[0] || r.status_code > codeRange[1]))
@@ -284,7 +286,7 @@ export function ExposureResults({
         out.push({ ...a, key: `a-${r.id}-${j}`, isAlike: true, sev: sevOf(a), num: `${i + 1}.${j + 1}` }));
     });
     return out;
-  }, [results, kw, filter, codeFilter, sevSel, tagSel]);
+  }, [results, kw, filter, codeFilter, sevSel, tagSel, surfaceOnly]);
 
   const dupTotal = useMemo(
     () => flat.reduce((s, r) => s + (r.isAlike ? 1 : 0), 0), [flat]);
@@ -409,6 +411,9 @@ export function ExposureResults({
   return (
     <div>
       <div className="flex items-center gap-1.5 flex-wrap mb-3">
+        <Chip checked={surfaceOnly} activeColor="#f87171"
+          onChange={() => setSurfaceOnly((v) => !v)}>只看攻击面</Chip>
+        <span className="w-px h-4 bg-[var(--border)] mx-1" />
         {SEV.map((o, i) => (
           <Chip key={i} checked={sevSel.includes(i)} activeColor={o.hex}
             onChange={() => toggle(sevSel, i, setSevSel)}>{o.label}</Chip>

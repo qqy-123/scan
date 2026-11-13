@@ -388,6 +388,37 @@ async def _probe_host(client, url: str, timeout: float = 8):
     return (r.status_code, title, str(r.url), len(r.content), body_hash)
 
 
+async def _wildcard(client, root: str):
+    """Wildcard DNS + wildcard-vhost detector: resolve two random labels
+    under <root>. Returns (ips, sig):
+      ips — addresses the fake names resolved to (empty -> sane domain)
+      sig — (final_url, title, len, body_hash) of the wildcard page, for
+            _same_as_home() comparison; None when the fake name doesn't
+            answer HTTP (still a wildcard domain, just no wild vhost)."""
+    fakes = [f"nxw{uuid.uuid4().hex[:8]}.{root}" for _ in range(2)]
+    got = await asyncio.gather(*(_resolve(f) for f in fakes))
+    ips = {ip for lst in got for ip in (lst or [])}
+    if not ips:
+        return set(), None
+    sig = None
+    for scheme in ("https", "http"):
+        hit = await _probe_host(client, f"{scheme}://{fakes[0]}")
+        if hit:
+            sig = (hit[2], hit[1], hit[3], hit[4])
+            break
+    return ips, sig
+
+
+def _wild_row(root: str):
+    """Info row noting the domain is wildcard — emitted once so users know
+    why brute/CT enumeration produced few entries."""
+    return {
+        "kind": "sub", "url": f"*.{root}", "source": "detect",
+        "status_code": None, "title": "泛解析域名 — 通配应答的伪子域已忽略",
+        "length": None, "hint": "sub:wild", "surface": 0,
+    }
+
+
 def _extract_subs(text: str, root: str) -> set:
     """Hostnames under <root> embedded in a page/JS body."""
     if not root or not text:
@@ -456,6 +487,7 @@ async def subdomain_scan(base_url: str, client: httpx.AsyncClient,
     # home signature — a live subdomain that just mirrors the homepage is
     # info, not a new attack surface
     sig = await _page_signature(client, base_url)
+    wild_ips, wild_sig = await _wildcard(client, root)
     sem = asyncio.Semaphore(concurrency)
     out = []
     dead = 0
@@ -474,10 +506,14 @@ async def subdomain_scan(base_url: str, client: httpx.AsyncClient,
                         "hint": "sub:ct", "surface": 0,
                     })
                 return
+            wild = bool(wild_ips) and set(ips) <= wild_ips
             for scheme in ("https", "http"):
                 hit = await _probe_host(client, f"{scheme}://{name}")
                 if hit:
                     status, title, fu, ln, bh = hit
+                    if wild and wild_sig and _same_as_home(
+                            wild_sig, fu, title, ln, bh):
+                        return   # wildcard-vhost echo, not a real sub
                     same = _same_as_home(sig, fu, title, ln, bh)
                     fhost = urlsplit(fu).hostname if fu else ""
                     note = (f" → {fu}" if fhost and fhost != name
@@ -492,6 +528,8 @@ async def subdomain_scan(base_url: str, client: httpx.AsyncClient,
                         "surface": 0 if same else 1, "server": None,
                     })
                     return
+            if wild:
+                return   # wildcard-resolved but silent — indistinguishable junk
             out.append({
                 "kind": "sub", "url": f"https://{name}", "source": src,
                 "status_code": None, "title": f"解析 {ips[0]}", "length": None,
@@ -499,6 +537,8 @@ async def subdomain_scan(base_url: str, client: httpx.AsyncClient,
             })
 
     await asyncio.gather(*(one(n) for n in all_names))
+    if wild_ips:
+        out.append(_wild_row(root))
     return out
 
 
@@ -512,6 +552,7 @@ async def subdomain_brute(base_url: str, client: httpx.AsyncClient,
     words = [w.strip() for w in SUB_DICT_PATH.read_text(
         encoding="utf-8").splitlines() if w.strip() and not w.startswith("#")]
     sig = await _page_signature(client, base_url)
+    wild_ips, wild_sig = await _wildcard(client, root)
     sem = asyncio.Semaphore(concurrency)
     out = []
 
@@ -521,10 +562,14 @@ async def subdomain_brute(base_url: str, client: httpx.AsyncClient,
             ips = await _resolve(fqdn)
             if not ips:
                 return
+            wild = bool(wild_ips) and set(ips) <= wild_ips
             for scheme in ("https", "http"):
                 hit = await _probe_host(client, f"{scheme}://{fqdn}")
                 if hit:
                     status, title, fu, ln, bh = hit
+                    if wild and wild_sig and _same_as_home(
+                            wild_sig, fu, title, ln, bh):
+                        return   # wildcard-vhost echo, not a real sub
                     same = _same_as_home(sig, fu, title, ln, bh)
                     fhost = urlsplit(fu).hostname if fu else ""
                     note = f" → {fu}" if fhost and fhost != fqdn else ""
@@ -537,6 +582,8 @@ async def subdomain_brute(base_url: str, client: httpx.AsyncClient,
                         "surface": 0 if same else 1, "server": None,
                     })
                     return
+            if wild:
+                return   # wildcard-resolved but silent — indistinguishable junk
             out.append({
                 "kind": "sub", "url": f"https://{fqdn}", "source": "brute",
                 "status_code": None, "title": f"解析 {ips[0]}", "length": None,
@@ -544,6 +591,24 @@ async def subdomain_brute(base_url: str, client: httpx.AsyncClient,
             })
 
     await asyncio.gather(*(one(w) for w in words))
+    if wild_ips:
+        # signature clustering: a wildcard vhost may serve *different* pages
+        # per name (tenant routers that 404 unknown hosts), so identical
+        # responses across ≥3 distinct dict names = catch-all template —
+        # downgrade to echo rather than dropping (they did answer HTTP).
+        sigseen = {}
+        for r in out:
+            if r["hint"] not in ("sub:alive", "sub:echo"):
+                continue
+            k = (r["status_code"], (r["title"] or "").lower(),
+                 round((r["length"] or 0) / 300))
+            sigseen.setdefault(k, []).append(r)
+        for rs in sigseen.values():
+            if len(rs) >= 3:
+                for r in rs:
+                    if r["hint"] == "sub:alive":
+                        r["hint"], r["surface"] = "sub:echo", 0
+        out.append(_wild_row(root))
     return out
 
 
@@ -795,11 +860,18 @@ async def port_scan(hosts: list, concurrency: int = 150) -> list:
     """TCP-connect TOP ports per discovered host; classify banners and
     flag unauthenticated services (Redis/ES/Mongo/Docker/Memcached)."""
     resolved = await asyncio.gather(*(_resolve(h) for h in hosts))
-    todo = [(h, ips[0]) for h, ips in zip(hosts, resolved) if ips]
+    # dedupe by resolved IP: wildcard/enum output can be hundreds of fake
+    # names all pointing at the same address — port facts belong to the
+    # IP, so scan each unique one once and note the shared-name count
+    by_ip = {}
+    for h, ips in zip(hosts, resolved):
+        if ips:
+            by_ip.setdefault(ips[0], []).append(h)
+    todo = [(hs[0], ip, len(hs)) for ip, hs in by_ip.items()]
     sem = asyncio.Semaphore(concurrency)
     out = []
 
-    async def one(h: str, ip: str, port: int):
+    async def one(h: str, ip: str, port: int, shared: int):
         async with sem:
             r = await _port_probe(ip, h, port)
             if r is None:
@@ -835,13 +907,14 @@ async def port_scan(hosts: list, concurrency: int = 150) -> list:
                     title = f"{svc} open（TCP连通，应用层无响应）"
                 url = f"{h}:{port}"
             out.append({
-                "kind": "port", "url": url, "source": f"port:{ip}",
+                "kind": "port", "url": url,
+                "source": f"port:{ip}" + (f" (+{shared - 1}同IP)" if shared > 1 else ""),
                 "status_code": status, "title": title, "length": None,
                 "hint": hint, "surface": 1 if status else 0,
             })
 
     await asyncio.gather(*(
-        one(h, ip, p) for h, ip in todo for p in TOP_PORTS))
+        one(h, ip, p, n) for h, ip, n in todo for p in TOP_PORTS))
     return out
 
 
@@ -1410,10 +1483,14 @@ async def run_exposure(run_id: int):
                     domain_cache[root] = task
                 results += await task
             # subdomains of this root that JS/目录 findings pointed at —
-            # recorded as unvalidated intel ("sub:js"), deep scan promotes
+            # recorded as unvalidated intel ("sub:js"), deep scan promotes.
+            # 'sub' rows are skipped — brute/enum output re-recorded as
+            # intel would amplify wildcard junk 1:1.
             if root and not _is_ip(root):
                 seen_hosts = set()
                 for r in list(results):
+                    if r.get("kind") == "sub":
+                        continue
                     h = urlsplit(r.get("url") or "").hostname or ""
                     if h.endswith("." + root) and h != host \
                             and h not in seen_hosts:

@@ -31,7 +31,6 @@ function ExposurePage() {
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<any>(null);
   const [showScan, setShowScan] = useState(false);
-  const [kw, setKw] = useState("");
   const [diff, setDiff] = useState<{ open: boolean; loading: boolean; data: any }>({
     open: false, loading: false, data: null,
   });
@@ -71,7 +70,6 @@ function ExposurePage() {
 
   const viewRun = (r: any) => {
     setSelected(r);
-    setKw("");
     router.replace(`/exposure/?run=${r.id}`, { scroll: false });
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
   };
@@ -224,16 +222,12 @@ function ExposurePage() {
               <Tag className="ml-2">{selected.project_name}</Tag>
               <Tag color={selected.found ? "red" : "default"}>{selected.found} 条发现</Tag>
             </div>
-            <div className="flex gap-2">
-              <input className="ipt !py-1 text-[12px] w-64" placeholder="过滤 URL / 标题 / 指纹"
-                value={kw} onChange={(e) => setKw(e.target.value)} />
-              <button className="btn btn-sm" onClick={() => {
-                setSelected(null);
-                router.replace("/exposure/", { scroll: false });
-              }}><ArrowLeft size={13} /> 返回列表</button>
-            </div>
+            <button className="btn btn-sm" onClick={() => {
+              setSelected(null);
+              router.replace("/exposure/", { scroll: false });
+            }}><ArrowLeft size={13} /> 返回列表</button>
           </div>
-          <ExposureResults runId={selected.id} filter={kw} />
+          <ExposureResults runId={selected.id} />
         </div>
       )}
 
