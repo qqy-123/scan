@@ -33,22 +33,30 @@ async def run_scan(scan_id: int):
     client = probe.make_client()
     alive_count = 0
 
-    async def process(target):
-        nonlocal alive_count
+    async def probe_only(target):
+        """Phase 1: pure liveness probe — cheap IO-bound connects get the
+        box to themselves; no browser CPU competing to starve them into
+        false ConnectTimeout verdicts."""
         async with probe_sem:
             resp = await probe.fetch(client, target["url"])
-
         if not resp["alive"]:
             store.save_result(_base_result(scan_id, target, resp))
             store.bump_done(scan_id)
-            return
+            return None
+        return target, resp
 
+    async def enrich(survivor):
+        """Phase 2: capture + fingerprint for a confirmed-alive target."""
+        nonlocal alive_count
+        target, resp = survivor
         alive_count += 1
         await _finish_alive(scan, opts, cfg, client, shot_sem, probe_sem,
                             target, resp)
 
     try:
-        await asyncio.gather(*(process(t) for t in targets))
+        survivors = await asyncio.gather(
+            *(probe_only(t) for t in targets))
+        await asyncio.gather(*(enrich(s) for s in survivors if s))
 
         # confirmation pass: a wave of DNS/connect flakes shouldn't condemn
         # live assets — re-probe every dead row once at lower concurrency and
@@ -209,13 +217,14 @@ async def _finish_alive(scan, opts, cfg, client, shot_sem, probe_sem,
 
 
 async def _reverify_dead(scan, opts, cfg, tmap) -> int:
-    """Re-probe this scan's dead rows once at lower concurrency; revive
-    survivors through the full post-alive pipeline in place. Returns the
-    number revived — used both by run_scan's confirmation pass and the
-    manual reverify endpoint."""
-    dead = store.dead_results(scan["id"])
-    if not dead:
-        return 0
+    """Re-probe this scan's dead rows; revive survivors through the full
+    post-alive pipeline in place. Returns the number revived — used both
+    by run_scan's confirmation pass and the manual reverify endpoint.
+
+    Rounds: scam/phish targets flap on minute scales and this box's
+    egress has short outage windows — a single wave can miss an entire
+    up-cycle. Repeat up to 3 rounds while revivals keep coming, with a
+    settle gap so the next round sees a different flap window."""
     client = probe.make_client()
     # dead re-probes are cheap TCP attempts (no body, no browser) — run them
     # at full scan concurrency, and skip fetch's built-in retry: this pass
@@ -224,27 +233,51 @@ async def _reverify_dead(scan, opts, cfg, tmap) -> int:
     shot_sem = asyncio.Semaphore(
         cfg["browser_concurrency"] or BROWSER_CONCURRENCY)
     revived = 0
+
+    async def confirm(row):
+        """Re-probe only — no browser work inside, so revive captures
+        can't starve the remaining dead-target checks."""
+        t = tmap.get(row["target_id"])
+        if not t:
+            return None
+        async with sem:
+            resp = await probe.fetch(client, row["url"], retry=False)
+        return (row, t, resp)
+
+    async def revive(s):
+        nonlocal revived
+        row, t, resp = s
+        revived += 1
+        await _finish_alive(scan, opts, cfg, client, shot_sem, sem,
+                            t, resp, row_id=row["id"])
+
     try:
-        # uplink sanity gate: if the scanner itself can't reach the net the
-        # whole wave would re-condemn live targets — wait once, then bail
-        if not await probe.canary_ok(client):
-            await asyncio.sleep(20)
+        for rnd in range(3):
+            dead = store.dead_results(scan["id"])
+            if not dead:
+                break
+            # uplink sanity gate: if the scanner itself can't reach the net
+            # the whole wave would re-condemn live targets — bail instead
             if not await probe.canary_ok(client):
-                return 0
-
-        async def confirm(row):
-            nonlocal revived
-            t = tmap.get(row["target_id"])
-            if not t:
-                return
-            async with sem:
-                resp = await probe.fetch(client, row["url"], retry=False)
-            if resp["alive"]:
-                revived += 1
-                await _finish_alive(scan, opts, cfg, client, shot_sem, sem,
-                                    t, resp, row_id=row["id"])
-
-        await asyncio.gather(*(confirm(r) for r in dead))
+                await asyncio.sleep(20)
+                if not await probe.canary_ok(client):
+                    break
+            res = [x for x in
+                   await asyncio.gather(*(confirm(r) for r in dead)) if x]
+            hits = [x for x in res if x[2]["alive"]]
+            # a wave that is mostly timeouts looks like congestion, not
+            # death — refused/DNS-fail waves are genuinely dead
+            timeoutish = sum(
+                1 for x in res
+                if not x[2]["alive"] and "Timeout" in (x[2]["error"] or "")
+            ) > len(res) * 0.5
+            if hits:
+                await asyncio.gather(*(revive(s) for s in hits))
+                await asyncio.sleep(15)  # let flapped-down hosts recover
+            elif timeoutish and rnd == 0:
+                await asyncio.sleep(15)  # one mulligan for a congested wave
+            else:
+                break
     finally:
         await client.aclose()
     return revived

@@ -16,7 +16,7 @@ function LoginForm() {
     if (!pw) return;
     setLoading(true);
     try {
-      const { data } = await api.login(pw);
+      const data = await api.login(pw);
       localStorage.setItem("scan_token", data.token);
       router.push(next.startsWith("/") ? next : "/dashboard/");
     } catch (err: any) {
