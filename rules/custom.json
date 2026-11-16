@@ -10,5 +10,46 @@
    "assets/Shop2ufoot-[\\w-]+\\.js"
   ],
   "url": ["#/human-check"]
+ },
+ {
+  "name": "速信贷 套路贷套件",
+  "category": "网贷",
+  "website": "https://155.985268.com",
+  "probe": {
+   "/api/settings": {
+    "all": [
+     "loginTtUseCollectorId",
+     "contractDisplayMode",
+     "overduePenaltyRate"
+    ],
+    "status": [
+     200
+    ]
+   }
+  },
+  "scriptSrc": [
+   "/api/customer-service/public/client\\.js\\;confidence:80"
+  ]
+ },
+ {
+  "name": "weipan 云函数微盘",
+  "category": "微盘",
+  "website": "https://nasdaqv-1394478215.picgz.myqcloud.com",
+  "probe": {
+   "/": {
+    "all": [
+     "myqcloud\\.com"
+    ],
+    "status": [
+     200
+    ]
+   }
+  },
+  "scriptSrc": [
+   "myqcloud\\.com"
+  ],
+  "html": [
+   "weipan-api-crypto-key"
+  ]
  }
 ]
