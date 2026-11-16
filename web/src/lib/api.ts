@@ -72,6 +72,7 @@ export const api = {
     put(`/api/targets/${tid}`, { url }),
   createScan: (pid: number, opts: any) => post(`/api/projects/${pid}/scans`, opts),
   getScan: (sid: number) => get(`/api/scans/${sid}`),
+  reverifyScan: (sid: number) => post(`/api/scans/${sid}/reverify`),
   scanStats: (sid: number) => get(`/api/scans/${sid}/stats`),
   getResult: (rid: number) => get(`/api/results/${rid}`),
   rules: () => get("/api/rules"),

@@ -301,7 +301,9 @@ function ProjectDetail() {
         {s.kind === "rescan" ? "二次扫描" : "全量扫描"}</Tag> },
     { key: "status", title: "状态", width: 130,
       render: (s) => s.status === "running"
-        ? <Tag color="processing" className="pulsing">{s.done}/{s.total}</Tag>
+        ? <Tag color="processing" className="pulsing">
+            {s.stage === "reverify" ? "复核中" : `${s.done}/${s.total}`}
+          </Tag>
         : statusTag(s.status) },
     { key: "n", title: "存活/总数", width: 110,
       render: (s) => `${s.alive}/${s.total}` },
@@ -312,7 +314,7 @@ function ProjectDetail() {
     { key: "op", title: "操作", width: 90,
       render: (s) => (
         <Link href={`/scans/?id=${s.id}`} onClick={(e) => e.stopPropagation()}>
-          <button className="btn btn-sm" disabled={s.status !== "done"}>查看</button>
+          <button className="btn btn-sm" disabled={s.status === "running"}>查看</button>
         </Link>
       ) },
   ], []);
@@ -530,7 +532,7 @@ function ProjectDetail() {
           {tab === "scans" && (
             project.scans?.length ? (
               <DataTable cols={scanCols} rows={project.scans} pageSize={10}
-                onRow={(s) => s.status === "done" && router.push(`/scans/?id=${s.id}`)} />
+                onRow={(s) => s.status !== "running" && router.push(`/scans/?id=${s.id}`)} />
             ) : <Empty text="还没有扫描记录" />
           )}
 

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { api } from "@/lib/api";
-import { fmtTime } from "@/lib/fmt";
+import { fmtTime, setIfChanged } from "@/lib/fmt";
 import { FpTags } from "@/components/fp-tags";
 import { Checkbox, Empty, Tag } from "@/components/ui";
 import { ColSettings, DataTable, useColPrefs, type Col } from "@/components/data-table";
@@ -30,9 +30,21 @@ function ScanResults() {
   const [onlyAlive, setOnlyAlive] = useState(sp.get("alive") === "1");
   const [scanKw, setScanKw] = useState(sp.get("kw") || "");
   const [resCodeFilter, setResCodeFilter] = useState(sp.get("code") || "");
+  const [reverifying, setReverifying] = useState(false);
+
+  const pullOnce = () =>
+    api.getScan(sid).then((s) => setIfChanged(setScan, s)).catch(() => {});
 
   useEffect(() => {
-    api.getScan(sid).then(setScan);
+    let t: number | undefined;
+    const pull = () =>
+      api.getScan(sid).then((s) => {
+        setIfChanged(setScan, s);
+        // poll while running (incl. a reverify pass on a finished scan)
+        if (s?.status === "running") t = window.setTimeout(pull, 3000);
+      }).catch(() => {});
+    pull();
+    return () => clearTimeout(t);
   }, [sid]);
 
   /* URL-synced list state */
@@ -50,6 +62,10 @@ function ScanResults() {
     if (qs !== sp.toString()) router.replace(`/scans/?${qs}`, { scroll: false });
   }, [page, size, onlyAlive, scanKw, resCodeFilter]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { setPage(1); }, [onlyAlive, scanKw, resCodeFilter]);
+
+  const deadCount = useMemo(
+    () => (scan?.results || []).filter((r: any) => !r.alive).length,
+    [scan]);
 
   const filteredResults = useMemo(() => {
     const rows = scan?.results || [];
@@ -129,7 +145,22 @@ function ScanResults() {
                 {scan.kind === "rescan" ? "二次扫描" : "全量扫描"}
               </Tag>
               <Tag>存活 {scan.alive}/{scan.total}</Tag>
+              {scan.status === "running" && (
+                <Tag color="orange">
+                  {scan.stage === "reverify" ? "复核中" : "运行中"}
+                </Tag>
+              )}
             </>
+          )}
+          {scan && scan.status !== "running" && deadCount > 0 && (
+            <button className="btn btn-sm" disabled={reverifying}
+              onClick={async () => {
+                setReverifying(true);
+                try { await api.reverifyScan(sid); }
+                finally { setReverifying(false); pullOnce(); }
+              }}>
+              {reverifying ? "复核中…" : `复核失活 (${deadCount})`}
+            </button>
           )}
           <Checkbox checked={onlyAlive} onChange={setOnlyAlive} label="只看存活" />
           <input className="ipt !py-1 text-[12px] w-44" placeholder="状态码：200 / 200-399 / 4xx"

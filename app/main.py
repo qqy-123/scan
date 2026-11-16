@@ -260,6 +260,26 @@ def get_scan(sid: int):
     return s
 
 
+@app.post("/api/scans/{sid}/reverify")
+async def reverify_scan(sid: int):
+    """Re-probe every dead result once — recovery for scans whose
+    confirmation pass was killed mid-flight or ran during an uplink
+    outage. Revived rows are updated in place and the scan's alive
+    count is recomputed."""
+    scan = store.get_scan(sid)
+    if not scan:
+        raise HTTPException(404)
+    if _sweep_zombies(scans=[scan]):
+        scan = store.get_scan(sid)
+    if scan["status"] == "running" or ("scan", sid) in _TASKS:
+        raise HTTPException(409, "scan already running")
+    dead = len(store.dead_results(sid))
+    if not dead:
+        return {"ok": True, "dead": 0}
+    _track(("scan", sid), pipeline.reverify_scan(sid))
+    return {"ok": True, "dead": dead}
+
+
 @app.get("/api/scans/{sid}/stats")
 def scan_stats(sid: int):
     results = store.list_results(sid)

@@ -228,6 +228,7 @@ def init():
         ("exposure_runs", "deep_total INTEGER DEFAULT 0"),
         ("exposure_runs", "deep_done INTEGER DEFAULT 0"),
         ("exposure_runs", "stage TEXT"),
+        ("scans", "stage TEXT"),
         ("targets", "import_id INTEGER"),
     ):
         try:
@@ -651,7 +652,7 @@ def fail_zombie_runs(scan_ids: list = (), exp_ids: list = (),
            if PG else
            f"started_at < datetime('now', '-{int(min_age_sec)} seconds')")
     for ids, sql in (
-        (scan_ids, "UPDATE scans SET status='failed',"
+        (scan_ids, "UPDATE scans SET status='failed', stage=NULL,"
                    " finished_at=CURRENT_TIMESTAMP WHERE status='running'"
                    f" AND {lim} AND id=?"),
         (exp_ids, "UPDATE exposure_runs SET status='failed', stage=NULL,"
@@ -842,8 +843,8 @@ def alive_targets(project_id: int) -> list:
 def create_scan(project_id: int, kind: str, options: dict, total: int) -> int:
     conn = _conn()
     cur = conn.execute(
-        "INSERT INTO scans(project_id, kind, options, total) VALUES(?,?,?,?)"
-        + _INS_SUFFIX,
+        "INSERT INTO scans(project_id, kind, options, total, stage)"
+        " VALUES(?,?,?,?,'scan')" + _INS_SUFFIX,
         (project_id, kind, json.dumps(options), total),
     )
     sid = _insert_id(cur)
@@ -855,11 +856,30 @@ def create_scan(project_id: int, kind: str, options: dict, total: int) -> int:
 def finish_scan(scan_id: int, alive: int):
     conn = _conn()
     conn.execute(
-        "UPDATE scans SET status='done', alive=?, finished_at=CURRENT_TIMESTAMP WHERE id=?",
+        "UPDATE scans SET status='done', stage=NULL, alive=?,"
+        " finished_at=CURRENT_TIMESTAMP WHERE id=?",
         (alive, scan_id),
     )
     conn.commit()
     conn.close()
+
+
+def set_scan_status(scan_id: int, status: str, stage: str | None = None):
+    conn = _conn()
+    conn.execute("UPDATE scans SET status=?, stage=? WHERE id=?",
+                 (status, stage, scan_id))
+    conn.commit()
+    conn.close()
+
+
+def count_alive(scan_id: int) -> int:
+    conn = _conn()
+    n = conn.execute(
+        "SELECT COUNT(*) c FROM results WHERE scan_id=? AND alive=1",
+        (scan_id,),
+    ).fetchone()["c"]
+    conn.close()
+    return n
 
 
 def fail_orphaned_runs():
@@ -867,8 +887,8 @@ def fail_orphaned_runs():
     'running' at boot is orphaned — fail it so the UI unlocks."""
     conn = _conn()
     conn.execute(
-        "UPDATE scans SET status='failed', finished_at=CURRENT_TIMESTAMP"
-        " WHERE status='running'"
+        "UPDATE scans SET status='failed', stage=NULL,"
+        " finished_at=CURRENT_TIMESTAMP WHERE status='running'"
     )
     conn.execute(
         "UPDATE exposure_runs SET status='failed', finished_at=CURRENT_TIMESTAMP"
@@ -884,7 +904,8 @@ def fail_orphaned_runs():
 def fail_scan(scan_id: int):
     conn = _conn()
     conn.execute(
-        "UPDATE scans SET status='failed', finished_at=CURRENT_TIMESTAMP WHERE id=?",
+        "UPDATE scans SET status='failed', stage=NULL,"
+        " finished_at=CURRENT_TIMESTAMP WHERE id=?",
         (scan_id,),
     )
     conn.commit()
@@ -917,7 +938,8 @@ def list_scans(project_id: int) -> list:
 def running_scan(project_id: int) -> dict | None:
     conn = _conn()
     row = conn.execute(
-        "SELECT * FROM scans WHERE project_id=? AND status='running' ORDER BY id DESC LIMIT 1",
+        "SELECT * FROM scans WHERE project_id=? AND status='running'"
+        " AND (stage IS NULL OR stage='scan') ORDER BY id DESC LIMIT 1",
         (project_id,),
     ).fetchone()
     conn.close()

@@ -18,10 +18,13 @@ def _title(html: str) -> str:
     return re.sub(r"\s+", " ", m.group(1)).strip() if m else ""
 
 
-async def fetch(client: httpx.AsyncClient, url: str) -> dict:
+async def fetch(client: httpx.AsyncClient, url: str,
+                retry: bool = True) -> dict:
     """Fetch a URL; returns response details + raw materials for fingerprinting.
 
-    URL without scheme tries https first, then http.
+    URL without scheme tries https first, then http. retry=False makes the
+    connect-failure retry single-shot (used by confirmation passes that are
+    themselves the retry layer).
     """
     candidates = (
         [f"https://{url}", f"http://{url}"]
@@ -32,7 +35,7 @@ async def fetch(client: httpx.AsyncClient, url: str) -> dict:
     # connect-level failures deserve one retry: under browser-capture load a
     # wave of connects can starve past the timeout and mass-mark live targets
     # dead. Read/write errors stay single-shot.
-    for attempt in range(2):
+    for attempt in range(2 if retry else 1):
         for cand in candidates:
             start = time.monotonic()
             try:
@@ -70,6 +73,28 @@ async def fetch(client: httpx.AsyncClient, url: str) -> dict:
         "html": "",
         "error": last_err,
     }
+
+
+CANARY_URLS = (
+    "https://www.gstatic.com/generate_204",
+    "https://detectportal.firefox.com/success.txt",
+)
+
+
+async def canary_ok(client: httpx.AsyncClient, timeout: int = 6) -> bool:
+    """True when the scanner's own egress reaches a well-known host. Before
+    a dead-target confirmation wave this distinguishes 'targets dead' from
+    'our uplink is down' — re-probing while offline just re-condemns live
+    targets and burns the whole timeout budget."""
+
+    async def hit(url: str) -> bool:
+        try:
+            await client.get(url, timeout=timeout)
+            return True
+        except Exception:
+            return False
+
+    return any(await asyncio.gather(*(hit(u) for u in CANARY_URLS)))
 
 
 STATIC_PROBE_EXT = {
