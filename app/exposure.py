@@ -1754,7 +1754,8 @@ async def run_deep_scan(run_id: int, limit: int = 120,
                 print(f"[deep] capture error {resp0['final_url']}: {e}")
         if want_fp:
             if signals is None:
-                fav = await probe.fetch_favicon_hash(client, resp0["final_url"])
+                fav = await probe.fetch_favicon_hash(
+                    client, resp0["final_url"], resp0.get("html", ""))
                 signals = fp.signals_from_response(resp0, fav)
             matched = fp.match(signals)
             hits = list(matched["hits"])

@@ -146,6 +146,11 @@ def _pattern_tokens(raw: str) -> set:
 def _rule_tokens(raw: dict) -> set | None:
     """All candidate literal tokens for a rule, or None when any single
     pattern has no extractable literal (that rule must always evaluate)."""
+    # favicon hashes and rendered-DOM selectors match non-text signals —
+    # they can hit a page containing none of the rule's text literals,
+    # so such rules can never be safely prefiltered
+    if raw.get("favicon") or raw.get("dom"):
+        return None
     toks = set()
 
     def feed(p):
@@ -551,7 +556,8 @@ def evaluate(rule: dict, signals: dict) -> dict | None:
             score += 100
             evidence.append({"field": "dom", "key": sel, "pattern": str(cond)})
 
-    if rule["favicon"] and signals.get("favicon") in rule["favicon"]:
+    fav = set((signals.get("favicon") or "").split())
+    if rule["favicon"] and fav & set(rule["favicon"]):
         score += 100
         evidence.append(
             {"field": "favicon", "key": "mmh3", "pattern": signals["favicon"]}

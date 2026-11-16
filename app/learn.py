@@ -165,7 +165,8 @@ async def extract(url: str, client=None) -> dict:
             html = signals["html"]
             packet_urls = signals["urls"]
         else:
-            favicon = await probe.fetch_favicon_hash(client, resp["final_url"])
+            favicon = await probe.fetch_favicon_hash(
+                client, resp["final_url"], resp.get("html", ""))
             cap["favicon_hash"] = favicon
             signals = fp.signals_from_response(resp, favicon)
             html = resp["html"]

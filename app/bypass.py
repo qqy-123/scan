@@ -164,7 +164,8 @@ async def refingerprint(client: httpx.AsyncClient, resp: dict,
     from . import probe
 
     if signals is None:
-        favicon = await probe.fetch_favicon_hash(client, resp["final_url"])
+        favicon = await probe.fetch_favicon_hash(
+            client, resp["final_url"], resp.get("html", ""))
         signals = fp.signals_from_response(resp, favicon)
     matched = fp.match(signals)
     return fp.postprocess(list(matched["hits"]))

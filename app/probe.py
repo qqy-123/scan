@@ -170,21 +170,38 @@ def probe_matches_baseline(body: str, path: str, baseline: str) -> bool:
         None, norm, baseline).quick_ratio() >= 0.97
 
 
-async def fetch_favicon_hash(client: httpx.AsyncClient, final_url: str) -> int | None:
+_LINK_ICON_RE = re.compile(
+    r'<link[^>]+rel=["\'][^"\']*icon[^"\']*["\'][^>]*>', re.I)
+_HREF_RE = re.compile(r'href=["\']([^"\']+)["\']', re.I)
+
+
+async def fetch_favicon_hash(client: httpx.AsyncClient, final_url: str,
+                             html: str = "") -> str | None:
+    """mmh3 hashes of every icon the page declares plus /favicon.ico —
+    space-joined so fingerprint rules can match any source."""
     import base64
 
     import mmh3
 
-    try:
-        from urllib.parse import urlsplit
+    from urllib.parse import urljoin, urlsplit
 
-        p = urlsplit(final_url)
-        resp = await client.get(f"{p.scheme}://{p.netloc}/favicon.ico")
+    urls = []
+    for tag in _LINK_ICON_RE.findall(html or ""):
+        m = _HREF_RE.search(tag)
+        if m:
+            urls.append(urljoin(final_url, m.group(1)))
+    p = urlsplit(final_url)
+    urls.append(f"{p.scheme}://{p.netloc}/favicon.ico")
+
+    out = []
+    for u in dict.fromkeys(urls):
+        try:
+            resp = await client.get(u)
+        except httpx.HTTPError:
+            continue
         if resp.status_code == 200 and resp.content:
-            return mmh3.hash(base64.encodebytes(resp.content))
-    except httpx.HTTPError:
-        pass
-    return None
+            out.append(str(mmh3.hash(base64.encodebytes(resp.content))))
+    return " ".join(out) or None
 
 
 async def sni_fetch(ip: str, host: str, scheme: str = "https",

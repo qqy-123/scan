@@ -134,7 +134,7 @@ async def _finish_alive(scan, opts, cfg, client, shot_sem, probe_sem,
         # fallback: httpx signals only
         if signals is None:
             favicon_hash = await probe.fetch_favicon_hash(
-                client, resp["final_url"])
+                client, resp["final_url"], resp.get("html", ""))
             signals = fp.signals_from_response(resp, favicon_hash)
 
         matched = fp.match(signals)

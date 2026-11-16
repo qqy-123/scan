@@ -3,10 +3,12 @@
   "name": "Souq 商城套件",
   "category": "电商",
   "website": "https://souqappfree.top",
-  "html": [
-   "assets/souq-favicon",
-   "SouqJump Technology Limited",
-   "<title>Souq</title>[\\s\\S]{0,600}assets/chunk-"
-  ]
+  "favicon": ["-1298087724"],
+  "scriptSrc": [
+   "assets/part-[\\w-]+-\\d+-[\\w-]+\\.js\\;confidence:60",
+   "assets/asset-refs-[\\w-]+-[\\w-]+\\.js\\;confidence:80",
+   "assets/Shop2ufoot-[\\w-]+\\.js"
+  ],
+  "url": ["#/human-check"]
  }
 ]
