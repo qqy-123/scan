@@ -271,9 +271,13 @@ function ProjectDetail() {
           <div className="sub-line">{fmtTime(t.imported_at)}</div>
         </>
       ) : <span className="muted">历史导入</span> },
-    { key: "op", title: "操作", width: 210, fixed: true,
+    { key: "op", title: "操作", width: 268, fixed: true,
       render: (t) => (
         <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+          <a href={/^https?:\/\//i.test(t.url) ? t.url : `http://${t.url}`}
+            target="_blank" rel="noopener noreferrer">
+            <button className="btn btn-sm">打开</button>
+          </a>
           {t.latest && (
             <Link href={`/result/?id=${t.latest.id}`}>
               <button className="btn btn-sm">详情</button>
