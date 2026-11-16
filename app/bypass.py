@@ -9,6 +9,7 @@ Two strategies:
 """
 
 import asyncio
+import re
 import socket
 from urllib.parse import urlsplit
 
@@ -70,14 +71,54 @@ def _unprotected(r: httpx.Response) -> bool:
     return 200 <= r.status_code < 400 and not is_protected_response(r)
 
 
-async def find_bypass(client: httpx.AsyncClient, url: str) -> dict | None:
+_DIRECT_LOC_RE = re.compile(
+    r'(?:location\.(?:replace|assign|href)|window\.location)'
+    r'\s*[=(]\s*["\']([^"\']{1,120})["\']')
+_PATH_LIT_RE = re.compile(r'["\'](/[a-zA-Z0-9_\-]{1,40})["\']')
+
+
+def _redirect_candidates(html: str, base_url: str) -> list:
+    """Same-origin paths a JS gate would send the browser to — direct
+    location.* targets plus root-relative literals in redirect logic
+    (`isMobileDevice() ? "/wap" : "/pc"` style). Skips asset paths."""
+    out = []
+    for m in _DIRECT_LOC_RE.finditer(html or ""):
+        t = m.group(1)
+        if t.startswith("/") and not t.startswith("//"):
+            out.append(t)
+    for m in _PATH_LIT_RE.finditer(html or ""):
+        t = m.group(1)
+        if not re.search(r'\.\w{2,5}$', t):
+            out.append(t)
+    seen, urls = set(), []
+    base = urlsplit(base_url)
+    for t in out:
+        if t not in seen:
+            seen.add(t)
+            urls.append(f"{base.scheme}://{base.netloc}{t}")
+    return urls[:6]
+
+
+async def find_bypass(client: httpx.AsyncClient, url: str,
+                      html: str = "") -> dict | None:
     """Probe alternate routes to a protected page.
     Returns {"mode", "url", "headers", "resp"} — `url`/`headers` can be fed
     straight into probe.fetch-style requests or playwright capture."""
     host = urlsplit(url).hostname or ""
     path = urlsplit(url).path or "/"
 
-    # 1. forwarding-header spoof on the same URL
+    # 1. JS-gate redirect follow — device-split/phishing interstitials
+    #    point straight at the real app with location.replace("/pc") etc.
+    for cand in _redirect_candidates(html, url):
+        try:
+            r = await client.get(cand, timeout=10)
+        except httpx.HTTPError:
+            continue
+        if _unprotected(r):
+            return {"mode": "js-redirect:" + urlsplit(cand).path,
+                    "url": cand, "headers": {}, "resp": r}
+
+    # 2. forwarding-header spoof on the same URL
     for hdrs in HEADER_ATTEMPTS:
         h = {k: v.format(host=host) for k, v in hdrs.items()}
         try:
@@ -88,7 +129,7 @@ async def find_bypass(client: httpx.AsyncClient, url: str) -> dict | None:
             return {"mode": "header:" + ",".join(h),
                     "url": url, "headers": h, "resp": r}
 
-    # 2. origin-IP bypass: each resolved IP + real Host header
+    # 3. origin-IP bypass: each resolved IP + real Host header
     for ip in await _resolve(host):
         for scheme in ("https", "http"):
             ip_url = f"{scheme}://{ip}{path}"

@@ -190,7 +190,8 @@ async def _finish_alive(scan, opts, cfg, client, shot_sem, probe_sem,
 
         # front protection detected? try alternate routes to the real service
         if prot:
-            bp = await bypass.find_bypass(client, resp["final_url"])
+            bp = await bypass.find_bypass(client, resp["final_url"],
+                                          resp.get("html", ""))
             if bp:
                 bresp = bypass.resp_to_dict(bp["resp"], bp["url"])
                 result["protection"] += f"→bypass:{bp['mode']}"

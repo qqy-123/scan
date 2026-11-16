@@ -1,1 +1,12 @@
-[]
+[
+ {
+  "name": "Souq 商城套件",
+  "category": "电商",
+  "website": "https://souqappfree.top",
+  "html": [
+   "assets/souq-favicon",
+   "SouqJump Technology Limited",
+   "<title>Souq</title>[\\s\\S]{0,600}assets/chunk-"
+  ]
+ }
+]
