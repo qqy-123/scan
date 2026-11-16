@@ -32,6 +32,30 @@
   ]
  },
  {
+  "name": "Vant 投资理财盘套件",
+  "category": "投资盘",
+  "website": "https://35525.top",
+  "probe": {
+   "/api/captcha/index": {
+    "all": [
+     "data:image",
+     "token",
+     "code.?:0"
+    ],
+    "status": [
+     200
+    ]
+   },
+   "/api/banner/index": {
+    "all": [
+     "client_type",
+     "link_value",
+     "cover"
+    ]
+   }
+  }
+ },
+ {
   "name": "weipan 云函数微盘",
   "category": "微盘",
   "website": "https://nasdaqv-1394478215.picgz.myqcloud.com",
